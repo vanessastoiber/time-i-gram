@@ -883,6 +883,7 @@ export type BinAggregate = 'mean' | 'sum';
 /* ----------------------------- DATA ----------------------------- */
 export type DataDeep =
     | JsonData
+    | JsonTimeData
     | CsvData
     | BedData
     | BigWigData
@@ -929,6 +930,26 @@ export interface JsonData {
         genomicFields: string[];
     }[];
 }
+
+/**
+ * The JSON data format allows users to include data directly in the Gosling's JSON specification.
+ */
+export interface JsonTimeData {
+    /**
+     * Define data type.
+     */
+    type: 'json-time';
+
+    /** Values in the form of JSON. */
+    values: Datum[];
+
+    /** Specify the number of rows loaded from the URL.
+     *
+     * __Default:__ `1000`
+     */
+    sampleLength?: number;
+}
+
 
 /**
  * BED file format

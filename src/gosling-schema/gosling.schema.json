@@ -528,6 +528,9 @@
           "$ref": "#/definitions/JsonData"
         },
         {
+          "$ref": "#/definitions/JsonTimeData"
+        },
+        {
           "$ref": "#/definitions/CsvData"
         },
         {
@@ -3635,6 +3638,33 @@
         "baseGenomicField",
         "genomicField",
         "genomicLengthField"
+      ],
+      "type": "object"
+    },
+    "JsonTimeData": {
+      "additionalProperties": false,
+      "description": "The JSON data format allows users to include data directly in the Gosling's JSON specification.",
+      "properties": {
+        "sampleLength": {
+          "description": "Specify the number of rows loaded from the URL.\n\n__Default:__ `1000`",
+          "type": "number"
+        },
+        "type": {
+          "const": "json-time",
+          "description": "Define data type.",
+          "type": "string"
+        },
+        "values": {
+          "description": "Values in the form of JSON.",
+          "items": {
+            "$ref": "#/definitions/Datum"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "type",
+        "values"
       ],
       "type": "object"
     },
