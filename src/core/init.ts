@@ -7,6 +7,7 @@ import { BrushTrack } from '@gosling-lang/gosling-brush';
 import { GoslingTrack } from '@gosling-lang/gosling-track';
 import { DummyTrack } from '@gosling-lang/dummy-track';
 import * as dataFetchers from '@data-fetchers';
+import { UnixTimeTrack } from '@gosling-lang/unix-time-track';
 
 let once = false;
 
@@ -72,6 +73,15 @@ export function init() {
         name: 'DummyTrack',
         track: DummyTrack,
         config: DummyTrack.config
+    });
+
+    /**
+     * Register a unix time plugin track to HiGlassComponent
+     */
+    higlassRegister({
+        name: 'UnixTimeTrack',
+        track: UnixTimeTrack,
+        config: UnixTimeTrack.config,
     });
 
     /**
