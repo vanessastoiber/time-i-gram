@@ -954,6 +954,8 @@ export interface JsonTimeData {
      * __Default:__ `1000`
      */
     sampleLength?: number;
+    dateFields?: string[];
+    timestampField?: string;
 }
 
 

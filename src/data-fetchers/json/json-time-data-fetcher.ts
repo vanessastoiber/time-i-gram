@@ -1,9 +1,8 @@
-import { computeChromSizes } from '../../core/utils/assembly';
 import { sampleSize } from 'lodash-es';
-import type { Assembly, JsonData } from '@gosling-lang/gosling-schema';
+import type { Assembly, JsonTimeData } from '@gosling-lang/gosling-schema';
 import { type CommonDataConfig, filterUsingGenoPos, sanitizeChrName } from '../utils';
 
-type CsvDataConfig = JsonData & CommonDataConfig;
+type CsvTimeDataConfig = JsonTimeData & CommonDataConfig;
 
 /**
  * HiGlass data fetcher specific for Gosling which ultimately will accept any types of data other than JSON values.
@@ -14,7 +13,7 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
     }
 
     class JsonTimeDataFetcherClass {
-        private dataConfig: CsvDataConfig;
+        private dataConfig: CsvTimeDataConfig;
         // @ts-ignore
         private tilesetInfoLoading: boolean;
         private chromSizes: any;
@@ -33,13 +32,41 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
             }
             this.values = dataConfig.values.map((row: any) => {
                 try {
-                    // TODO: Convert date fields to timestamps (seconds)
+                    const timestampField = this.dataConfig.timestampField;
+                    if (timestampField && this.isValidTimestamp(row.timestampField)) {
+                        return row;
+                    }
+                    const convertToDate = this.dataConfig.dateFields;
+                    // todo add correct typing
+                    const timeFormat = {};
+
+                    if (convertToDate) {
+                        for (const field of convertToDate) {
+                            if (row[field]) {
+                                timeFormat[field] = row[field];
+                                const date = this.createDateFromFields(timeFormat);
+                                const seconds = Date.parse(date) / 1000;
+                                row[field] = seconds;
+                            }
+                        }
+                    }
                     return row;
                 } catch {
                     // skip the rows that had errors in them
                     return undefined;
                 }
             });
+        }
+
+        isValidTimestamp(value: number) {
+            const date = new Date(value);
+            return !isNaN(date.getTime());
+        }
+
+        createDateFromFields(fields: any) {
+            const { year = 1970, month = 1, day = 1 } = fields;
+            const dateStr = `${year}-${month}-${day}`;
+            return dateStr;
         }
 
         tilesetInfo(callback?: any) {

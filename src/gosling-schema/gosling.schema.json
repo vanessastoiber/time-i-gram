@@ -3646,9 +3646,18 @@
       "additionalProperties": false,
       "description": "The JSON data format allows users to include data directly in the Gosling's JSON specification.",
       "properties": {
+        "dateFields": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "sampleLength": {
           "description": "Specify the number of rows loaded from the URL.\n\n__Default:__ `1000`",
           "type": "number"
+        },
+        "timestampField": {
+          "type": "string"
         },
         "type": {
           "const": "json-time",
@@ -8996,6 +9005,9 @@
         "data"
       ],
       "type": "object"
+    },
+    "TemporalDomain": {
+      "$ref": "#/definitions/TimeInterval"
     },
     "Text": {
       "additionalProperties": false,

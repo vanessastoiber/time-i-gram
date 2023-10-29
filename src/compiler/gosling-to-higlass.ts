@@ -139,6 +139,7 @@ export function goslingToHiGlass(
             IsDataDeep(firstResolvedSpec.data) &&
             (firstResolvedSpec.data.type === 'csv' ||
                 firstResolvedSpec.data.type === 'json' ||
+                firstResolvedSpec.data.type === 'json-time' ||
                 firstResolvedSpec.data.type === 'bigwig' ||
                 firstResolvedSpec.data.type === 'bam' ||
                 firstResolvedSpec.data.type === 'vcf' ||
