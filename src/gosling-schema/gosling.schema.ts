@@ -738,7 +738,7 @@ export interface AxisCommon {
     /** Name of the data field. */
     field?: string;
     /** Specify the data type. */
-    type?: 'quantitative' | 'nominal' | 'genomic';
+    type?: 'quantitative' | 'nominal' | 'genomic' | 'temporal';
     /** Values of the data */
     domain?: ValueExtent | GenomicDomain;
     /** Values of the visual channel. */
@@ -756,8 +756,8 @@ export interface AxisCommon {
 }
 
 export interface X extends AxisCommon {
-    type?: 'genomic';
-    domain?: GenomicDomain;
+    type?: 'genomic' | 'temporal';
+    domain?: GenomicDomain | TemporalDomain;
 }
 
 export interface Y extends AxisCommon {
@@ -856,9 +856,10 @@ export interface ChannelValue {
 }
 
 export type AxisPosition = 'none' | 'top' | 'bottom' | 'left' | 'right';
-export type FieldType = 'genomic' | 'nominal' | 'quantitative';
+export type FieldType = 'genomic' | 'nominal' | 'quantitative' | 'temporal';
 export type ValueExtent = string[] | number[];
 export type GenomicDomain = DomainInterval | DomainChrInterval | DomainChr;
+export type TemporalDomain = TimeInterval;
 export type Domain = ValueExtent | GenomicDomain;
 export type Range = ValueExtent | PredefinedColors;
 export type PredefinedColors = 'viridis' | 'grey' | 'spectral' | 'warm' | 'cividis' | 'bupu' | 'rdbu' | 'hot' | 'pink';
@@ -873,6 +874,11 @@ export interface DomainChrInterval {
     interval: [number, number];
 }
 export interface DomainInterval {
+    /** Show a certain interval within entire chromosome */
+    interval: [number, number]; // This is consistent to HiGlass's initXDomain and initYDomain.
+}
+
+export interface TimeInterval {
     /** Show a certain interval within entire chromosome */
     interval: [number, number]; // This is consistent to HiGlass's initXDomain and initYDomain.
 }

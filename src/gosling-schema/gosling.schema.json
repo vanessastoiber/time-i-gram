@@ -1090,7 +1090,8 @@
       "enum": [
         "genomic",
         "nominal",
-        "quantitative"
+        "quantitative",
+        "temporal"
       ],
       "type": "string"
     },
@@ -9028,6 +9029,24 @@
       },
       "type": "object"
     },
+    "TimeInterval": {
+      "additionalProperties": false,
+      "properties": {
+        "interval": {
+          "description": "Show a certain interval within entire chromosome",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+        }
+      },
+      "required": [
+        "interval"
+      ],
+      "type": "object"
+    },
     "Tooltip": {
       "additionalProperties": false,
       "properties": {
@@ -9182,7 +9201,14 @@
           "description": "Specify where should the axis be put"
         },
         "domain": {
-          "$ref": "#/definitions/GenomicDomain",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GenomicDomain"
+            },
+            {
+              "$ref": "#/definitions/TemporalDomain"
+            }
+          ],
           "description": "Values of the data"
         },
         "field": {
@@ -9206,8 +9232,11 @@
           "description": "Values of the visual channel."
         },
         "type": {
-          "const": "genomic",
           "description": "Specify the data type.",
+          "enum": [
+            "genomic",
+            "temporal"
+          ],
           "type": "string"
         }
       },
@@ -9271,7 +9300,8 @@
           "enum": [
             "quantitative",
             "nominal",
-            "genomic"
+            "genomic",
+            "temporal"
           ],
           "type": "string"
         },

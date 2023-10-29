@@ -9,7 +9,7 @@ import type {
     Color,
     Stroke
 } from '@gosling-lang/gosling-schema';
-import { validateTrack, getGenomicChannelFromTrack, getGenomicChannelKeyFromTrack } from '@gosling-lang/gosling-schema';
+import { validateTrack, getGenomicChannelFromTrack, getGenomicChannelKeyFromTrack, getTemporalChannelFromTrack } from '@gosling-lang/gosling-schema';
 import {
     type ScaleLinear,
     scaleLinear,
@@ -18,7 +18,8 @@ import {
     type ScaleBand,
     scaleBand,
     type ScaleSequential,
-    scaleSequential
+    scaleSequential,
+    type ScaleTime
 } from 'd3-scale';
 import { interpolateViridis } from 'd3-scale-chromatic';
 import { min as d3min, max as d3max, sum as d3sum, group } from 'd3-array';
@@ -48,6 +49,7 @@ export type ScaleType =
     | ScaleLinear<any, any>
     | ScaleOrdinal<any, any>
     | ScaleBand<any>
+    | ScaleTime<any, any>
     | ScaleSequential<any>
     | (() => string | number); // constant value
 
@@ -213,6 +215,10 @@ export class GoslingTrackModel {
         return getGenomicChannelFromTrack(this.spec());
     }
 
+    public getTemporalChannel(): ChannelDeep | undefined {
+        return getTemporalChannelFromTrack(this.spec());
+    }
+
     /**
      * Replace a domain with a new one in the complete spec(s) if the original spec does not define the domain.
      * A domain is replaced only when the channel is bound with data (i.e., `ChannelDeep`).
@@ -309,6 +315,9 @@ export class GoslingTrackModel {
             case 'x1e':
                 if (channelFieldType === 'quantitative' || channelFieldType === 'genomic') {
                     return (this.channelScales[channelKey] as ScaleLinear<any, any>)(value as number);
+                }
+                if (channelFieldType === 'temporal') {
+                    return (this.channelScales[channelKey] as ScaleTime<any, any>)(value as number);
                 }
                 if (channelFieldType === 'nominal') {
                     return (this.channelScales[channelKey] as ScaleBand<any>)(value as string);
@@ -509,8 +518,9 @@ export class GoslingTrackModel {
         const data = this.data();
 
         const genomicChannel = this.getGenomicChannel();
-        if (!genomicChannel || !genomicChannel.field) {
-            console.warn('Genomic field is not provided in the specification');
+        const temporalChannel = this.getTemporalChannel();
+        if ((!genomicChannel || !genomicChannel.field) && (!temporalChannel || !temporalChannel.field)) {
+            console.warn('Genomic or temporal field is not provided in the specification');
             // EXPERIMENTAL: we are removing this rule in our spec.
             return;
         }

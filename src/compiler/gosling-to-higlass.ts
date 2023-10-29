@@ -5,7 +5,7 @@ import { parseServerAndTilesetUidFromUrl } from '../core/utils';
 import type { Track, Domain } from '@gosling-lang/gosling-schema';
 import type { BoundingBox, RelativePosition } from './bounding-box';
 import { resolveSuperposedTracks } from '../core/utils/overlay';
-import { getGenomicChannelKeyFromTrack, getGenomicChannelFromTrack } from '../gosling-schema/validate';
+import { getGenomicChannelKeyFromTrack, getGenomicChannelFromTrack, getTemporalChannelFromTrack, getTemporalChannelKeyFromTrack } from '../gosling-schema/validate';
 import {
     IsDataDeep,
     IsChannelDeep,
@@ -71,9 +71,12 @@ export function goslingToHiGlass(
         }
 
         const genomicChannel = getGenomicChannelFromTrack(firstResolvedSpec);
+        const temporalChannel = getTemporalChannelFromTrack(firstResolvedSpec);
         const genomicChannelKey = getGenomicChannelKeyFromTrack(firstResolvedSpec);
+        const temporalChannelKey = getTemporalChannelKeyFromTrack(firstResolvedSpec);
         const isXGenomic = genomicChannelKey === 'x' || genomicChannelKey === 'xe';
-        const xDomain = isXGenomic && IsChannelDeep(genomicChannel) ? (genomicChannel.domain as Domain) : undefined;
+        const isXTemporal = temporalChannelKey === 'x' || temporalChannelKey === 'xe';
+        const xDomain = isXGenomic && IsChannelDeep(genomicChannel) ? (genomicChannel.domain as Domain) : isXTemporal && IsChannelDeep(temporalChannel) ? (temporalChannel.domain as Domain) : undefined;
         const yDomain =
             Is2DTrack(firstResolvedSpec) && IsChannelDeep(firstResolvedSpec.y)
                 ? (firstResolvedSpec.y.domain as Domain)
@@ -247,7 +250,8 @@ export function goslingToHiGlass(
                 'axis' in channel &&
                 channel.axis &&
                 channel.axis !== 'none' &&
-                channel.type === 'genomic'
+                (channel.type === 'genomic' || 
+                channel.type === 'temporal')
             ) {
                 const narrowType = getAxisNarrowType(c as any, gosTrack.orientation, bb.width, bb.height);
                 hgModel.setAxisTrack(channel.axis, narrowType, {

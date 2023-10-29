@@ -48,9 +48,9 @@ export function validateTrack(track: Track) {
         // ...
 
         // Additionally, validate the schema with the aspects that cannot be validated by the json schema
-        if (!getGenomicChannelFromTrack(spec) && spec.mark !== 'brush' && spec.mark !== 'rule') {
+        if ((!getGenomicChannelFromTrack(spec) && spec.mark !== 'brush' && spec.mark !== 'rule') && !getTemporalChannelFromTrack(spec)) {
             // as an exception, brush and rule can encode no genomic data
-            errorMessages.push('genomic type is not encoded to either a x- or y- axis');
+            errorMessages.push('neither genomic nor temporal type is encoded to either a x- or y- axis');
             // EXPERIMENTAL: we are removing this rule in our spec.
             valid = false;
         }
@@ -87,6 +87,18 @@ export function getGenomicChannelFromTrack(track: SingleTrack | OverlaidTrack): 
     return genomicChannel;
 }
 
+export function getTemporalChannelFromTrack(track: SingleTrack | OverlaidTrack): ChannelDeep | undefined {
+    // we do not support using two genomic coordinates yet
+    let temporalChannel: ChannelDeep | undefined = undefined;
+    ['x', 'y', 'xe', 'ye', 'x1', 'y1', 'x1e', 'y1e'].reverse().forEach(channelType => {
+        const channel = track[channelType as keyof typeof ChannelTypes];
+        if (IsChannelDeep(channel) && channel.type === 'temporal') {
+            temporalChannel = channel;
+        }
+    });
+    return temporalChannel;
+}
+
 /**
  * Find an axis channel that is encoded with genomic coordinate and return 'x' or 'y'.
  * `undefined` if not found.
@@ -103,4 +115,18 @@ export function getGenomicChannelKeyFromTrack(
         }
     });
     return genomicChannelKey;
+}
+
+export function getTemporalChannelKeyFromTrack(
+    track: SingleTrack | OverlaidTrack
+): 'x' | 'xe' | 'y' | 'ye' | 'x1' | 'y1' | 'x1e' | 'y1e' | undefined {
+    // we do not support using two genomic coordinates yet
+    let temporalChannelKey: string | undefined = undefined;
+    ['x', 'xe', 'y', 'ye', 'x1', 'y1', 'x1e', 'y1e'].reverse().forEach(channelKey => {
+        const channel = track[channelKey as keyof typeof ChannelTypes];
+        if (IsChannelDeep(channel) && channel.type === 'temporal') {
+            temporalChannelKey = channelKey;
+        }
+    });
+    return temporalChannelKey;
 }

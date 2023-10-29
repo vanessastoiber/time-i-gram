@@ -341,6 +341,23 @@ export class HiGlassModel {
                 reverseOrientation: position === 'bottom' || position === 'right' ? true : false
             }
         };
+        const unixTimeAxisTrackTemplate: Track = {
+            type: 'unix-time-track',
+            chromInfoPath: this.hg.chromInfoPath,
+            options: {
+                ...options,
+                assembly: "unknown",
+                stroke: 'solid', // text outline
+                color: options.theme.axis.labelColor,
+                fontSize: options.theme.axis.labelFontSize,
+                fontFamily: options.theme.axis.labelFontFamily,
+                fontWeight: options.theme.axis.labelFontWeight,
+                tickColor: options.theme.axis.tickColor,
+                tickFormat: type === 'narrower' ? 'si' : 'plain',
+                tickPositions: type === 'regular' ? 'even' : 'ends',
+                reverseOrientation: position === 'bottom' || position === 'right' ? true : false
+            }
+        };
         if (options.layout === 'circular') {
             // circular axis: superpose an axis track on top of the `center` track
             this.addTrackToCombined({
@@ -350,26 +367,28 @@ export class HiGlassModel {
         } else {
             // linear axis: place an axis track on the top, left, bottom, or right
             const axisTrack = { ...axisTrackTemplate, [widthOrHeight]: HIGLASS_AXIS_SIZE };
+            const unixTimeAxisTrack = { ...unixTimeAxisTrackTemplate, [widthOrHeight]: HIGLASS_AXIS_SIZE };
 
             if (position === 'left') {
                 // In vertical tracks, the main track has been already inserted into `left`, so put axis on the first index to show it on the left.
-                if (this.getLastView().tracks.left.filter(d => d.type === 'axis-track').length !== 0) {
+                if (this.getLastView().tracks.left.filter(d => d.type === 'axis-track' || d.type === 'unix-time-track').length !== 0) {
                     // we already have an axis
                     return this;
                 }
                 this.getLastView().tracks.left = insertItemToArray(this.getLastView().tracks.left, 0, axisTrack);
             } else if (position === 'right') {
-                if (this.getLastView().tracks.right.filter(d => d.type === 'axis-track').length !== 0) {
+                if (this.getLastView().tracks.right.filter(d => d.type === 'axis-track' || d.type === 'unix-time-track').length !== 0) {
                     // we already have an axis
                     return this;
                 }
                 this.getLastView().tracks.right.push(axisTrack);
             } else {
-                if (this.getLastView().tracks[position].filter(d => d.type === 'axis-track').length !== 0) {
+                if (this.getLastView().tracks[position].filter(d => d.type === 'axis-track' || d.type === 'unix-time-track').length !== 0) {
                     // we already have an axis
                     return this;
                 }
-                this.getLastView().tracks[position].push(axisTrack);
+                // TODO: Add condition
+                this.getLastView().tracks[position].push(unixTimeAxisTrack);
             }
         }
         return this;
