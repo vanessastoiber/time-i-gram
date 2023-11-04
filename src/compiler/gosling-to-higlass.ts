@@ -255,23 +255,43 @@ export function goslingToHiGlass(
                 channel.type === 'temporal')
             ) {
                 const narrowType = getAxisNarrowType(c as any, gosTrack.orientation, bb.width, bb.height);
-                hgModel.setAxisTrack(channel.axis, narrowType, {
-                    id: `${trackId}-${channel.axis}-axis`,
-                    layout: firstResolvedSpec.layout,
-                    innerRadius:
-                        channel.axis === 'top'
-                            ? (firstResolvedSpec.outerRadius as number) - HIGLASS_AXIS_SIZE
-                            : firstResolvedSpec.innerRadius,
-                    outerRadius:
-                        channel.axis === 'top'
-                            ? firstResolvedSpec.outerRadius
-                            : (firstResolvedSpec.innerRadius as number) + HIGLASS_AXIS_SIZE,
-                    width: firstResolvedSpec.width,
-                    height: firstResolvedSpec.height,
-                    startAngle: firstResolvedSpec.startAngle,
-                    endAngle: firstResolvedSpec.endAngle,
-                    theme
-                });
+                if (channel.type === 'temporal') {
+                    hgModel.setUnixTimeTrack(channel.axis, narrowType, {
+                        id: `${trackId}-${channel.axis}-axis`,
+                        layout: firstResolvedSpec.layout,
+                        innerRadius:
+                            channel.axis === 'top'
+                                ? (firstResolvedSpec.outerRadius as number) - HIGLASS_AXIS_SIZE
+                                : firstResolvedSpec.innerRadius,
+                        outerRadius:
+                            channel.axis === 'top'
+                                ? firstResolvedSpec.outerRadius
+                                : (firstResolvedSpec.innerRadius as number) + HIGLASS_AXIS_SIZE,
+                        width: firstResolvedSpec.width,
+                        height: firstResolvedSpec.height,
+                        startAngle: firstResolvedSpec.startAngle,
+                        endAngle: firstResolvedSpec.endAngle,
+                        theme
+                    });
+                } else {
+                    hgModel.setAxisTrack(channel.axis, narrowType, {
+                        id: `${trackId}-${channel.axis}-axis`,
+                        layout: firstResolvedSpec.layout,
+                        innerRadius:
+                            channel.axis === 'top'
+                                ? (firstResolvedSpec.outerRadius as number) - HIGLASS_AXIS_SIZE
+                                : firstResolvedSpec.innerRadius,
+                        outerRadius:
+                            channel.axis === 'top'
+                                ? firstResolvedSpec.outerRadius
+                                : (firstResolvedSpec.innerRadius as number) + HIGLASS_AXIS_SIZE,
+                        width: firstResolvedSpec.width,
+                        height: firstResolvedSpec.height,
+                        startAngle: firstResolvedSpec.startAngle,
+                        endAngle: firstResolvedSpec.endAngle,
+                        theme
+                    });
+                }
             }
         });
 

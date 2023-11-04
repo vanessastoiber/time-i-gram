@@ -341,6 +341,59 @@ export class HiGlassModel {
                 reverseOrientation: position === 'bottom' || position === 'right' ? true : false
             }
         };
+        if (options.layout === 'circular') {
+            // circular axis: superpose an axis track on top of the `center` track
+            this.addTrackToCombined({
+                ...axisTrackTemplate,
+                options: { ...axisTrackTemplate.options, layout: 'circular' }
+            });
+        } else {
+            // linear axis: place an axis track on the top, left, bottom, or right
+            const axisTrack = { ...axisTrackTemplate, [widthOrHeight]: HIGLASS_AXIS_SIZE };
+            
+            if (position === 'left') {
+                // In vertical tracks, the main track has been already inserted into `left`, so put axis on the first index to show it on the left.
+                if (this.getLastView().tracks.left.filter(d => d.type === 'axis-track').length !== 0) {
+                    // we already have an axis
+                    return this;
+                }
+                this.getLastView().tracks.left = insertItemToArray(this.getLastView().tracks.left, 0, axisTrack);
+            } else if (position === 'right') {
+                if (this.getLastView().tracks.right.filter(d => d.type === 'axis-track').length !== 0) {
+                    // we already have an axis
+                    return this;
+                }
+                this.getLastView().tracks.right.push(axisTrack);
+            } else {
+                if (this.getLastView().tracks[position].filter(d => d.type === 'axis-track').length !== 0) {
+                    // we already have an axis
+                    return this;
+                }
+                // TODO: Add condition
+                this.getLastView().tracks[position].push(axisTrack);
+            }
+        }
+        return this;
+    }
+
+    public setUnixTimeTrack(
+        position: Exclude<AxisPosition, 'none'>,
+        type: 'regular' | 'narrow' | 'narrower' = 'regular',
+        options: {
+            id?: string;
+            layout?: 'circular' | 'linear';
+            innerRadius?: number;
+            outerRadius?: number;
+            width?: number;
+            height?: number;
+            startAngle?: number;
+            endAngle?: number;
+            theme: Required<CompleteThemeDeep>;
+        }
+    ) {
+        if (!this.hg.views) return this;
+
+        const widthOrHeight = position === 'left' || position === 'right' ? 'width' : 'height';
         const unixTimeAxisTrackTemplate: Track = {
             type: 'unix-time-track',
             chromInfoPath: this.hg.chromInfoPath,
@@ -361,29 +414,28 @@ export class HiGlassModel {
         if (options.layout === 'circular') {
             // circular axis: superpose an axis track on top of the `center` track
             this.addTrackToCombined({
-                ...axisTrackTemplate,
-                options: { ...axisTrackTemplate.options, layout: 'circular' }
+                ...unixTimeAxisTrackTemplate,
+                options: { ...unixTimeAxisTrackTemplate.options, layout: 'circular' }
             });
         } else {
             // linear axis: place an axis track on the top, left, bottom, or right
-            const axisTrack = { ...axisTrackTemplate, [widthOrHeight]: HIGLASS_AXIS_SIZE };
             const unixTimeAxisTrack = { ...unixTimeAxisTrackTemplate, [widthOrHeight]: HIGLASS_AXIS_SIZE };
 
             if (position === 'left') {
                 // In vertical tracks, the main track has been already inserted into `left`, so put axis on the first index to show it on the left.
-                if (this.getLastView().tracks.left.filter(d => d.type === 'axis-track' || d.type === 'unix-time-track').length !== 0) {
+                if (this.getLastView().tracks.left.filter(d => d.type === 'unix-time-track').length !== 0) {
                     // we already have an axis
                     return this;
                 }
-                this.getLastView().tracks.left = insertItemToArray(this.getLastView().tracks.left, 0, axisTrack);
+                this.getLastView().tracks.left = insertItemToArray(this.getLastView().tracks.left, 0, unixTimeAxisTrack);
             } else if (position === 'right') {
-                if (this.getLastView().tracks.right.filter(d => d.type === 'axis-track' || d.type === 'unix-time-track').length !== 0) {
+                if (this.getLastView().tracks.right.filter(d => d.type === 'unix-time-track').length !== 0) {
                     // we already have an axis
                     return this;
                 }
-                this.getLastView().tracks.right.push(axisTrack);
+                this.getLastView().tracks.right.push(unixTimeAxisTrack);
             } else {
-                if (this.getLastView().tracks[position].filter(d => d.type === 'axis-track' || d.type === 'unix-time-track').length !== 0) {
+                if (this.getLastView().tracks[position].filter(d => d.type === 'unix-time-track').length !== 0) {
                     // we already have an axis
                     return this;
                 }
