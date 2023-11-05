@@ -3664,6 +3664,9 @@
           "description": "Define data type.",
           "type": "string"
         },
+        "url": {
+          "type": "string"
+        },
         "values": {
           "description": "Values in the form of JSON.",
           "items": {
@@ -3673,8 +3676,7 @@
         }
       },
       "required": [
-        "type",
-        "values"
+        "type"
       ],
       "type": "object"
     },

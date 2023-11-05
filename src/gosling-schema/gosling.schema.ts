@@ -946,8 +946,10 @@ export interface JsonTimeData {
      */
     type: 'json-time';
 
+    url?: string;
+
     /** Values in the form of JSON. */
-    values: Datum[];
+    values?: Datum[];
 
     /** Specify the number of rows loaded from the URL.
      *

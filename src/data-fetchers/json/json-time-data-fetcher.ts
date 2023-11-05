@@ -26,36 +26,57 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
             this.tilesetInfoLoading = false;
             this.assembly = this.dataConfig.assembly;
 
-            if (!dataConfig.values) {
+            if (!dataConfig.values && !dataConfig.url) {
                 console.error('Please provide `values` of the JSON data');
                 return;
             }
-            this.values = dataConfig.values.map((row: any) => {
-                try {
-                    const timestampField = this.dataConfig.timestampField;
-                    if (timestampField && this.isValidTimestamp(row.timestampField)) {
-                        return row;
-                    }
-                    const convertToDate = this.dataConfig.dateFields;
-                    // todo add correct typing
-                    const timeFormat = {};
 
-                    if (convertToDate) {
-                        for (const field of convertToDate) {
-                            if (row[field]) {
-                                timeFormat[field] = row[field];
-                                const date = this.createDateFromFields(timeFormat);
-                                const seconds = Date.parse(date) / 1000;
-                                row[field] = seconds;
-                            }
+            if (dataConfig.url) {
+                this.values = [];
+                this.fetchData(dataConfig.url).then(data => {
+                    data.map((row: any) => {
+                        const timestampField = this.dataConfig.timestampField;
+                        if (timestampField && this.isValidTimestamp(row.timestampField)) {
+                            return row;
                         }
+                        const convertToDate = this.dataConfig.dateFields;
+                        const convertedRow = this.processRow(row, convertToDate);
+                        this.values.push(convertedRow);
+                    });
+                })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            } else {
+                this.values = dataConfig.values.map((row: any) => {
+                    try {
+                        const timestampField = this.dataConfig.timestampField;
+                        if (timestampField && this.isValidTimestamp(row.timestampField)) {
+                            return row;
+                        }
+                        const convertToDate = this.dataConfig.dateFields;
+                        const convertedRow = this.processRow(row, convertToDate);
+                        return convertedRow;
+                    } catch {
+                        // skip the rows that had errors in them
+                        return undefined;
                     }
-                    return row;
-                } catch {
-                    // skip the rows that had errors in them
-                    return undefined;
-                }
-            });
+                });
+            }
+        }
+
+        async fetchData(url: string): Promise<any> {
+            return fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .catch(error => {
+                    console.error(`Error fetching data: ${error}`);
+                    return Promise.reject(error);
+                });
         }
 
         isValidTimestamp(value: number) {
@@ -63,10 +84,29 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
             return !isNaN(date.getTime());
         }
 
-        createDateFromFields(fields: any) {
+        createDateFromFields(fields: { year: number; month: number; day: number }) {
             const { year = 1970, month = 1, day = 1 } = fields;
             const dateStr = `${year}-${month}-${day}`;
             return dateStr;
+        }
+
+        processRow(row: any, convertToDate?: string[]) {
+            try {
+                const timeFormat: { year: number, month: number, day: number } = { year: 1970, month: 1, day: 1 };
+                if (convertToDate) {
+                    for (const field of convertToDate) {
+                        if (row[field]) {
+                            timeFormat[field] = row[field];
+                        }
+                    }
+                    const seconds = Date.parse(`${timeFormat.year}-${timeFormat.month}-${timeFormat.day}`) / 1000;
+                    row[convertToDate[0]] = seconds;
+                }
+                return row;
+            } catch {
+                // skip the rows that had errors in them
+                return undefined;
+            }
         }
 
         tilesetInfo(callback?: any) {
