@@ -53,6 +53,7 @@ import { spec as JSON_SPEC_BASIC_SEMANTIC_ZOOM } from './spec/basic-semantic-zoo
 
 import JS_SPEC_ISLANDVIEWER from './spec/islandviewer?raw';
 import { spec as JSON_SPEC_ISLANDVIEWER } from './spec/islandviewer';
+import { EX_SPEC_TEMPORAL_OVERVIEW_DETAIL } from './json-spec/temporal-data_overview-detail';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -63,6 +64,7 @@ export type ExampleGroup =
     | 'Applications'
     | 'Track Templates'
     | 'Doc'
+    | 'Temporal Data'
     | 'Unassigned';
 
 export const ExampleGroups: {
@@ -104,6 +106,10 @@ export const ExampleGroups: {
     {
         name: 'Doc',
         description: 'Examples used in the official documentation.'
+    },
+    {
+        name: 'Temporal Data',
+        description: 'Examples of temporal data.'
     },
     {
         name: 'Unassigned',
@@ -499,6 +505,12 @@ const editorExampleObj: {
         specJs: JS_SPEC_ISLANDVIEWER,
         underDevelopment: true,
         image: THUMBNAILS.ISLANDVIEWER
+    },
+    TEMPORAL_DATA_OVERVIEW_DETAIL: {
+        group: 'Temporal Data',
+        name: 'Unemployment - Overview + Detail',
+        spec: EX_SPEC_TEMPORAL_OVERVIEW_DETAIL,
+        underDevelopment: true
     }
 };
 
