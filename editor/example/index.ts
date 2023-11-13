@@ -54,6 +54,7 @@ import { spec as JSON_SPEC_BASIC_SEMANTIC_ZOOM } from './spec/basic-semantic-zoo
 import JS_SPEC_ISLANDVIEWER from './spec/islandviewer?raw';
 import { spec as JSON_SPEC_ISLANDVIEWER } from './spec/islandviewer';
 import { EX_SPEC_TEMPORAL_OVERVIEW_DETAIL } from './json-spec/temporal-data_overview-detail';
+import { EX_SPEC_TEMPORAL_SEATTLE_WEATHER } from './spec/temporal-data_seattle-weather';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -510,6 +511,12 @@ const editorExampleObj: {
         group: 'Temporal Data',
         name: 'Unemployment - Overview + Detail',
         spec: EX_SPEC_TEMPORAL_OVERVIEW_DETAIL,
+        underDevelopment: true
+    },
+    TEMPORAL_DATA_SEATTLE_WEATHER: {
+        group: 'Temporal Data',
+        name: 'Seattle Weather',
+        spec: EX_SPEC_TEMPORAL_SEATTLE_WEATHER,
         underDevelopment: true
     }
 };
