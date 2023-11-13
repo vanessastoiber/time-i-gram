@@ -891,6 +891,7 @@ export type DataDeep =
     | JsonData
     | JsonTimeData
     | CsvData
+    | CSVTimeData
     | BedData
     | BigWigData
     | MultivecData
@@ -950,6 +951,24 @@ export interface JsonTimeData {
 
     /** Values in the form of JSON. */
     values?: Datum[];
+
+    /** Specify the number of rows loaded from the URL.
+     *
+     * __Default:__ `1000`
+     */
+    sampleLength?: number;
+    dateFields?: string[];
+    timestampField?: string;
+}
+
+export interface CSVTimeData {
+    /**
+     * Define data type.
+     */
+    type: 'csv-time';
+
+    url: string;
+    separator?: string;
 
     /** Specify the number of rows loaded from the URL.
      *

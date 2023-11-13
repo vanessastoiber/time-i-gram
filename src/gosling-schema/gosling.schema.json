@@ -293,6 +293,40 @@
       ],
       "type": "string"
     },
+    "CSVTimeData": {
+      "additionalProperties": false,
+      "properties": {
+        "dateFields": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "sampleLength": {
+          "description": "Specify the number of rows loaded from the URL.\n\n__Default:__ `1000`",
+          "type": "number"
+        },
+        "separator": {
+          "type": "string"
+        },
+        "timestampField": {
+          "type": "string"
+        },
+        "type": {
+          "const": "csv-time",
+          "description": "Define data type.",
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "url"
+      ],
+      "type": "object"
+    },
     "Channel": {
       "anyOf": [
         {
@@ -532,6 +566,9 @@
         },
         {
           "$ref": "#/definitions/CsvData"
+        },
+        {
+          "$ref": "#/definitions/CSVTimeData"
         },
         {
           "$ref": "#/definitions/BedData"
