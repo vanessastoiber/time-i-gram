@@ -64,11 +64,12 @@ export function drawBar(track: any, tile: Tile, model: GoslingTrackModel) {
         // const rowGraphics = tile.graphics; // new HGC.libraries.PIXI.Graphics(); // only one row for stacked marks
 
         const genomicChannel = model.getGenomicChannel();
-        if (!genomicChannel || !genomicChannel.field) {
-            console.warn('Genomic field is not provided in the specification');
+        const temporalChannel = model.getTemporalChannel();
+        if ((!genomicChannel || !genomicChannel.field) && (!temporalChannel || !temporalChannel.field)) {
+            console.warn('Neither genomic nor temporal field is not provided in the specification');
             return;
         }
-        const pivotedData = group(data, d => d[genomicChannel.field as string]);
+        const pivotedData = group(data, d => genomicChannel ? d[genomicChannel.field as string] : d[temporalChannel.field as string]);
         const xKeys = [...pivotedData.keys()];
 
         // TODO: users may want to align rows by values

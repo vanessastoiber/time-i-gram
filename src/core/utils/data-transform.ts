@@ -434,7 +434,7 @@ export function aggregateData(spec: SingleTrack, data: Datum[]): Datum[] {
         return data;
     }
 
-    const qChannelKeys = [...getChannelKeysByType(spec, 'quantitative'), ...getChannelKeysByType(spec, 'genomic')];
+    const qChannelKeys = [...getChannelKeysByType(spec, 'quantitative'), ...getChannelKeysByType(spec, 'genomic'), ...getChannelKeysByType(spec, 'temporal')];
     const aggregated: { [k: string]: number | string }[] = [];
 
     const uniqueCategories = Array.from(new Set(data.map(d => d[nField])));

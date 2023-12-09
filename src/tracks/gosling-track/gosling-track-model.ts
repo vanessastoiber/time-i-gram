@@ -539,7 +539,7 @@ export class GoslingTrackModel {
             if (IsStackedChannel(spec, channelKey) && IsChannelDeep(channel)) {
                 // we need to group data before calculating scales because marks are going to be stacked
                 // (spec as any /* TODO: select more accurately */).x
-                const pivotedData = group(data, d => d[genomicChannel.field as string]);
+                const pivotedData = group(data, d => genomicChannel ? d[genomicChannel.field as string] : d[temporalChannel?.field as string]);
                 const xKeys = [...pivotedData.keys()];
 
                 if (!channel.domain) {
