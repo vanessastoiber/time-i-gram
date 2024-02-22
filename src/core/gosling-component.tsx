@@ -137,10 +137,11 @@ export const GoslingComponent = forwardRef<GoslingRef, GoslingCompProps>((props,
                     if (props.experimental?.reactive && isMountedOnce) {
                         // Use API to update visualization.
                         setTimeout(() => {
-                            preverseZoomStatus(
-                                newHiGlassSpec,
-                                hgRef.current?.api.getViewConfig() as gosling.HiGlassSpec
-                            );
+                            // TODO: Check if needed
+                            // preverseZoomStatus(
+                            //     newHiGlassSpec,
+                            //     hgRef.current?.api.getViewConfig() as gosling.HiGlassSpec
+                            // );
                             hgRef.current?.api.setViewConfig(newHiGlassSpec);
                         }, DELAY_FOR_CONTAINER_RESIZE_BEFORE_RERENDER);
                     } else {
