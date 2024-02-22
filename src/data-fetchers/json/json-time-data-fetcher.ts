@@ -1,6 +1,6 @@
 import { sampleSize } from 'lodash-es';
-import type { Assembly, JsonTimeData } from '@gosling-lang/gosling-schema';
-import { type CommonDataConfig, filterUsingGenoPos, sanitizeChrName } from '../utils';
+import type { JsonTimeData } from '@gosling-lang/gosling-schema';
+import { type CommonDataConfig, filterUsingGenoPos } from '../utils';
 
 type CsvTimeDataConfig = JsonTimeData & CommonDataConfig;
 
@@ -14,17 +14,11 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
 
     class JsonTimeDataFetcherClass {
         private dataConfig: CsvTimeDataConfig;
-        // @ts-ignore
-        private tilesetInfoLoading: boolean;
-        private chromSizes: any;
         private values: any;
-        private assembly: Assembly;
 
         constructor(params: any[]) {
             const [dataConfig] = params;
             this.dataConfig = dataConfig;
-            this.tilesetInfoLoading = false;
-            this.assembly = this.dataConfig.assembly;
 
             if (!dataConfig.values && !dataConfig.url) {
                 console.error('Please provide `values` of the JSON data');
@@ -110,8 +104,6 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
         }
 
         tilesetInfo(callback?: any) {
-            this.tilesetInfoLoading = false;
-
             const TILE_SIZE = 1024;
             // TODO: Make dynamic
             const totalLength = 3088269832;
