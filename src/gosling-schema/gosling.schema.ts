@@ -976,6 +976,9 @@ export interface CSVTimeData {
      */
     sampleLength?: number;
     dateFields?: string[];
+    dayFirstDate?: boolean;
+    yearFirstDate?: boolean;
+    interval?: string[];
     timestampField?: string;
 }
 

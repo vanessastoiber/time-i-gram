@@ -302,6 +302,15 @@
           },
           "type": "array"
         },
+        "dayFirstDate": {
+          "type": "boolean"
+        },
+        "interval": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "sampleLength": {
           "description": "Specify the number of rows loaded from the URL.\n\n__Default:__ `1000`",
           "type": "number"
@@ -319,6 +328,9 @@
         },
         "url": {
           "type": "string"
+        },
+        "yearFirstDate": {
+          "type": "boolean"
         }
       },
       "required": [
