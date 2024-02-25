@@ -90,7 +90,7 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
                 if (convertToDate) {
                     for (const field of convertToDate) {
                         if (row[field]) {
-                            timeFormat[field] = row[field];
+                            timeFormat[field as keyof typeof timeFormat] = row[field];
                         }
                     }
                     const seconds = Date.parse(`${timeFormat.year}-${timeFormat.month}-${timeFormat.day}`) / 1000;
