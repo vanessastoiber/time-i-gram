@@ -31,20 +31,24 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
             this.fetchData().then(data => {
                 d3dsvFormat(separator).parse(data, (row: DSVRowString<string>) => {
                     const timestampField = this.dataConfig.timestampField;
-                    if (timestampField && this.isValidTimestamp(row.timestampField)) {
+                    if (timestampField && this.isValidTimestamp(Number(row[timestampField]))) {
                         this.values.push(row);
                         return row;
                     }
                     // TODO
                     const intervalSpec = this.dataConfig.interval;
-                    if (intervalSpec && this.isValidTimestamp(row[intervalSpec[0]]) && this.isValidTimestamp(row[intervalSpec[1]])) {
+                    if (intervalSpec && this.isValidTimestamp(Number(row[intervalSpec[0]])) && this.isValidTimestamp(Number(row[intervalSpec[1]]))) {
                         this.values.push(row);
                         return row;
-                    } else if (intervalSpec && !this.isValidDate(row[intervalSpec[0]]) && !this.isValidDate(row[intervalSpec[1]])) {
-                        row[intervalSpec[0]] = this.processRow(row, [...intervalSpec[0]]);
-                        row[intervalSpec[1]] = this.processRow(row, [...intervalSpec[1]]);
-                        this.values.push(row);
-                        return row;
+                    } else if (intervalSpec && row[intervalSpec[0]] !== undefined && row[intervalSpec[1]] !== undefined) {
+                        if (typeof row[intervalSpec[0]] === 'string' && typeof row[intervalSpec[1]] === 'string' && row[intervalSpec[0]] && row[intervalSpec[1]] && !this.isValidDate(row[intervalSpec[0]] || "") && !this.isValidDate(row[intervalSpec[1]] || "")) {
+                            if (intervalSpec[0] !== undefined && intervalSpec[1] !== undefined) {
+                                row[intervalSpec[0]] = intervalSpec[0] && row[intervalSpec[0]] ? this.processRow(row, [...intervalSpec[0]]) : row[intervalSpec[0]];
+                                row[intervalSpec[1]] = intervalSpec[1] && row[intervalSpec[1]] ? this.processRow(row, [...intervalSpec[1]]) : row[intervalSpec[1]];
+                                this.values.push(row);
+                                return row;
+                            }
+                        }
                     }
                     const convertToDate = this.dataConfig.dateFields;
                     const convertedRow = this.processRow(row, convertToDate);
@@ -88,6 +92,23 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
         return timeRegex.test(timeString);
         }
 
+        isValidYear(year: number | string) {
+            let parsedYear: number;
+            if (typeof year === 'number') {
+                parsedYear = year;
+            } else {
+                parsedYear = parseInt(year, 10);
+            }
+            const currentYear = new Date().getFullYear();
+            
+            // Check if year is a number and within a reasonable range
+            if (isNaN(parsedYear) || parsedYear < 1000 || parsedYear > currentYear) {
+                return false;
+            }
+            
+            return true;
+        }
+
         // parse each date to YYYY-MM-DD format
         parseDate(dateString: string) {
             // only handle dates without time
@@ -102,6 +123,9 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
                 separatorChar = '.';
             } else if (dateString.includes('/')) {
                 separatorChar = '/';
+            // assume that the date is in the format YYYY
+            } else if (this.isValidYear(dateString)) {
+                return `${dateString}-01-01`;
             }
             const parts = dateString.split(separatorChar);
             //todo change year to month
@@ -122,85 +146,79 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
             return dateStr;
         }
 
-
-        // processRow(row: any, convertToDate?: string[]) {
-        //     try {
-        //         const timeFormat: { year: number, month: number, day: number, hour: number, minute: number, second: number  } = { year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0 };
-        //         if (convertToDate) {
-        //             // check if complete date is given in one column
-        //             if (convertToDate?.length === 1 && this.isValidDate(row[convertToDate[0]])) {
-        //                 const validatedDate = this.parseDate(row[convertToDate[0]]);
-        //                 const seconds = Date.parse(validatedDate) / 1000;
-        //                 row[convertToDate[0]] = seconds;
-        //             // check if separate date fields for intervals are given
-        //             } else if (convertToDate?.length === 2 && this.isValidDate(row[convertToDate[0]]) && this.isValidDate(row[convertToDate[1]])) {
-        //                 convertToDate.forEach((field, i) => {
-        //                     const validatedDate = this.parseDate(row[convertToDate[i]]);
-        //                     const seconds = Date.parse(validatedDate) / 1000;
-        //                     row[convertToDate[i]] = seconds;
-        //                 });
-        //             // assume that one the first column is date and the second column is time
-        //             } else if (convertToDate?.length === 2 && this.isValidDate(row[convertToDate[0]]) && this.isValidTimeFormat(row[convertToDate[1]])) {
-        //                 const validatedDate = this.parseDate(row[convertToDate[0]]);
-        //                 const fullDate = validatedDate.concat('T', row[convertToDate[1]]);
-        //                 const seconds = Date.parse(fullDate) / 1000;
-        //                 row[convertToDate[0]] = seconds;
-        //             // assume separate columns for year, month, day
-        //             } else {
-        //                 for (const field of convertToDate) {
-        //                     if (row[field]) {
-        //                         timeFormat[field] = row[field];
-        //                     }
-        //                 }
-        //                 const seconds = Date.parse(`${timeFormat.year}-${timeFormat.month}-${timeFormat.day}T${timeFormat.hour}:${timeFormat.minute}:${timeFormat.second}`) / 1000;
-        //                 row[convertToDate[0]] = seconds;
-        //             }
-        //         }
-        //         return row;
-        //     } catch {
-        //         // skip the rows that had errors in them
-        //         return undefined;
-        //     }
-        // }
-
         processRow(row: any, convertToDate?: string[]) {
             try {
-                const timeFormat: { year: number, month: number, day: number, hour: number, minute: number, second: number  } = { year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0 };
+                const defaultTimeFormat = { year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0 };
+        
                 if (convertToDate) {
-                    // check if complete date is given in one column
-                    if (convertToDate?.length === 1) {
-                        const validatedDate = this.parseDate(row[convertToDate[0]]);
-                        const seconds = Date.parse(validatedDate) / 1000;
-                        row[convertToDate[0]] = seconds;
-                    // assume that one the first column is date and the second column is time
-                    } else if (convertToDate?.length === 2 && this.isValidTimeFormat(row[convertToDate[1]])) {
-                        const validatedDate = this.parseDate(row[convertToDate[0]]);
-                        const fullDate = validatedDate.concat('T', row[convertToDate[1]]);
-                        const seconds = Date.parse(fullDate) / 1000;
-                        row[convertToDate[0]] = seconds;
-                    // check if separate date fields for intervals are given
-                    } else if (convertToDate?.length === 2) {
-                        convertToDate.forEach((field, i) => {
-                            const validatedDate = this.parseDate(row[convertToDate[i]]);
-                            const seconds = Date.parse(validatedDate) / 1000;
-                            row[convertToDate[i]] = seconds;
-                        });
-                    // assume separate columns for year, month, day
-                    } else {
-                        for (const field of convertToDate) {
-                            if (row[field]) {
-                                timeFormat[field] = row[field];
+                    switch (convertToDate.length) {
+                        case 1:
+                            row[convertToDate[0]] = this.parseAndConvertToSeconds(row[convertToDate[0]]);
+                            break;
+                        case 2:
+                            if (this.isValidTimeFormat(row[convertToDate[1]])) {
+                                const fullDate = `${this.parseDate(row[convertToDate[0]])}T${row[convertToDate[1]]}`;
+                                row[convertToDate[0]] = this.parseAndConvertToSeconds(fullDate);
+                            // Check if we're dealing with a calendar week format in the second convertToDate field
+                            } else if (this.containsCalendarWeek(row[convertToDate[1]])) {
+                                const calendarWeekMonday = this.weekToDate(row[convertToDate[0]], row[convertToDate[1]]);
+                                row[convertToDate[0]] = (calendarWeekMonday) ? this.parseAndConvertToSeconds(calendarWeekMonday) : 0;
+                            } else {
+                                convertToDate.forEach((field, i) => {
+                                    row[field] = this.parseAndConvertToSeconds(row[field]);
+                                });
                             }
-                        }
-                        const seconds = Date.parse(`${timeFormat.year}-${timeFormat.month}-${timeFormat.day}T${timeFormat.hour}:${timeFormat.minute}:${timeFormat.second}`) / 1000;
-                        row[convertToDate[0]] = seconds;
+                            break;
+                        default:
+                            let timeFormat = { ...defaultTimeFormat };
+                            for (const field of convertToDate) {
+                                if (row[field]) {
+                                    timeFormat[field as keyof typeof timeFormat] = row[field];
+                                }
+                            }
+                            row[convertToDate[0]] = this.parseAndConvertToSeconds(
+                                `${timeFormat.year}-${timeFormat.month}-${timeFormat.day}T${timeFormat.hour}:${timeFormat.minute}:${timeFormat.second}`
+                            );
+                            break;
                     }
                 }
                 return row;
             } catch {
-                // skip the rows that had errors in them
+                // skip rows with errors
                 return undefined;
             }
+        }
+        
+        parseAndConvertToSeconds(date: string): number {
+            const validatedDate = this.parseDate(date);
+            return Date.parse(validatedDate) / 1000;
+        }
+
+        containsCalendarWeek(date: string): boolean {
+            const regex = /\b([1-9]|[1-4][0-9]|5[0-2])\b/g;
+            return regex.test(date);
+        }
+
+        parseCalendarWeek(date: string): boolean {
+            const regex = /\b([1-9]|[1-4][0-9]|5[0-2])\b/g;
+            return regex.test(date);
+        }
+        
+        weekToDate(year: string, week: string) {
+            const regex = /\b([1-9]|[1-4][0-9]|5[0-2])\b/g;
+            const match = week.match(regex);
+            const weekNumber = match ? Number(match[0]) : undefined;
+            if (weekNumber === undefined) {
+                return undefined;
+            }
+            var date = new Date(Number(year), 0, 1 + (weekNumber - 1) * 7);
+            if (date.getDay() <= 4)
+                date.setDate(date.getDate() - date.getDay() + 1);
+            else
+                date.setDate(date.getDate() + 8 - date.getDay());
+            
+            // Format the date as a string
+            return `${date.getFullYear()}-${("0" + (date.getMonth() + 1)).slice(-2)}-${("0" + date.getDate()).slice(-2)}`;
         }
 
         tilesetInfo(callback?: any) {
