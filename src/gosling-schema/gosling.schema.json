@@ -305,6 +305,9 @@
         "dayFirstDate": {
           "type": "boolean"
         },
+        "includesCalendarWeek": {
+          "type": "boolean"
+        },
         "interval": {
           "items": {
             "type": "string"

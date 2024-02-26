@@ -978,6 +978,7 @@ export interface CSVTimeData {
     dateFields?: string[];
     dayFirstDate?: boolean;
     yearFirstDate?: boolean;
+    includesCalendarWeek?: boolean;
     interval?: string[];
     timestampField?: string;
 }

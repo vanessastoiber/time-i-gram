@@ -160,7 +160,7 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
                                 const fullDate = `${this.parseDate(row[convertToDate[0]])}T${row[convertToDate[1]]}`;
                                 row[convertToDate[0]] = this.parseAndConvertToSeconds(fullDate);
                             // Check if we're dealing with a calendar week format in the second convertToDate field
-                            } else if (this.containsCalendarWeek(row[convertToDate[1]])) {
+                            } else if (this.dataConfig.includesCalendarWeek && this.containsCalendarWeek(row[convertToDate[1]])) {
                                 const calendarWeekMonday = this.weekToDate(row[convertToDate[0]], row[convertToDate[1]]);
                                 row[convertToDate[0]] = (calendarWeekMonday) ? this.parseAndConvertToSeconds(calendarWeekMonday) : 0;
                             } else {
