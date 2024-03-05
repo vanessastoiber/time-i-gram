@@ -1,5 +1,7 @@
+import type { PIXI } from '@higlass/libraries';
 import { scaleUtc } from 'd3-scale';
 import { utcFormat } from 'd3-time-format';
+import { cartesianToPolar } from '../../core/utils/polar';
 import * as uuid from 'uuid';
 
 const durationSecond = 1000;
@@ -61,6 +63,10 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
 
       this.uid = uuid.v1();
       this.options = options;
+      if (this.options.layout === 'circular') {
+        this.pTicksCircular = new PIXI.Graphics();
+        this.pMain.addChild(this.pTicksCircular);
+      }
     
       this.axisTexts = [];
       this.endpointsTexts = [];
@@ -129,7 +135,7 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
         }
 
         this.axisTexts[i].text = tickFormat(tick);
-        this.axisTexts[i].anchor.y = 0.5;
+        this.axisTexts[i].anchor.y = this.options.layout === 'circular' ? 0 : this.options.reverseOrientation ? 0 : 0.5;
         this.axisTexts[i].anchor.x = 0.5;
         i++;
       }
@@ -137,18 +143,74 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       while (this.axisTexts.length > ticks.length) {
         const lastText = this.axisTexts.pop();
         this.pMain.removeChild(lastText);
+        if (this.options.layout === 'circular') {
+          this.pTicksCircular.removeChildren();
+        }
       }
     }
+
+    addCurvedText(textObj: PIXI.Text, cx: number) {
+      const [width, height] = this.dimensions;
+      const { startAngle, endAngle } = this.options;
+      const factor = Math.min(width, height) / Math.min(this.options.width, this.options.height);
+      const innerRadius = this.options.innerRadius * factor -60;
+      const outerRadius = this.options.outerRadius * factor;
+
+      const r = (outerRadius + innerRadius) / 2.0;
+      const centerPos = cartesianToPolar(cx, width, r, width / 2.0, height / 2.0, startAngle, endAngle);
+      textObj.x = centerPos.x;
+      textObj.y = centerPos.y;
+
+      textObj.resolution = 4;
+      const txtStyle = new HGC.libraries.PIXI.TextStyle(this.pixiTextConfig);
+      const metric = HGC.libraries.PIXI.TextMetrics.measureText(textObj.text, txtStyle);
+
+      // scale the width of text label so that its width is the same when converted into circular form
+      const tw = ((metric.width / (2 * r * Math.PI)) * width * 360) / (endAngle - startAngle);
+      let [minX, maxX] = [cx - tw / 2.0, cx + tw / 2.0];
+
+      // make sure not to place the label on the origin
+      if (minX < 0) {
+          const gap = -minX;
+          minX = 0;
+          maxX += gap;
+      } else if (maxX > width) {
+          const gap = maxX - width;
+          maxX = width;
+          minX -= gap;
+      }
+
+      const ropePoints: PIXI.Point[] = [];
+      // Cause fat font tick labels to be drawn as curved text
+      // const baseR = innerRadius + metric.height / 2.0 + 3 + 40;
+      // for (let i = maxX; i >= minX; i -= tw / 10.0) {
+      //     const p = cartesianToPolar(i, width, baseR, width / 2.0, height / 2.0, startAngle, endAngle);
+      //     ropePoints.push(new HGC.libraries.PIXI.Point(p.x, p.y));
+      // }
+
+      if (ropePoints.length === 0) {
+          return undefined;
+      }
+
+      // textObj.updateText();
+      const rope = new HGC.libraries.PIXI.SimpleRope(textObj.texture, ropePoints);
+      return rope;
+  }
 
     drawTicks(tickStartY: number, tickEndY: number) {
       this.timeScale.ticks().forEach((tick: any, i: string | number) => {
         const xPos = this.position[0] + this.timeScale(tick);
 
-        this.pMain.moveTo(xPos, this.position[1] + tickStartY);
-        this.pMain.lineTo(xPos, this.position[1] + tickEndY);
-
-        this.axisTexts[i].x = xPos;
-        this.axisTexts[i].y = this.position[1] + tickEndY + betweenTickAndText;
+        if (this.options.layout === 'circular') {
+          const rope = this.addCurvedText(this.axisTexts[i], xPos);
+          rope && this.pTicksCircular.addChild(rope);
+        } else {
+          this.axisTexts[i].x = xPos;
+          this.axisTexts[i].y = this.position[1] + tickEndY + betweenTickAndText - 10;
+          this.pMain.moveTo(xPos, this.position[1] + tickStartY);
+          this.pMain.lineTo(xPos, this.position[1] + tickEndY);
+        }
+        if (this.options.layout === 'circular') return;
       });
     }
 
@@ -174,6 +236,9 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
 
       const tickStartY = (this.dimensions[1] - tickHeight - textHeight - betweenTickAndText) / 2;
       const tickEndY = tickStartY + tickHeight;
+      if (this.options.layout === 'circular') {
+        this.pTicksCircular.removeChildren();
+      }
 
       this.updateTimeScale();
       this.createAxisTexts();
