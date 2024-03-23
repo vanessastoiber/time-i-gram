@@ -745,9 +745,13 @@
         "startField": {
           "type": "string"
         },
+        "transformedDateField": {
+          "type": "string"
+        },
         "type": {
           "enum": [
             "filter",
+            "span",
             "concat",
             "replace",
             "log",
@@ -758,6 +762,12 @@
             "coverage",
             "subjson"
           ],
+          "type": "string"
+        },
+        "weekField": {
+          "type": "string"
+        },
+        "yearField": {
           "type": "string"
         }
       },

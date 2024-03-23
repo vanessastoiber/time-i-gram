@@ -32,6 +32,7 @@ import {
     concatString,
     displace,
     filterData,
+    enableSpan,
     calculateGenomicLength,
     parseSubJSON,
     replaceString,
@@ -888,6 +889,9 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                     switch (t.type) {
                         case 'filter':
                             tabularDataTransformed = filterData(t, tabularDataTransformed);
+                            break;
+                        case 'span':
+                            tabularDataTransformed = enableSpan(t, tabularDataTransformed);
                             break;
                         case 'concat':
                             tabularDataTransformed = concatString(t, tabularDataTransformed);

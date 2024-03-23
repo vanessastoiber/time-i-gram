@@ -766,6 +766,9 @@
           "$ref": "#/definitions/FilterTransform"
         },
         {
+          "$ref": "#/definitions/SpanTransform"
+        },
+        {
           "$ref": "#/definitions/StrConcatTransform"
         },
         {
@@ -8518,6 +8521,39 @@
         "operation",
         "target",
         "threshold"
+      ],
+      "type": "object"
+    },
+    "SpanTransform": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "newField": {
+          "type": "string"
+        },
+        "transformedDateField": {
+          "type": "string"
+        },
+        "type": {
+          "const": "span",
+          "type": "string"
+        },
+        "weekField": {
+          "type": "string"
+        },
+        "yearField": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "field",
+        "yearField",
+        "weekField",
+        "transformedDateField",
+        "newField"
       ],
       "type": "object"
     },

@@ -3,6 +3,7 @@ import type {
     SingleTrack,
     Datum,
     FilterTransform,
+    SpanTransform,
     LogTransform,
     ExonSplitTransform,
     Assembly,
@@ -50,6 +51,32 @@ export function filterData(filter: FilterTransform, data: Datum[]): Datum[] {
         });
     }
     return output;
+}
+
+/**
+ * Add new field that contains the next year that is found in the descendant rows to support the creation of spans.
+ * Limitation: This function assumes that there is one column that contains the year in the format YYYY and a column that contains the calendar week
+ */
+export function enableSpan(filter: SpanTransform, data: Datum[]): any {
+    if (data.length === 0) {
+        return data;
+    }
+    data.sort((a, b) => {
+        // Sort by ISO_YEAR and then by ISO_WEEK if years are equal
+        return Number(a[filter.yearField]) - Number(b[filter.yearField]) || Number(a[filter.weekField]) - Number(b[filter.weekField]);
+    });
+    
+    const transformedData = data.map((row, index, array) => {
+        // Clone the current item to avoid mutating the original data
+        const transformedRow = {...row};
+        // Check if the next row is the start of a new year
+        if (index < array.length - 1 && array[index + 1][filter.yearField] !== row[filter.yearField]) {
+            const endDate = array[index + 1][filter.transformedDateField];
+            transformedRow[filter.newField] = endDate;
+        }
+        return transformedRow;
+    });
+    return transformedData;
 }
 
 /**

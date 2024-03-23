@@ -1306,6 +1306,7 @@ export interface MatrixData {
 
 export type DataTransform =
     | FilterTransform
+    | SpanTransform
     | StrConcatTransform
     | StrReplaceTransform
     | LogTransform
@@ -1317,6 +1318,14 @@ export type DataTransform =
     | JsonParseTransform;
 
 export type FilterTransform = OneOfFilter | RangeFilter | IncludeFilter;
+export interface SpanTransform {
+    type: 'span';
+    field: string;
+    yearField: string;
+    weekField: string;
+    transformedDateField: string;
+    newField: string;
+} ;
 
 interface CommonFilterTransform {
     type: 'filter';
