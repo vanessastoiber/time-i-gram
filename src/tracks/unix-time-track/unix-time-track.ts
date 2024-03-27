@@ -49,14 +49,7 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
 
   class UnixTimeTrackClass extends HGC.tracks.TiledPixiTrack {
     constructor(params: any[]) {
-      //scene, trackConfig, dataConfig, handleTilesetInfoReceived, animate,
       super(...params);
-        // scene,
-        // dataConfig,
-        // handleTilesetInfoReceived,
-        // trackConfig.options,
-        // animate,
-      // );
 
       const [context, options] = params;
       const { registerViewportChanged, removeViewportChanged, setDomainsCallback } = context;
@@ -206,9 +199,9 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
           rope && this.pTicksCircular.addChild(rope);
         } else {
           this.axisTexts[i].x = xPos;
-          this.axisTexts[i].y = this.position[1] + tickEndY + betweenTickAndText - 10;
-          this.pMain.moveTo(xPos, this.position[1] + tickStartY);
-          this.pMain.lineTo(xPos, this.position[1] + tickEndY);
+          this.axisTexts[i].y = this.position[1] + tickEndY + betweenTickAndText - 15;
+          this.pMain.moveTo(xPos, this.position[1] + tickStartY - 10);
+          this.pMain.lineTo(xPos, this.position[1] + tickEndY - 5);
         }
         if (this.options.layout === 'circular') return;
       });
@@ -224,8 +217,8 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       this.context.x = xPos;
       this.context.y = this.position[1] + tickEndY + betweenCenterTickAndText;
       if (this.context.text !== ' ') {
-        this.pMain.moveTo(xPos, this.position[1] + tickStartY);
-        this.pMain.lineTo(xPos, this.position[1] + tickEndY);
+        this.pMain.moveTo(xPos, this.position[1] + tickStartY - 10);
+        this.pMain.lineTo(xPos, this.position[1] + tickEndY - 5);
       }
     }
 
@@ -256,101 +249,16 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       return `${z}.${x}.${y}`;
     }
 
-    // calculateVisibleTiles() {
-    //   this.calculateZoomLevel();
-
-    //   if ('resolutions' in this.tilesetInfo) {
-    //     const sortedResolutions = this.tilesetInfo.resolutions
-    //         .map((x: number) => +x)
-    //         .sort((a: number, b: number) => b - a);
-
-    //     const xTiles = tileProxy.calculateTilesFromResolution(
-    //         sortedResolutions[zoomLevel],
-    //         this._xScale,
-    //         this.tilesetInfo.min_pos[0],
-    //         this.tilesetInfo.max_pos[0]
-    //     );
-
-    //     let yTiles: number[] | undefined;
-    //     if (Is2DTrack(resolveSuperposedTracks(this.options.spec)[0])) {
-    //         // it makes sense only when the y-axis is being used for a genomic field
-    //         yTiles = tileProxy.calculateTilesFromResolution(
-    //             sortedResolutions[zoomLevel],
-    //             this._yScale,
-    //             this.tilesetInfo.min_pos[0],
-    //             this.tilesetInfo.max_pos[0]
-    //         );
-    //     }
-
-    //     const tiles = GoslingTrackClass.#tilesToId(xTiles, yTiles, zoomLevel);
-
-    //     this.setVisibleTiles(tiles);
-    // } else {
-    //     const xTiles = tileProxy.calculateTiles(
-    //         zoomLevel,
-    //         this.relevantScale(),
-    //         this.tilesetInfo.min_pos[0],
-    //         this.tilesetInfo.max_pos[0],
-    //         this.tilesetInfo.max_zoom,
-    //         this.tilesetInfo.max_width
-    //     );
-
-    //     let yTiles: number[] | undefined;
-    //     if (Is2DTrack(resolveSuperposedTracks(this.options.spec)[0])) {
-    //         // it makes sense only when the y-axis is being used for a genomic field
-    //         yTiles = tileProxy.calculateTiles(
-    //             zoomLevel,
-    //             this._yScale,
-    //             this.tilesetInfo.min_pos[1],
-    //             this.tilesetInfo.max_pos[1],
-    //             this.tilesetInfo.max_zoom,
-    //             // @ts-expect-error what is max_width1?
-    //             this.tilesetInfo.max_width1 ?? this.tilesetInfo.max_width
-    //         );
-    //     }
-
-    //     const tiles = GoslingTrackClass.#tilesToId(xTiles, yTiles, zoomLevel);
-    //     this.setVisibleTiles(tiles);
-    // }
-
-    //   const resolution = this.tilesetInfo.resolutions[this.zoomLevel];
-    //   // const resolution = 60;
-      
-    //   const minX = this.tilesetInfo.min_pos[0];
-    //   const maxX = this.tilesetInfo.max_pos[0];
-
-    //   const epsilon = 0.000001;
-    //   const tileWidth = resolution;
-
-    //   const lowerBound = Math.max(
-    //     0,
-    //     Math.floor((this.timeScale.domain()[0] - minX) / tileWidth),
-    //   );
-    //   const upperBound = Math.max(0, Math.ceil(
-    //     Math.min(maxX, this.timeScale.domain()[1] - minX - epsilon) / tileWidth,
-    //   ));
-
-    //   const tiles = [];
-    //   for (let i = lowerBound; i <= upperBound; i++) {
-    //     tiles.push(`test.${this.zoomLevel}.${i}.${0}`);
-    //   }
-
-    //   this.setVisibleTiles(tiles);
-    // }
-
     calculateZoomLevel() {
       const [l, r] = this.timeScale.domain();
       const days = (r - l) / (1000 * 60 * 60 * 24);
 
       if (days > 365) {
         this.zoomLevel = ZOOM_LEVEL_YEAR;
-        // this.zoomText.text = 'resolution: YEAR';
       } else if (days > 14) {
         this.zoomLevel = ZOOM_LEVEL_WEEK;
-        // this.zoomText.text = 'resolution: WEEK';
       } else {
         this.zoomLevel = ZOOM_LEVEL_DAY;
-        // this.zoomText.text = 'resolution: DAY';
       }
     }
 
@@ -359,15 +267,6 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
     zoomed(newXScale: any, newYScale: any) {
       this.xScale(newXScale);
       this.yScale(newYScale);
-
-      // if (!this.tilesetInfo) {
-      //   return;
-      // }
-
-      // this.calculateZoomLevel();
-      // this.calculateVisibleTiles();
-
-      // this.refreshTiles();
 
       this.draw();
     }
@@ -384,6 +283,26 @@ UnixTimeTrack.config = {
   availableOptions: [
   ],
   defaultOptions: {
+    // innerRadius: 340,
+    //     outerRadius: 310,
+    //     startAngle: 0,
+    //     endAngle: 360,
+    //     width: 700,
+    //     height: 700,
+    //     layout: 'linear',
+    //     labelPosition: 'none',
+    //     labelColor: 'black',
+    //     labelTextOpacity: 0.4,
+    //     trackBorderWidth: 0,
+    //     trackBorderColor: 'black',
+    //     tickPositions: 'even',
+    //     fontSize: 12,
+    //     fontFamily: 'sans-serif', // 'Arial',
+    //     fontWeight: 'normal',
+    //     color: '#808080',
+    //     stroke: '#ffffff',
+    //     backgroundColor: 'transparent',
+    //     showMousePosition: false
   },
 };
 
