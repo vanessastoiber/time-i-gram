@@ -111,8 +111,8 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
                 tile_size: TILE_SIZE,
                 max_zoom: Math.ceil(Math.log(totalLength / TILE_SIZE) / Math.log(2)),
                 max_width: totalLength,
-                min_pos: [0, 0],
-                max_pos: [totalLength, totalLength]
+                min_pos: [-14831769600, -14831769600],
+                max_pos: [1893456000, 1893456000]
             };
 
             if (callback) {
@@ -160,8 +160,8 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
             const tileWidth = +tsInfo.max_width / 2 ** +z;
 
             // get the bounds of the tile
-            const minX = tsInfo.min_pos[0] + x * tileWidth;
-            const maxX = tsInfo.min_pos[0] + (x + 1) * tileWidth;
+            const minX = -14831769600;
+            const maxX = 1893456000;
 
             // filter the data so that visible data is sent to tracks
             let tabularData = filterUsingGenoPos(this.values, [minX, maxX], this.dataConfig);
