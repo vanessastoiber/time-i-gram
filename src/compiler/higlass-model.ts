@@ -10,7 +10,7 @@ import type { CompleteThemeDeep } from '../core/utils/theme';
 import exampleHg from '../core/example/hg-view-config-1';
 import { insertItemToArray } from '../core/utils/array';
 
-export const HIGLASS_AXIS_SIZE = 30;
+export const HIGLASS_AXIS_SIZE = 45;
 
 const getViewTemplate = (assembly?: Assembly) => {
     return {
