@@ -766,7 +766,7 @@
           "$ref": "#/definitions/FilterTransform"
         },
         {
-          "$ref": "#/definitions/SpanTransform"
+          "$ref": "#/definitions/IntervalTransform"
         },
         {
           "$ref": "#/definitions/StrConcatTransform"
@@ -8524,7 +8524,7 @@
       ],
       "type": "object"
     },
-    "SpanTransform": {
+    "IntervalTransform": {
       "additionalProperties": false,
       "properties": {
         "field": {

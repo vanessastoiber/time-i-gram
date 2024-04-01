@@ -1306,7 +1306,7 @@ export interface MatrixData {
 
 export type DataTransform =
     | FilterTransform
-    | SpanTransform
+    | IntervalTransform
     | StrConcatTransform
     | StrReplaceTransform
     | LogTransform
@@ -1318,8 +1318,8 @@ export type DataTransform =
     | JsonParseTransform;
 
 export type FilterTransform = OneOfFilter | RangeFilter | IncludeFilter;
-export interface SpanTransform {
-    type: 'span';
+export interface IntervalTransform {
+    type: 'interval';
     field: string;
     yearField: string;
     weekField: string;

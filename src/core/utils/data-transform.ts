@@ -3,7 +3,7 @@ import type {
     SingleTrack,
     Datum,
     FilterTransform,
-    SpanTransform,
+    IntervalTransform,
     LogTransform,
     ExonSplitTransform,
     Assembly,
@@ -54,10 +54,10 @@ export function filterData(filter: FilterTransform, data: Datum[]): Datum[] {
 }
 
 /**
- * Add new field that contains the next year that is found in the descendant rows to support the creation of spans.
+ * Add new field that contains the next year that is found in the descendant rows to support the creation of intervals.
  * Limitation: This function assumes that there is one column that contains the year in the format YYYY and a column that contains the calendar week
  */
-export function enableSpan(filter: SpanTransform, data: Datum[]): any {
+export function enableInterval(filter: IntervalTransform, data: Datum[]): any {
     if (data.length === 0) {
         return data;
     }
