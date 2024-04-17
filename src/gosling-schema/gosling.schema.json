@@ -3602,6 +3602,39 @@
       ],
       "type": "object"
     },
+    "IntervalTransform": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "newField": {
+          "type": "string"
+        },
+        "transformedDateField": {
+          "type": "string"
+        },
+        "type": {
+          "const": "interval",
+          "type": "string"
+        },
+        "weekField": {
+          "type": "string"
+        },
+        "yearField": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "field",
+        "yearField",
+        "weekField",
+        "transformedDateField",
+        "newField"
+      ],
+      "type": "object"
+    },
     "JsonData": {
       "additionalProperties": false,
       "description": "The JSON data format allows users to include data directly in the Gosling's JSON specification.",
@@ -8521,39 +8554,6 @@
         "operation",
         "target",
         "threshold"
-      ],
-      "type": "object"
-    },
-    "IntervalTransform": {
-      "additionalProperties": false,
-      "properties": {
-        "field": {
-          "type": "string"
-        },
-        "newField": {
-          "type": "string"
-        },
-        "transformedDateField": {
-          "type": "string"
-        },
-        "type": {
-          "const": "span",
-          "type": "string"
-        },
-        "weekField": {
-          "type": "string"
-        },
-        "yearField": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "type",
-        "field",
-        "yearField",
-        "weekField",
-        "transformedDateField",
-        "newField"
       ],
       "type": "object"
     },

@@ -751,7 +751,7 @@
         "type": {
           "enum": [
             "filter",
-            "span",
+            "interval",
             "concat",
             "replace",
             "log",
