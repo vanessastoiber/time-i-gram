@@ -518,7 +518,7 @@ const factory: PluginTrackFactory<never, AxisTrackOptions> = (HGC, context, opti
             const outerRadius = this.options.outerRadius * factor;
 
             const r = (outerRadius + innerRadius) / 2.0;
-            const centerPos = cartesianToPolar(cx, width, r, width / 2.0, height / 2.0, startAngle, endAngle);
+            const centerPos = cartesianToPolar(cx, width, r, width / 2.0, height / 2.0, endAngle, startAngle);
             textObj.x = centerPos.x;
             textObj.y = centerPos.y;
 
@@ -528,6 +528,7 @@ const factory: PluginTrackFactory<never, AxisTrackOptions> = (HGC, context, opti
 
             // scale the width of text label so that its width is the same when converted into circular form
             const tw = ((metric.width / (2 * r * Math.PI)) * width * 360) / (endAngle - startAngle);
+            // let [minX, maxX] = [cx - tw / 2.0, cx + tw / 2.0]; // Change the order of minX and maxX
             let [minX, maxX] = [cx - tw / 2.0, cx + tw / 2.0];
 
             // make sure not to place the label on the origin
@@ -544,7 +545,7 @@ const factory: PluginTrackFactory<never, AxisTrackOptions> = (HGC, context, opti
             const ropePoints: PIXI.Point[] = [];
             const baseR = innerRadius + metric.height / 2.0 + 3;
             for (let i = maxX; i >= minX; i -= tw / 10.0) {
-                const p = cartesianToPolar(i, width, baseR, width / 2.0, height / 2.0, startAngle, endAngle);
+                const p = cartesianToPolar(i, width, baseR, width / 2.0, height / 2.0, endAngle, startAngle);
                 ropePoints.push(new HGC.libraries.PIXI.Point(p.x, p.y));
             }
 

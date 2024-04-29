@@ -69,7 +69,7 @@ export function drawBar(track: any, tile: Tile, model: GoslingTrackModel) {
             console.warn('Neither genomic nor temporal field is not provided in the specification');
             return;
         }
-        const pivotedData = group(data, d => genomicChannel ? d[genomicChannel.field as string] : d[temporalChannel.field as string]);
+        const pivotedData = group(data, d => genomicChannel ? d[genomicChannel.field as string] : (temporalChannel ? d[temporalChannel.field as string] : undefined));
         const xKeys = [...pivotedData.keys()];
 
         // TODO: users may want to align rows by values

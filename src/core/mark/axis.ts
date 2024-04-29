@@ -259,19 +259,19 @@ export function drawCircularYAxis(
             // The current position, i.e., radius, of this tick
             const currentR = trackOuterRadius - ((rowPosition + rowHeight - y) / th) * trackRingSize;
 
-            // Ticks are drawn in anti-clockwise direction
-            const scaledStartX = isLeft ? 0 : tw - SCALED_TICK_SIZE(currentR);
-            const scaledEndX = isLeft ? SCALED_TICK_SIZE(currentR) : tw;
+            // Ticks are drawn in clockwise direction
+            const scaledStartX = isLeft ? tw - SCALED_TICK_SIZE(currentR) : 0;
+            const scaledEndX = isLeft ? tw : tw - SCALED_TICK_SIZE(currentR);
 
             // The position of a tick in the polar system
             const pos = cartesianToPolar(scaledStartX, tw, currentR, cx, cy, startAngle, endAngle);
             const startRad = valueToRadian(scaledStartX, tw, startAngle, endAngle);
             const endRad = valueToRadian(scaledEndX, tw, startAngle, endAngle);
 
-            // Render a tick
+            // Render a tick in a clockwise direction
             graphics.moveTo(pos.x, pos.y);
-            graphics.arc(cx, cy, currentR, startRad, endRad, true);
-            graphics.arc(cx, cy, currentR, endRad, startRad, false);
+            graphics.arc(cx, cy, currentR, startRad, endRad, true); // Set the last parameter to true for clockwise direction
+            graphics.arc(cx, cy, currentR, endRad, startRad, false); // Set the last parameter to false for clockwise direction
             graphics.closePath();
         });
 
@@ -285,8 +285,8 @@ export function drawCircularYAxis(
             const endRad = valueToRadian(scaledEndX, tw, startAngle, endAngle);
 
             graphics.moveTo(innerPos.x, innerPos.y);
-            graphics.arc(cx, cy, trackInnerRadius, startRad, endRad, true);
-            graphics.arc(cx, cy, trackInnerRadius, endRad, startRad, false);
+            graphics.arc(cx, cy, trackInnerRadius, startRad, endRad, true); // Set the last parameter to true for clockwise direction
+            graphics.arc(cx, cy, trackInnerRadius, endRad, startRad, false); // Set the last parameter to false for clockwise direction
             graphics.closePath();
         }
         {
@@ -298,8 +298,8 @@ export function drawCircularYAxis(
             const endRad = valueToRadian(scaledEndX, tw, startAngle, endAngle);
 
             graphics.moveTo(outerPos.x, outerPos.y);
-            graphics.arc(cx, cy, trackOuterRadius, startRad, endRad, true);
-            graphics.arc(cx, cy, trackOuterRadius, endRad, startRad, false);
+            graphics.arc(cx, cy, trackOuterRadius, startRad, endRad, true); // Set the last parameter to true for clockwise direction
+            graphics.arc(cx, cy, trackOuterRadius, endRad, startRad, false); // Set the last parameter to false for clockwise direction
             graphics.closePath();
         }
 

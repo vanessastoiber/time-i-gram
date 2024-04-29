@@ -9,7 +9,8 @@ export function valueToRadian(v: number, max: number, sa: number, ea: number, g?
     const gap = g ?? RADIAN_GAP;
     const radExtent = ((ea - sa) / 360) * Math.PI * 2 - gap * 2;
     const radStart = (sa / 360) * Math.PI * 2;
-    return -(radStart + (safeVal / max) * radExtent) - Math.PI / 2.0 - gap;
+    // Subtract the calculated radian from 2 * Math.PI to reverse the direction
+    return 2 * Math.PI - (radStart + (safeVal / max) * radExtent) - Math.PI / 2.0 - gap;
 }
 
 /**
@@ -24,15 +25,15 @@ export function cartesianToPolar(x: number, max: number, r: number, cx: number, 
 
 export function positionToRadian(x: number, y: number, cx: number, cy: number) {
     if (cx <= x) {
-        return Math.atan((y - cy) / (x - cx));
+        return Math.atan2((y - cy), (x - cx));
     } else {
-        return Math.atan((y - cy) / (x - cx)) - Math.PI;
+        return Math.atan2((y - cy), (x - cx)) + Math.PI;
     }
 }
 
 /**
- * Calculate a degree in the range of [0, 360) based on two points. Anticlockwise, starts from 12 o'clock.
+ * Calculate a degree in the range of [0, 360) based on two points. Clockwise, starts from 3 o'clock.
  */
 export function pointsToDegree(x: number, y: number, cx: number, cy: number) {
-    return ((Math.atan2(-(y - cy), x - cx) / Math.PI) * 180 + 270) % 360;
+    return ((Math.atan2(y - cy, -(x - cx)) / Math.PI) * 180 + 90) % 360;
 }
