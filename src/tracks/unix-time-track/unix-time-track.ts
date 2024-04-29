@@ -128,8 +128,8 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
         }
 
         this.axisTexts[i].text = tickFormat(tick);
-        this.axisTexts[i].anchor.y = this.options.layout === 'circular' ? 0 : this.options.reverseOrientation ? 0 : 0.5;
-        this.axisTexts[i].anchor.x = 0.5;
+        this.axisTexts[i].anchor.y = this.options.layout === 'circular' ? 0.5 : this.options.reverseOrientation ? 0 : 0.5;
+        this.axisTexts[i].anchor.x = 0.4;
         i++;
       }
 
@@ -146,7 +146,7 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       const [width, height] = this.dimensions;
       const { startAngle, endAngle } = this.options;
       const factor = Math.min(width, height) / Math.min(this.options.width, this.options.height);
-      const innerRadius = this.options.innerRadius * factor -60;
+      const innerRadius = this.options.innerRadius * factor -100;
       const outerRadius = this.options.outerRadius * factor;
 
       const r = (outerRadius + innerRadius) / 2.0;
