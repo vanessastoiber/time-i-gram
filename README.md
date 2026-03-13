@@ -1,9 +1,366 @@
 # time-i-gram
 
-[npm (embed package)](https://www.npmjs.com/package/@vanessa_stoiber1999/time-i-gram)
-
-[Observable Demo](https://observablehq.com/d/226caaa8a69fc9d3)
+[![npm](https://img.shields.io/npm/v/@vanessa_stoiber1999/time-i-gram?label=npm%20(embed))](https://www.npmjs.com/package/@vanessa_stoiber1999/time-i-gram)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 
 **time-i-gram: A Grammar for Interactive Visualization of Time-based Data**
 
 <img width="1449" alt="teaser" src="https://github.com/vanessastoiber/thesis-datasets/blob/44333d134c2aa1faf1503f2af29a8ae4d5f738e4/figures/front-figure.png">
+
+## Overview
+
+**time-i-gram** is a grammar-based toolkit for creating scalable and interactive visualizations of **time-based data**. It extends [Gosling.js](https://github.com/gosling-lang/gosling.js), a grammar originally designed for genomics data visualization, by introducing first-class support for temporal data types, time-aware data fetchers, and a Unix time axis track.
+
+With time-i-gram, users can declaratively specify rich, interactive time-series visualizations using a concise JSON specification, including features such as coordinated multiple views, semantic zooming, brushing & linking, and responsive layouts.
+
+>  **[Observable Demo](https://observablehq.com/d/226caaa8a69fc9d3)**
+
+---
+
+## Key Features
+
+### Temporal Data Type
+A new `"temporal"` field type for encoding time on axes (`x` or `y`), alongside the existing `"genomic"`, `"quantitative"`, and `"nominal"` types.
+
+```jsonc
+{
+  "x": { "field": "date", "type": "temporal", "axis": "bottom" }
+}
+```
+
+### Time-aware Data Sources
+Two new data source types for loading time-based datasets:
+
+| Type | Description |
+|---|---|
+| `csv-time` | Load temporal data from CSV files with automatic date field parsing |
+| `json-time` | Load temporal data from inline JSON values or remote JSON URLs |
+
+Both support `dateFields` (for human-readable dates), `timestampField` (for Unix timestamps), and `interval` (for time ranges).
+
+```jsonc
+{
+  "data": {
+    "url": "https://example.com/weather.csv",
+    "type": "csv-time",
+    "dateFields": ["date"]
+  }
+}
+```
+
+### Unix Time Axis Track
+A dedicated axis track that renders human-readable time labels (years, months, days, hours, etc.) with automatic tick formatting that adapts to the current zoom level.
+
+### All Gosling.js Features
+time-i-gram inherits the full power of Gosling.js, including:
+
+- **Visual Marks**: `point`, `line`, `area`, `bar`, `rect`, `text`, `rule`, `link`, `triangle`, and more
+- **Layouts**: Linear and circular
+- **Coordinated Multiple Views**: Linking, brushing, and overview+detail
+- **Semantic Zooming**: Dynamically changing visual representations at different zoom levels
+- **Responsive Visualization**: Adapting to screen/container size
+- **Theming**: Customizable visual styles
+- **JavaScript API**: Programmatic control and event subscriptions
+
+---
+
+## Installation
+
+### npm
+
+```bash
+# Install the embed package
+npm install @vanessa_stoiber1999/time-i-gram
+```
+
+### Peer Dependencies
+
+time-i-gram requires the following peer dependencies:
+
+```bash
+npm install pixi.js@^6.3.0 react@^18.0.0 react-dom@^18.0.0
+```
+
+---
+
+## Quick Start
+
+### Using the React Component
+
+```tsx
+import { GoslingComponent } from 'gosling.js';
+
+const spec = {
+  title: 'Seattle Weather',
+  tracks: [{
+    data: {
+      url: 'https://raw.githubusercontent.com/vega/vega/main/docs/data/seattle-weather.csv',
+      type: 'csv-time',
+      dateFields: ['date']
+    },
+    mark: 'bar',
+    x: { field: 'date', type: 'temporal', axis: 'bottom' },
+    y: { field: 'precipitation', type: 'quantitative' },
+    width: 800,
+    height: 200
+  }]
+};
+
+function App() {
+  return <GoslingComponent spec={spec} />;
+}
+```
+
+### Using the Embed API
+
+```js
+import { embed } from '@vanessa_stoiber1999/time-i-gram';
+
+const spec = { /* your time-i-gram spec */ };
+
+// Embed in a DOM element
+embed(document.getElementById('container'), spec);
+```
+
+### Using in Observable Notebooks
+
+```js
+embed = {
+  const mod = await import('https://cdn.jsdelivr.net/npm/@vanessa_stoiber1999/time-i-gram');
+  return mod.embed;
+}
+```
+
+---
+
+## Usage Example
+
+### U.S. Unemployment Across Industries — Circular Overview + Linked Detail
+
+A multi-view dashboard combining a **circular overview** (left) with **linked detail panels** (right) for exploring U.S. unemployment across five industry sectors (2000–2010). Brushing on the circular view or the timeline bar filters all detail panels via coordinated linking.
+
+
+```js
+import { embed } from '@vanessa_stoiber1999/time-i-gram';
+
+const CSV_URL =
+  "https://raw.githubusercontent.com/denisseram/time-i-gram/14a22f2e66006df8a8498e2c0d6f992c5b49a810/unemployment-across-industries.csv";
+
+const baseData = {
+  type: "csv-time",
+  url: CSV_URL,
+  separator: ",",
+  dateFields: ["date"],
+  sampleLength: 2000,
+  genomicFields: ["date"]
+};
+
+const timeDomain = { interval: [946713600, 1293782400] };
+const industries = ["Government", "Manufacturing", "Construction", "Information", "Finance"];
+
+// Helper: create an area + line overlay for one industry
+function industryTracks(series, width, height) {
+  return [
+    {
+      data: { ...baseData },
+      dataTransform: [{ type: "filter", field: "series", oneOf: [series] }],
+      x: { field: "date", type: "temporal", axis: "bottom", domain: timeDomain, linkingId: "detail-link" },
+      y: { field: "count", type: "quantitative", axis: "left" },
+      color: { field: "series", type: "nominal", domain: industries },
+      mark: "area",
+      opacity: { value: 0.3 },
+      width,
+      height,
+      style: { outline: "none" }
+    },
+    {
+      data: { ...baseData },
+      dataTransform: [{ type: "filter", field: "series", oneOf: [series] }],
+      x: { field: "date", type: "temporal", axis: "bottom", domain: timeDomain, linkingId: "detail-link" },
+      y: { field: "count", type: "quantitative", axis: "left" },
+      color: { field: "series", type: "nominal", domain: industries },
+      mark: "line",
+      size: { value: 1.5 },
+      width,
+      height,
+      style: { outline: "none" }
+    }
+  ];
+}
+
+const spec = {
+  title: "U.S. Unemployment Across Industries (2000–2010)",
+  subtitle: "Monthly number of unemployed persons by industry sector — Source: U.S. Bureau of Labor Statistics (BLS)",
+  arrangement: "horizontal",
+  views: [
+    // ── LEFT: Circular overview with brush ──
+    {
+      layout: "circular",
+      title: "Cyclical Unemployment Patterns",
+      subtitle: "Each ring shows the monthly unemployment count for one industry — drag the brush to zoom into a period",
+      centerRadius: 0.35,
+      alignment: "overlay",
+      width: 450,
+      height: 450,
+      tracks: [
+        ...industries.map((s) => ({
+          data: { ...baseData },
+          dataTransform: [{ type: "filter", field: "series", oneOf: [s] }],
+          x: { field: "date", type: "temporal", axis: "top", domain: timeDomain },
+          y: { field: "count", type: "quantitative", axis: "right" },
+          color: { field: "series", type: "nominal", domain: industries, legend: true },
+          mark: "line",
+          width: 450,
+          height: 450,
+          style: { outline: "none" }
+        })),
+        { mark: "brush", x: { linkingId: "detail-link" }, color: { value: "steelBlue" } }
+      ]
+    },
+    // ── RIGHT: Detail panels stacked vertically ──
+    {
+      arrangement: "vertical",
+      views: [
+        {
+          title: "Public & Industrial Sectors",
+          subtitle: "Monthly unemployed persons (thousands) in Government, Manufacturing, and Construction",
+          alignment: "overlay",
+          width: 500,
+          height: 130,
+          tracks: ["Government", "Manufacturing", "Construction"].flatMap((s) => industryTracks(s, 500, 130))
+        },
+        {
+          title: "Service & Knowledge Sectors",
+          subtitle: "Monthly unemployed persons (thousands) in Information and Finance",
+          alignment: "overlay",
+          width: 500,
+          height: 130,
+          tracks: ["Information", "Finance"].flatMap((s) => industryTracks(s, 500, 130))
+        },
+        {
+          title: "Timeline Overview",
+          subtitle: "Aggregate unemployment count — drag to select a time window",
+          alignment: "overlay",
+          width: 500,
+          height: 60,
+          tracks: [
+            {
+              data: { ...baseData },
+              x: { field: "date", type: "temporal", axis: "bottom", domain: timeDomain },
+              y: { field: "count", type: "quantitative", axis: "none" },
+              color: { value: "#94a3b8" },
+              mark: "bar",
+              width: 500,
+              height: 60,
+              style: { outline: "none" }
+            },
+            { mark: "brush", x: { linkingId: "detail-link" }, color: { value: "steelBlue" } }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+embed(document.getElementById("container"), spec);
+```
+
+<img src="gif.gif" alt="Demo of the unemployment visualization with circular overview and linked detail panels" width="100%">
+
+
+
+
+---
+
+## Development
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (v16+)
+- [Yarn](https://yarnpkg.com/getting-started/install) (used instead of npm)
+
+### Getting Started
+
+```bash
+# Clone the repository
+git clone https://github.com/vanessastoiber/time-i-gram.git
+cd time-i-gram
+
+# Install dependencies
+yarn
+
+# Start the development editor
+yarn start
+```
+
+Then open [http://localhost:3000/](http://localhost:3000/) in your browser to explore the interactive editor with built-in examples.
+
+## API
+
+time-i-gram exposes the same API as Gosling.js:
+
+```ts
+import { GoslingComponent, compile, validateGoslingSpec, embed, init } from 'gosling.js';
+```
+
+| Export | Description |
+|---|---|
+| `GoslingComponent` | React component for rendering visualizations |
+| `embed` | Embed a visualization into a DOM element |
+| `compile` | Compile a Gosling spec into a HiGlass spec |
+| `validateGoslingSpec` | Validate a specification against the schema |
+| `init` | Register all track plugins and data fetchers (called automatically) |
+| `GoslingSchema` | The JSON schema for validation |
+
+---
+
+## Built On
+
+time-i-gram is built on top of these excellent projects:
+
+- [Gosling.js](https://github.com/gosling-lang/gosling.js) — Grammar-based genomics visualization toolkit
+- [HiGlass](https://github.com/higlass/higlass) — Fast multi-scale visualization engine
+- [PixiJS](https://pixijs.com/) — 2D rendering engine
+- [D3.js](https://d3js.org/) — Data-driven documents
+- [React](https://react.dev/) — UI component library
+
+---
+
+## Citation
+
+If you use time-i-gram in your research, please cite:
+
+> V. Stoiber, N. Gehlenborg, W. Aigner, and M. Streit, "time-i-gram: A Grammar for Interactive Visualization of Time-based Data," *Center for Open Science*, 2024. doi: [10.31219/osf.io/m9ubg](https://doi.org/10.31219/osf.io/m9ubg)
+
+```bibtex
+@article{Stoiber2024,
+  title     = {time-i-gram: A Grammar for Interactive Visualization of Time-based Data},
+  url       = {http://dx.doi.org/10.31219/osf.io/m9ubg},
+  DOI       = {10.31219/osf.io/m9ubg},
+  publisher = {Center for Open Science},
+  author    = {Stoiber, Vanessa and Gehlenborg, Nils and Aigner, Wolfgang and Streit, Marc},
+  year      = {2024},
+  month     = may
+}
+```
+
+This work extends Gosling.js, which can be cited as:
+
+> S. L'Yi, Q. Wang, F. Lekschas, and N. Gehlenborg, "Gosling: A Grammar-based Toolkit for Scalable and Interactive Genomics Data Visualization," *IEEE Transactions on Visualization and Computer Graphics*, 2022. doi: [10.1109/TVCG.2021.3114876](https://doi.org/10.1109/TVCG.2021.3114876)
+
+```bibtex
+@article{LYi2022,
+  title = {Gosling: A Grammar-based Toolkit for Scalable and Interactive Genomics Data Visualization},
+  volume = {28},
+  ISSN = {2160-9306},
+  url = {http://dx.doi.org/10.1109/TVCG.2021.3114876},
+  DOI = {10.1109/tvcg.2021.3114876},
+  number = {1},
+  journal = {IEEE Transactions on Visualization and Computer Graphics},
+  publisher = {Institute of Electrical and Electronics Engineers (IEEE)},
+  author = {LYi,  Sehi and Wang,  Qianwen and Lekschas,  Fritz and Gehlenborg,  Nils},
+  year = {2022},
+  month = jan,
+  pages = {140–150}
+}
+```
