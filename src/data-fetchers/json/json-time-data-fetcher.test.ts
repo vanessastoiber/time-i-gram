@@ -47,6 +47,24 @@ describe('json-time data fetcher: date parsing', () => {
         expect(sampledTile['0.0'].tabularData.length).toEqual(100);
     });
 
+    it('sends each tile only the rows inside its x-range', async () => {
+        const { fetcher } = await loadValues(
+            [
+                { t: utc(2000, 6, 1), v: 'a' },
+                { t: utc(2020, 6, 1), v: 'b' }
+            ],
+            { timestampField: 't', x: 't' }
+        );
+        const info = fetcher.tilesetInfo();
+        const z = 10; // tiles of about ten years
+        const tileOf = (t: number) => Math.floor((t - info.min_pos[0]) / (info.max_width / 2 ** z));
+        const [tileA, tileB] = [`${z}.${tileOf(utc(2000, 6, 1))}`, `${z}.${tileOf(utc(2020, 6, 1))}`];
+        expect(tileA).not.toEqual(tileB);
+        const tiles = await new Promise<any>(resolve => fetcher.fetchTilesDebounced(resolve, [tileA, tileB]));
+        expect(tiles[tileA].tabularData.map((r: any) => r.v)).toEqual(['a']);
+        expect(tiles[tileB].tabularData.map((r: any) => r.v)).toEqual(['b']);
+    });
+
     it('builds dates from year/month/day columns in UTC', async () => {
         const { rows } = await loadValues([{ year: 2000, month: 3 }], { dateFields: ['year', 'month'] });
         expect(rows[0].year).toEqual(utc(2000, 3, 1));

@@ -1,14 +1,9 @@
 import { sampleSize } from 'lodash-es';
 import type { JsonTimeData } from '@gosling-lang/gosling-schema';
 import { type CommonDataConfig, filterUsingGenoPos } from '../utils';
-import { parseDateTime, timestampToSeconds, utcSeconds } from '../time-utils';
+import { parseDateTime, timestampToSeconds, utcSeconds, TIME_MAX_POS, TIME_MIN_POS } from '../time-utils';
 
 type CsvTimeDataConfig = JsonTimeData & CommonDataConfig;
-
-// Epoch-second bounds of the synthetic tileset this fetcher reports to HiGlass (~1500 CE to
-// ~2030 CE). Shared between `tilesetInfo()` and `tile()` so the two stay consistent.
-const MIN_POS_SECONDS = -14831769600;
-const MAX_POS_SECONDS = 1893456000;
 
 /**
  * HiGlass data fetcher specific for Gosling which ultimately will accept any types of data other than JSON values.
@@ -144,8 +139,8 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
             // computed tile grid doesn't actually cover `[min_pos, max_pos]`. Any date whose
             // seconds value falls outside the resulting (wrong) grid is silently treated as
             // having zero visible tiles, so it's never fetched or drawn.
-            const minPos = MIN_POS_SECONDS;
-            const maxPos = MAX_POS_SECONDS;
+            const minPos = TIME_MIN_POS;
+            const maxPos = TIME_MAX_POS;
             const totalLength = maxPos - minPos;
             const retVal = {
                 tile_size: TILE_SIZE,
@@ -199,8 +194,12 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
             const tsInfo = this.tilesetInfo();
             const tileWidth = +tsInfo.max_width / 2 ** +z;
 
+            // get the bounds of the tile
+            const minX = tsInfo.min_pos[0] + x * tileWidth;
+            const maxX = tsInfo.min_pos[0] + (x + 1) * tileWidth;
+
             // filter the data so that visible data is sent to tracks
-            let tabularData = filterUsingGenoPos(this.values, [MIN_POS_SECONDS, MAX_POS_SECONDS], this.dataConfig);
+            let tabularData = filterUsingGenoPos(this.values, [minX, maxX], this.dataConfig);
 
             // sample the data to make it managable for visualization components
             // sampling is opt-in: randomly dropping rows of a time series is misleading by default
