@@ -4,17 +4,17 @@ Audit date: 2026-10-07. Scope: the paper "time-i-gram: A Grammar for Interactive
 
 ## 0. Method and evidence base
 
-- **Paper.** The PDF supplied with the audit request. `paper/time-i-gram.pdf` does not exist in the repo.
+- **Paper.** `paper/time-i-gram.PDF`; supplementary material `paper/supplementary.PDF` (Figs S1–S8, analysed in §7). Both are local files, not tracked in git.
 - **Upstream baseline.** This repo is a *fork of the Gosling.js repository itself*, not a package that depends on it. `package.json` still reads `"name": "gosling.js", "version": "0.10.2"`. The last upstream commit is `98b5b88` ("v0.10.2", 2023-09-22, Sehi L'Yi). All time-i-gram work is in the 31 commits after it (2023-10-20 → 2026-03-13). Every NEW, MODIFIED or INHERITED status below comes from `git diff 98b5b88 HEAD`, plus the uncommitted working tree. NEW and MODIFIED are therefore verified; there was no need to compare against a separate Gosling copy in `node_modules`.
   - Files changed relative to upstream: 32 files, about +1,960 / −117 lines (see §5). About 80% of that is three new files: two data fetchers and one axis track.
-- **Working tree.** The audit includes three uncommitted changes: fixes to both time data fetchers, plus a new example `editor/example/spec/temporal-data_unemployment-circular-linear.ts`. Line numbers for `src/data-fetchers/*-time-data-fetcher.ts` refer to the working tree.
+- **Working tree.** At audit time three changes were uncommitted: fixes to both time data fetchers, plus a new example `editor/example/spec/temporal-data_unemployment-circular-linear.ts`. They are now commits `7cb2064` and `92f4074` on branch `fix/temporal-bugs`. Line numbers for `src/data-fetchers/*-time-data-fetcher.ts` refer to that state.
 - **Runtime checks:**
   1. `tsc --noEmit` passes with no errors.
   2. Every temporal example spec was validated against `src/gosling-schema/gosling.schema.json` with Ajv, the same validator the library uses.
   3. Each fetcher's date parser was re-run on the real example datasets.
   4. Every example was rendered headlessly (Playwright / Chromium) in the dev editor, and the README running example through `embed()`. Screenshots stayed in a scratch directory and are not committed.
 - **Environment caveat.** `yarn start` fails dependency pre-bundling in this checkout. The `uuid` alias in `vite.config.js:67` (upstream code) also captures `uuid/v4`, which `higlass-text`'s `slugid` requires, so every module returns HTTP 504. The renders used a temporary Vite config outside the repo that anchors that alias. **No repository file was modified.**
-- **Not verifiable here.** The paper's Fig 1 A/B/C and Fig 5 specifications, the OSF supplementary material (Figs S1–S8) and the Observable notebook. None of these specs is in the repo. Claims that depend on them are flagged "unverified".
+- **Not verifiable here.** The Observable notebook. The scenario specifications (Figs S3–S8) were not available for the first pass of this audit; they have since been extracted from `paper/supplementary.PDF` and are analysed in §7.
 
 Status vocabulary used below:
 - **NEW**: added by time-i-gram (absent at `98b5b88`).
@@ -168,7 +168,10 @@ Component letters follow **Figure 3 as printed** (A Data types, B Marks, C Chann
 
 15. **Python support.** §4 says the prototype *"is additionally accessible from Python via the Gos library."* Unverified. Gos wraps upstream Gosling.js; nothing in this repo targets Gos.
 
-16. **Usage-scenario specs.** §5 says complete specifications are in the supplementary material, *"Figures S3-S8"*. None of the scenario specs (influenza, solar PV, NYC taxi, Fig 5 heart rate) are in the repo, so their reproducibility from this codebase is unverified.
+16. **Usage-scenario specs.** §5 says complete specifications are in the supplementary material, *"Figures S3-S8"*. They are now extracted into the repo (§7). Several do not reproduce the printed figures as written:
+    - **S7 (influenza, Fig 1A):** the cyclic ring only appears when the circular view gets a one-year domain, which the printed spec doesn't set. Its two linear year-comparison views have no `data`, so they don't render.
+    - **S5 (solar, Fig 1B):** the dataset is daily for 2022, while §5.2 says *"hourly resolution over three years (2021–2024)"*.
+    - **S3 (running example) and S5:** each fails schema validation, so the dev editor won't render it (§7).
 
 ### 2.2 Things the code does that the paper does not mention
 
@@ -262,41 +265,222 @@ The complete set of time-i-gram changes relative to Gosling.js v0.10.2 (`git dif
 
 ## 6. Example inventory
 
-There are only **three temporal example specs in the repo** (two committed, one uncommitted), plus the running example embedded in the README. Every other spec in `editor/example/` is an upstream genomics example. None of the paper's scenario specs (Fig 1A influenza, Fig 1B solar PV, Fig 1C NYC taxi, Fig 5 heart rate) are in the repo.
+The repo has **nine temporal example specs**, plus two in the README:
+- three original ones (#1–#3);
+- six added from the supplementary material (#6–#11; details in §7);
+- in the README, the running example (#4) and the Quick Start (#5).
+
+Every other spec in `editor/example/` is an upstream genomics example.
+
+**Editor vs `embed()`.** The dev editor renders a spec only if schema validation returns `success` ([`editor/Editor.tsx:542,557`](../editor/Editor.tsx); inherited from Gosling). Any schema violation therefore leaves the editor **blank**, even though `embed()` and `GoslingComponent` only warn and render anyway. The "Runs / renders?" column reports both where they differ.
 
 | # | File | Dataset | Concepts exercised (§1) | Runs / renders? |
 |---|---|---|---|---|
 | 1 | `editor/example/json-spec/temporal-data_overview-detail.ts` (registered as `TEMPORAL_DATA_OVERVIEW_DETAIL`) | Vega `unemployment-across-industries.json` | `json-time`, `dateFields: ["year","month"]`, temporal x, line mark, color value, `filter` transform, `alignment: "overlay"`, brush, `linkingId`, stacked (vertical) tracks, instant | **Partially.** Schema-valid, and the five detail lines render. However: (a) the overview track has `values: []` and so draws no data, only a full-width brush; (b) no domain is set, so the default view spans about 1970–2065 with the data squeezed into 2000–2010; (c) the default `sampleLength` 1000 randomly drops about 41% of the 1,708 rows before the series filter; (d) two series share the colour `orange`. |
 | 2 | `editor/example/spec/temporal-data_seattle-weather.ts` (`TEMPORAL_DATA_SEATTLE_WEATHER`) | Vega `seattle-weather.csv` | `csv-time`, `dateFields: ["date"]`, temporal x, bar / line / rect / text marks, nominal color with legend, `alignment: "overlay"`, multiple views, `linkingId` (no brush), **semantic zoom** (`visibility`, `zoomLevel`) | **No: renders empty.** Schema-valid. Every ISO date (`2012-01-01`) parses to `1970-01-01` = 0 because `yearFirstDate: true` is missing (`csv-time-data-fetcher.ts:139,146`). The tile filter's strict `minX < value` (`src/data-fetchers/utils.ts:43`) then discards the zeros. Axes appear with no marks. |
-| 3 | `editor/example/spec/temporal-data_unemployment-circular-linear.ts` (**uncommitted**; `TEMPORAL_DATA_UNEMPLOYMENT_CIRCULAR_LINEAR`) | Vega `unemployment-across-industries.json` | `json-time`, `dateFields: ["year","month"]`, temporal x with `domain: { interval }`, `layout: "circular"` + linear, `arrangement: "horizontal"`, `alignment: "overlay"`, brush, `linkingId`, `static: true`, nominal color with legend, line mark | **Yes, with caveats.** Schema-valid and renders a circular overview beside a linear detail view. Caveats: random sampling drops about 41% of rows (no `sampleLength`); the circular brush, once moved, shades the mirrored sector; the decade is one revolution, not wrapped by year. |
-| 4 | `README.md:143-266` (running example, Fig 4; **not registered in the editor**) | `denisseram/time-i-gram@14a22f2…/unemployment-across-industries.csv` | `csv-time` with ISO date-time, `sampleLength`, temporal x with `domain`, circular overview + vertical detail column, `arrangement: "horizontal"` / `"vertical"`, `alignment: "overlay"`, line / area / bar marks, `opacity`, `size`, nominal color with legend, two brushes, `linkingId`, `centerRadius` | **Yes, with caveats.** Renders through `embed()`, closely matching Fig 4. Caveats: (a) schema warning for `genomicFields`, an undeclared property on `csv-time`, which the fetcher ignores; (b) all area tracks silently draw nothing (stacked-area genomic-only path, `area.ts:50-56`); (c) dragging the timeline brush moves both brushes and the detail views, but the detail range observed (about 1995.5–2006) did not match the brushed interval (about 2000–2006); (d) the circular brush shades the mirrored sector. |
+| 3 | `editor/example/spec/temporal-data_unemployment-circular-linear.ts` (`TEMPORAL_DATA_UNEMPLOYMENT_CIRCULAR_LINEAR`) | Vega `unemployment-across-industries.json` | `json-time`, `dateFields: ["year","month"]`, temporal x with `domain: { interval }`, `layout: "circular"` + linear, `arrangement: "horizontal"`, `alignment: "overlay"`, brush, `linkingId`, `static: true`, nominal color with legend, line mark | **Yes, with caveats.** Schema-valid and renders a circular overview beside a linear detail view. Caveats: random sampling drops about 41% of rows (no `sampleLength`); the circular brush, once moved, shades the mirrored sector; the decade is one revolution, not wrapped by year. |
+| 4 | `README.md:143-266` (running example, Fig 4; **not registered in the editor**) | `denisseram/time-i-gram@14a22f2…/unemployment-across-industries.csv` | `csv-time` with ISO date-time, `sampleLength`, temporal x with `domain`, circular overview + vertical detail column, `arrangement: "horizontal"` / `"vertical"`, `alignment: "overlay"`, line / area / bar marks, `opacity`, `size`, nominal color with legend, two brushes, `linkingId`, `centerRadius` | **Editor: blank** (schema-invalid). **`embed()`: yes, with caveats.** Renders closely matching Fig 4. Caveats: (a) schema warning for `genomicFields`, an undeclared property on `csv-time`, which the fetcher ignores; (b) all area tracks silently draw nothing (stacked-area genomic-only path, `area.ts:50-56`); (c) dragging the timeline brush moves both brushes and the detail views, but the detail range observed (about 1995.5–2006) did not match the brushed interval (about 2000–2006); (d) the circular brush shades the mirrored sector. |
 | 5 | `README.md:93-107` (Quick Start) | Vega `seattle-weather.csv` | `csv-time`, bar, temporal x | **Expected to render empty** (inferred, not rendered separately): it uses the same data config as #2. |
+| 6 | `editor/example/spec/temporal-data_supp-unemployment.ts` (S3; `TEMPORAL_DATA_SUPP_UNEMPLOYMENT`) | same CSV as #4 | identical to #4 apart from title text | **Editor: blank** (schema-invalid: `genomicFields`). **`embed()`: same result and caveats as #4.** |
+| 7 | `editor/example/spec/temporal-data_supp-seattle-weather.ts` (S4; `TEMPORAL_DATA_SUPP_SEATTLE_WEATHER`) | `thesis-datasets/1_seattle-weather/seattle-weather.csv` (`YYYY/MM/DD`) | `csv-time` + `yearFirstDate`, view-level `xDomain`, track properties inherited from the view, bar / line / rect / text, nominal color with legend, `linkingId`, **semantic zoom** (`visibility` / `zoomLevel`) | **Yes.** Valid. Dates parse because of `yearFirstDate: true`. Semantic zoom works: rect blocks above about 23 days, text labels below. Caveat: 1,461 rows exceed the default `sampleLength` 1000, so each track randomly drops rows (likely cause of a visible gap in the zoomed temperature line). |
+| 8 | `editor/example/spec/temporal-data_supp-solar-weather.ts` (S5, Fig 1B; `TEMPORAL_DATA_SUPP_SOLAR_WEATHER`) | `thesis-datasets/3_solar-power/*.csv` (daily, 2022) | `csv-time` + `dayFirstDate`, ISO date-time with offset, root `xDomain`, `spacing`, area / line / bar / point, field `size`, nominal color, `filter` (`inRange`, `oneOf` + `not`), `tooltip`, brush, `linkingId` | **Editor: blank** (schema-invalid: `type` / `legend` on value-only `color`). **`embed()`: yes.** All five detail panels render. The Overview line is empty because its `x.field: "time"` does not exist in the PV CSV; only the brush shows, which is also what the printed Fig S5 shows. |
+| 9 | `editor/example/spec/temporal-data_supp-nyc-taxi.ts` (S6, Fig 1C; `TEMPORAL_DATA_SUPP_NYC_TAXI`) | `thesis-datasets/4_nyc-taxi-trip/nyc_taxi_trip_duration.csv` (39 MB, 291k rows) | **interval primitive** via `withinLink` with `x` = pickup and `x1` = dropoff, `csv-time` with two `dateFields`, CSV `interval` option (no effect, see §7), semantic zoom, field-driven `stroke` / `color`, bar | **Yes.** Valid. At the printed `xDomain` (8 months) only the bars show: arcs are hidden by design below a 4,000 s visible span. In a 1-hour window the arcs appear and match Fig S6. Times are shifted by the browser's UTC offset (local-time parsing). |
+| 10 | `editor/example/spec/temporal-data_supp-who-flu.ts` (S7, Fig 1A; `TEMPORAL_DATA_SUPP_WHO_FLU`) | `thesis-datasets/5_who-flu/who_flu_usa_superimposed` and `who_flu_usa.csv` | circular + linear, `alignment: "stack"` / `"overlay"`, nominal color by year, **NEW `interval` transform** (year bands), rect / text / rule with `x` + `xe`, root `xDomain` | **Partially.** Valid. The timeline (bars, year bands, labels, rules) renders. The circular view does **not** form the published ring: the root `xDomain` (2009-09 → 2012-04) puts all data into one ~40% arc. With a 2010 domain it matches Fig S7 / 1A. The two linear comparison views have no `data` and render nothing. |
+| 11 | `editor/example/spec/temporal-data_supp-fitbit.ts` (S8, Fig 5; `TEMPORAL_DATA_SUPP_FITBIT`) | `thesis-datasets/6_fitbit/*.csv` (heart rate: 18 MB, 522k rows) | `csv-time` with US date-time strings, root `xDomain`, nested arrangements, line + stacked bar (nominal color), right-hand `y` axis, circular line, `linkingId` (no brush) | **Yes, with caveats.** Valid. Heart rate, daily activity and the circular view render. Caveats: (a) the domain (Mar–Jun) exceeds the data (Apr 12–May 12), so the ring is only partly filled; (b) `Calories` is nominal with `domain: [0, 50]`, so colours are assigned arbitrarily; (c) daily dates land on the previous day (local-time parsing); (d) sampling happens before the `Id` filter; (e) linear tick labels overlap. |
 
 ### Grammar concepts that no example exercises (gaps for new examples)
 
-- **Time primitives:** **interval** (`x` + `xe`, e.g. `rect` or `withinLink` arcs, as in the taxi scenario); span (not implemented).
+The supplementary specs (#6–#11) now cover several earlier gaps:
+- **Interval primitive:** `withinLink` with `x`/`x1` (#9); `rect`/`text` with `x`/`xe` (#10).
+- **Parsing:** date-time columns (#9, #11), `dayFirstDate` (#8), `yearFirstDate` (#7).
+- **Transform:** the NEW `interval` transform (#10).
+- **Marks:** point (#8), `rule` (#10), working non-stacked `area` (#8, color as a value).
+- **Channels:** field-driven `size` (#8) and `stroke` (#9).
+- **Interaction:** `tooltip` (#8); semantic zoom working end to end (#7, #9).
+
+Still exercised by **no** example:
+
+- **Time primitives:** span (not implemented).
 - **Data sources and parsing:**
   - `timestampField` (Unix seconds), which is also broken in `json-time`.
-  - Date + time-of-day columns (sub-day granularity).
-  - `includesCalendarWeek`, `dayFirstDate`, `yearFirstDate`.
-  - The CSV `interval` option.
+  - A separate time-of-day column (`dateFields: [date, "HH:MM:SS"]`).
+  - `includesCalendarWeek`.
+  - The CSV `interval` option *taking effect*: #9 sets it, but its dates parse anyway, so the option's code path is never reached.
   - `json-time` with inline `values` containing data.
-  - Pre-1970 dates.
-- **Transform:** the NEW `interval` data transform (year bands).
-- **Marks:**
-  - `point` on a temporal axis.
-  - `withinLink` / `betweenLink` connection marks.
-  - Working `area` (non-stacked: `color` as a value, or explicit `stack`-free config).
-  - `rule`, `triangle*`.
-- **Channels:** `row` (faceted timeline); field-driven `size`, `opacity` or `stroke`.
+  - Pre-1900 and pre-1970 dates.
+- **Marks:** `betweenLink`, `triangle*`; stacked area that actually draws (blocked by bug #10).
+- **Channels:** `row` (faceted timeline), field-driven `opacity`.
 - **Layout and arrangement:**
   - `arrangement: "parallel"` / `"serial"` with circular children (concentric year rings vs sectors).
-  - A cyclic view that aligns periods (one ring or overlay per year), which is what Fig 1A shows.
+  - A cyclic view built *by the grammar* rather than by preprocessing the data (#10 relies on preprocessing; §7).
   - Vertical orientation / temporal y (currently unsupported).
-- **Scales:** relative time scale (not implemented); an explicit chronological domain with a non-default zoom extent.
+- **Scales:** relative time scale (not implemented).
 - **Interaction:**
   - `zoomLimits`.
-  - `tooltip` / mouse events on temporal data.
-  - Semantic zoom that works end to end; the only example using it (#2) renders empty.
-  - Brush on a circular view that is actually moved, which would expose the mirroring bug.
-- **Paper scenarios:** none of Fig 1A, 1B, 1C or Fig 5 has a spec in the repo.
+  - `static` combined with a brush on a linear view.
+  - A brush in the FitBit scenario: #11 names its link `linking-with-brush` but contains no brush.
+  - A circular brush exercised in a committed example and moved, which would expose the mirroring bug.
+
+---
+
+## 7. Supplementary specs
+
+Source: `paper/supplementary.PDF`, §2 "Complete JSON specifications for manuscript figures" (Figs S3–S8).
+
+**Extraction**
+- Each spec is copied as printed into `editor/example/spec/temporal-data_supp-<scenario>.ts` and registered in the editor (group "Temporal Data", names "Supp. S3…S8"). Edits were limited to:
+  - wrapping each spec in a TS export (`as unknown as GoslingSpec`);
+  - for fragments printed without the enclosing `{ }`, wrapping them in a root object and turning the trailing `];` into `]`.
+- The `supp-` prefix avoids a clash with the existing `temporal-data_seattle-weather.ts`.
+- **S1 and S2** are reduced specs with `...` placeholders, illustrating the solar and unemployment examples. They are not runnable and were not extracted.
+
+**Method**
+- Ajv validation against `gosling.schema.json`, as in §0.
+- Every data URL was downloaded and its date column was run through the fetcher's verbatim parsing logic (browser time zone Europe/Vienna).
+- Headless renders (Chromium) used two paths: the dev editor (`?example=<ID>`), and `embed()` wherever the editor stays blank.
+- Zoom-dependent behaviour was checked by rendering variants with a narrower `xDomain`, which is equivalent to a zoomed-in state for `visibility` rules. Only the throwaway render scripts were changed; the repo specs stayed as printed.
+
+### 7.1 Data availability
+
+All nine data URLs return HTTP 200 (checked 2026-10-07). Eight are in `github.com/vanessastoiber/thesis-datasets` (branch `main`); the unemployment CSV is the one in `denisseram/time-i-gram`.
+
+| Spec | File | Size / rows | Date column and format | Parses to |
+|---|---|---|---|---|
+| S3 | `unemployment-across-industries.csv` | 99 kB / 1,708 | `date` = `2000-01-01T08:00:00.000Z` | correct (UTC) |
+| S4 | `1_seattle-weather/seattle-weather.csv` | 48 kB / 1,461 | `date` = `2012/01/01` + `yearFirstDate` | correct (UTC midnight) |
+| S5 | `3_solar-power/photovoltaics_01012022-31122022.csv` | 26 kB / 365 | `Datum und Uhrzeit` = `01.01.2022` + `dayFirstDate` | correct (UTC midnight) |
+| S5 | `3_solar-power/weather_data_local_20220101T0000_20221231T0000.csv` | 27 kB / 365 | `time` = `2022-01-01T00:00+00:00` | correct |
+| S6 | `4_nyc-taxi-trip/nyc_taxi_trip_duration.csv` | 39 MB / 291,100 | `pickup_datetime` = `2016-02-29 16:40:21` | **local time**: 1 h early in UTC (audit §1 A) |
+| S7 | `5_who-flu/who_flu_usa_superimposed` (no extension) | 35 kB / 261 | `ISO_SDATE` = `2010-01-03T23:00:00.000Z` | correct |
+| S7 | `5_who-flu/who_flu_usa.csv` | 35 kB / 261 | same | correct |
+| S8 | `6_fitbit/heartrate_seconds_merged.csv` | 18 MB / 521,632 | `Time` = `4/12/2016 7:21:00 AM` | **local time**: 2 h early |
+| S8 | `6_fitbit/dailyActivity_merged.csv` | 111 kB / 940 | `ActivityDate` = `4/12/2016` | **local time, wrong day**: rebuilt as non-ISO `2016-4-12`, which parses as local midnight, i.e. 22:00 UTC the previous day |
+
+None of the supplementary specs hits the "ISO date → 1970" bug. S4 avoids it with `yearFirstDate`; the others use strings containing `T` or `:`, which skip the date-order logic.
+
+### 7.2 Summary
+
+| Spec | Schema (Ajv) | Dev editor | `embed()` | Main problems (audit / Phase 1 bug no.) |
+|---|---|---|---|---|
+| S3 Unemployment (Fig 4) | **invalid**: `data.genomicFields` | blank | renders | stacked areas not drawn (#10); circular brush mirrored (#11); brush/detail offset (#13) |
+| S4 Seattle | valid | renders | renders | random row sampling (#8) |
+| S5 Solar (Fig 1B) | **invalid**: `color.type` / `color.legend` on value channels | blank | renders | overview `x.field: "time"` absent from data (spec error) |
+| S6 NYC taxi (Fig 1C) | valid | renders | renders | local-time parsing (#4); `interval` option inert (#3 path never reached); sampling (#8) |
+| S7 WHO flu (Fig 1A) | valid | partial | partial | root `xDomain` does not give the published ring; linear comparison views have no `data` (spec errors) |
+| S8 FitBit (Fig 5) | valid | renders | renders | local-time parsing, daily dates on wrong day (#4 / #1); sampling before the `Id` filter (#8); nominal `Calories` misuse (spec error) |
+
+### 7.3 Per-spec report
+
+#### S3: U.S. Unemployment Across Industries (`temporal-data_supp-unemployment.ts`)
+
+- **Relationship to other specs.** Identical to the README running example (`README.md:143-266`, §6 #4) apart from the title and subtitle text. Concept coverage and caveats are as in §6 #4.
+- **Concepts.**
+  - NEW: `csv-time`, temporal x, `TimeInterval` domain, time axis.
+  - MODIFIED: line (circular direction), bar.
+  - INHERITED: area, circular layout, `arrangement`, `alignment`, brush, `linkingId`, nominal color, `opacity`, `size`, `centerRadius`.
+- **Schema.** Invalid only because of `data.genomicFields: ["date"]`; removing it makes the spec valid. The `csv-time` fetcher ignores the key.
+- **Render.**
+  - The dev editor stays blank (`Editor.tsx:542`).
+  - `embed()` renders the circular overview, both detail panels and the timeline bars. All area layers are missing: stacked-area early return, bug #10.
+- **How it achieves the paper's claims.** The "cyclic" overview is `layout: "circular"`, with the whole 2000–2010 domain as one revolution. Nothing wraps per year.
+
+#### S4: Seattle Weather (`temporal-data_supp-seattle-weather.ts`)
+
+- **Concepts.**
+  - NEW: `csv-time` with `yearFirstDate`, temporal x, time axis.
+  - MODIFIED: line, bar.
+  - INHERITED: rect, text, `visibility` semantic zoom, view-level `xDomain`, view→track property inheritance (`data`, `x`, `mark` declared on the view), nominal color with `range` and legend, `linkingId`.
+- **Schema.** Valid.
+- **Render.** Renders in the editor, close to Fig S4.
+  - The `xDomain` runs 2011-01-01 → 2017-01-01 while the data covers 2012–2015, so there is empty space at both ends.
+  - Fig S4's axis starts in 2013, so it was apparently captured zoomed in.
+- **Semantic zoom.** Two `visibility` rules on `measure: "zoomLevel"` with `threshold: 2000000`. The threshold is in seconds of visible span, about 23 days:
+  - `rect` is visible when the span is greater than the threshold;
+  - `text` is visible when it is smaller.
+  - Verified: a 10-day window shows the text labels in place of the blocks.
+- **Ignored or non-existent properties.** None. The text track has no `y`, so it is not stacked and bug #10 does not apply.
+- **Caveat.** 1,461 rows exceed the default `sampleLength` of 1000, so each track randomly drops about a third of the rows independently. The zoomed temperature line showed a gap on Jan 4–5 although both rows exist in the CSV; sampling (bug #8) is the likely cause.
+
+#### S5: Solar Power Generation and Local Weather (`temporal-data_supp-solar-weather.ts`)
+
+- **Concepts.**
+  - NEW: `csv-time` with `dayFirstDate`, ISO date-time with offset, temporal x, time axis.
+  - MODIFIED: line, bar.
+  - INHERITED: area (non-stacked, because `color` is a value), point, field-driven `size`, nominal color, `filter` transforms (`inRange`; `oneOf` + `not`), `tooltip`, brush, `linkingId`, root `xDomain`, `spacing`.
+- **Schema.** Invalid only because value channels carry extra keys: `color: { value, type: "nominal", legend: true }` and `color: { value, legend: true }`. A `ChannelValue` takes only `value`, so `type` and `legend` are silently ignored and no legend is drawn for the area layers. `y.legend` is accepted by the schema.
+- **Render.**
+  - The editor stays blank.
+  - `embed()` renders all five detail panels with the root 2022 domain.
+- **Spec error.** The Overview view declares the PV CSV as data but uses `x.field: "time"`, a column that exists only in the weather CSV. The overview line therefore has no x values and only the brush is visible. The printed Fig S5 shows the same empty overview.
+- **Paper vs supplement.** §5.2 describes *"hourly resolution over three years (2021–2024)"* and Fig 1B's axis spans 2021–2024. The supplementary data is **daily, 2022 only** (365 rows), so Fig 1B was produced from different data or a different spec.
+- **Minor.** Tooltip `alt` texts say "KWh" while the panel titles say "Wh", and the fed-in tooltip is labelled "Consumption (KWh)".
+
+#### S6: NYC Taxi Trip Duration (`temporal-data_supp-nyc-taxi.ts`)
+
+- **Concepts.**
+  - NEW: `csv-time` with two `dateFields`, temporal x, time axis.
+  - MODIFIED: bar.
+  - INHERITED: `withinLink`, `visibility` semantic zoom, field-driven `stroke` / `color` / `strokeWidth`, `filter`, `linkingId`, root `xDomain`, `style.linkStyle`.
+- **Interval primitive.** Built with `mark: "withinLink"`, `x` = `pickup_datetime` and **`x1`** (not `xe`) = `dropoff_datetime`. When `xe` is missing, `withinLink` falls back to `xe = x1` ([`withinLink.ts:82-89`](../src/core/mark/withinLink.ts), inherited), so each trip is an arc from pickup to dropoff. This is Gosling's genomic "within-chromosome link" mark reused unchanged.
+- **Semantic zoom.** A single rule shows the arcs only when the visible span is below 4,000 s (about 67 min). At the printed `xDomain` (2015-12-01 → 2016-08-01) only the bars are visible. In a 1-hour window (2016-02-03 12:35–13:35) the arcs appear and the output matches Fig S6.
+- **Schema.** Valid.
+- **Ignored property.** `data.interval: ["pickup_datetime", "dropoff_datetime"]` has **no effect**. Both columns are valid date strings, so the fetcher skips the `interval` branch (`csv-time-data-fetcher.ts:50-51`) and converts them through the two-field `dateFields` path. The broken string-spreading code (bug #3) is never reached for this dataset.
+- **Caveats.**
+  - The date-times have no zone and parse in the browser's local time (bug #4). Displayed times are shifted by the viewer's UTC offset, so the figure depends on the machine that rendered it.
+  - 291k rows: each tile keeps 1,000 random rows before the `vendor_id` filter (bug #8).
+
+#### S7: WHO Flu Data (`temporal-data_supp-who-flu.ts`)
+
+- **Concepts.**
+  - NEW: `csv-time`, temporal x, time axis, the **`interval` data transform** (year bands, the only example that uses it).
+  - MODIFIED: line, bar.
+  - INHERITED: circular layout, `alignment: "stack"` / `"overlay"`, nominal color by year, rect / text / rule with `x` + `xe`, root `xDomain`, nested `arrangement`.
+- **Schema.** Valid.
+- **How the "one ring per year" cyclic view is built: by preprocessing the data only.**
+  - `who_flu_usa_superimposed` contains the same 261 rows as `who_flu_usa.csv`. The single difference is that every `ISO_SDATE` has its **year replaced by 2010**; month, day and time are unchanged (verified: 0 rows differ in anything but the year), while `ISO_YEAR` keeps the true year.
+  - The ring is therefore an ordinary chronological circular track over one year, with all seasons drawn on top of each other and coloured by `ISO_YEAR`.
+  - Ruled out: one track per year, the `interval` transform, and any period or cyclic grammar feature.
+- **Provenance.** No script produced this file:
+  - `thesis-datasets` has one commit touching `5_who-flu` (`6ce34a7` "restructure", 2024-04-30), and its README only says *"Source: https://www.who.int/tools/flunet (retrieved: 2024-03-30)"*.
+  - This repo contains no reference to the file outside this audit and the example.
+  - The rewrite was evidently done by hand.
+- **Preprocessing side effects.**
+  - ISO week 1 of 2013, 2014 and 2015 starts in late December (e.g. 2014-W1 = 2013-12-29). After the year rewrite these points land at the **end** of the 2010 ring (2010-12-29) instead of the start.
+  - All timestamps are `T23:00:00Z` or `T22:00:00Z`, i.e. local (CET/CEST) midnight exported as UTC.
+- **Render.**
+  - **Circular view:** does **not** reproduce Fig S7 / 1A as printed. The root `xDomain: [1251763200, 1333238400]` (2009-09-01 → 2012-04-01) is inherited by the circular view, so the single superimposed year fills only about 40% of the circle, with year labels 2010–2012 around it. With a 2010 domain on the circular view (`[1262304000, 1293840000]`) the output matches the published figure: a full month ring with "2010" at the centre. The printed spec is therefore not the spec that produced the figure.
+  - **Linear year-comparison views:** have no `data` (nor do their parents), so nothing renders. Fig 1A's middle panel cannot come from this spec.
+  - **Timeline:** renders bars, coloured year bands (`interval` transform: filter to `ISO_WEEK = 1`, then each year's band runs to the next year's first date), white year labels and grey year rules. The `interval` transform's required `field` key is unused. The 2015 week-1 row gets no `NEXT_YEAR`, so it has no band.
+
+#### S8: FitBit Activity and Heart Rate (`temporal-data_supp-fitbit.ts`)
+
+- **Concepts.**
+  - NEW: `csv-time` with US date and date-time strings, temporal x, time axis.
+  - MODIFIED: line, bar.
+  - INHERITED: circular layout, `centerRadius`, nested `arrangement` (horizontal → vertical), overlay with a second `y` axis (`axis: "right"`), stacked bar by nominal color, `filter`, `linkingId`, root `xDomain`.
+- **Schema.** Valid.
+- **Render.** Renders in the editor: heart rate (line), daily activity (stacked bars plus a line on the right axis) and a circular heart-rate track.
+- **Spec errors and caveats.**
+  - The root `xDomain` (2016-03-01 → 2016-06-01) is three times the span of the heart-rate data (2016-04-12 → 05-12). The linear panels are mostly empty and the ring is only partly filled; Fig S8's full ring must have been captured at a different zoom.
+  - `color: { field: "Calories", type: "nominal", domain: [0, 50] }`: calorie values (e.g. 1985) are not in the domain, so the ordinal scale assigns the seven colours arbitrarily in order of appearance.
+  - The link is named `linking-with-brush`, but the spec contains no brush, only zoom and pan linking.
+  - Linear time-axis tick labels overlap at this width.
+- **Date issues.**
+  - Heart-rate times parse as local time (bug #4).
+  - `ActivityDate` (`4/12/2016`) parses to 22:00 UTC on the **previous day**: bugs #1 / #4. The parser rebuilds `2016-4-12`, a non-ISO string that `Date.parse` reads as local time.
+- **Sampling.** 521,632 heart-rate rows: each tile keeps 1,000 random rows **before** the `Id` filter, and only 30% of the rows belong to Id 2022484408 (bug #8).
+
+### 7.4 Consequences for the Phase 1 bug list
+
+- **No new code bugs.** Every rendering or parsing problem above maps to an existing item: #1 / #4 (date parsing and local time), #3 (CSV `interval`, never reached here), #8 (sampling), #10 (stacked area), #11 (circular brush), #13 (brush offset).
+- **New, editor-level finding (upstream behaviour, not a time-i-gram bug).** `Editor.tsx:542,557` refuses to render schema-invalid specs, while `embed()` renders them. S3 and S5 are blank in the editor for this reason only. Fixing the specs, as planned in item #22, is enough.
+- **Spec errors, not code bugs, to fix under item #22:**
+  - S3: remove `genomicFields`.
+  - S5: drop `type` / `legend` from value colours; fix the Overview's `x.field`.
+  - S7: give the circular view a one-year domain; add `data` to the comparison views.
+  - S8: fit the domain to the data; make `Calories` quantitative or binned.
+- **Item #4 priority.** Item #4 (UTC parsing) affects three of the six supplementary scenarios. Fixing it changes the clock times shown in Fig S6 by the renderer's UTC offset, so the S6 figure should be regenerated after the fix.
+- **Paper (not code).**
+  - The Fig 1A ring comes from preprocessing the data, not from the grammar.
+  - The Fig 1B data in the supplement does not match §5.2's description.
+  - Neither S7 as printed nor S8 as printed reproduces its figure.
