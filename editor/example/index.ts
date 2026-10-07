@@ -56,6 +56,12 @@ import { spec as JSON_SPEC_ISLANDVIEWER } from './spec/islandviewer';
 import { EX_SPEC_TEMPORAL_OVERVIEW_DETAIL } from './json-spec/temporal-data_overview-detail';
 import { EX_SPEC_TEMPORAL_SEATTLE_WEATHER } from './spec/temporal-data_seattle-weather';
 import { EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR } from './spec/temporal-data_unemployment-circular-linear';
+import { EX_SPEC_TEMPORAL_SUPP_UNEMPLOYMENT } from './spec/temporal-data_supp-unemployment';
+import { EX_SPEC_TEMPORAL_SUPP_SEATTLE_WEATHER } from './spec/temporal-data_supp-seattle-weather';
+import { EX_SPEC_TEMPORAL_SUPP_SOLAR_WEATHER } from './spec/temporal-data_supp-solar-weather';
+import { EX_SPEC_TEMPORAL_SUPP_NYC_TAXI } from './spec/temporal-data_supp-nyc-taxi';
+import { EX_SPEC_TEMPORAL_SUPP_WHO_FLU } from './spec/temporal-data_supp-who-flu';
+import { EX_SPEC_TEMPORAL_SUPP_FITBIT } from './spec/temporal-data_supp-fitbit';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -524,6 +530,42 @@ const editorExampleObj: {
         group: 'Temporal Data',
         name: 'Unemployment: Circular Overview + Linear Detail',
         spec: EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR,
+        underDevelopment: true
+    },
+    TEMPORAL_DATA_SUPP_UNEMPLOYMENT: {
+        group: 'Temporal Data',
+        name: 'Supp. S3: U.S. Unemployment Across Industries',
+        spec: EX_SPEC_TEMPORAL_SUPP_UNEMPLOYMENT,
+        underDevelopment: true
+    },
+    TEMPORAL_DATA_SUPP_SEATTLE_WEATHER: {
+        group: 'Temporal Data',
+        name: 'Supp. S4: Seattle Weather',
+        spec: EX_SPEC_TEMPORAL_SUPP_SEATTLE_WEATHER,
+        underDevelopment: true
+    },
+    TEMPORAL_DATA_SUPP_SOLAR_WEATHER: {
+        group: 'Temporal Data',
+        name: 'Supp. S5: Solar Power and Local Weather',
+        spec: EX_SPEC_TEMPORAL_SUPP_SOLAR_WEATHER,
+        underDevelopment: true
+    },
+    TEMPORAL_DATA_SUPP_NYC_TAXI: {
+        group: 'Temporal Data',
+        name: 'Supp. S6: NYC Taxi Trip Duration',
+        spec: EX_SPEC_TEMPORAL_SUPP_NYC_TAXI,
+        underDevelopment: true
+    },
+    TEMPORAL_DATA_SUPP_WHO_FLU: {
+        group: 'Temporal Data',
+        name: 'Supp. S7: WHO Flu Data',
+        spec: EX_SPEC_TEMPORAL_SUPP_WHO_FLU,
+        underDevelopment: true
+    },
+    TEMPORAL_DATA_SUPP_FITBIT: {
+        group: 'Temporal Data',
+        name: 'Supp. S8: FitBit Activity and Heart Rate',
+        spec: EX_SPEC_TEMPORAL_SUPP_FITBIT,
         underDevelopment: true
     }
 };
