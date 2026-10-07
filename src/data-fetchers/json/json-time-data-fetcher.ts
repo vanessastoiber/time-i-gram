@@ -1,7 +1,7 @@
 import { sampleSize } from 'lodash-es';
 import type { JsonTimeData } from '@gosling-lang/gosling-schema';
 import { type CommonDataConfig, filterUsingGenoPos } from '../utils';
-import { parseDateTime, utcSeconds } from '../time-utils';
+import { parseDateTime, timestampToSeconds, utcSeconds } from '../time-utils';
 
 type CsvTimeDataConfig = JsonTimeData & CommonDataConfig;
 
@@ -84,7 +84,7 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
             const timestampField = this.dataConfig.timestampField;
             const timestamp = timestampField ? row[timestampField] : undefined;
             if (timestampField && timestamp !== '' && timestamp !== null && this.isValidTimestamp(Number(timestamp))) {
-                row[timestampField] = Number(timestamp);
+                row[timestampField] = timestampToSeconds(Number(timestamp), this.dataConfig.timestampUnit);
                 return row;
             }
             return this.processRow(row, this.dataConfig.dateFields);

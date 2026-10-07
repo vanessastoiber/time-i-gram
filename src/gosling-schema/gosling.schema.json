@@ -324,6 +324,10 @@
         "timestampField": {
           "type": "string"
         },
+        "timestampUnit": {
+          "$ref": "#/definitions/TimestampUnit",
+          "description": "Unit of the Unix timestamps in `timestampField` and in numeric `interval` columns: seconds (`\"s\"`) or milliseconds (`\"ms\"`).\n\n__Default:__ `\"s\"`"
+        },
         "type": {
           "const": "csv-time",
           "description": "Define data type.",
@@ -3746,6 +3750,10 @@
         },
         "timestampField": {
           "type": "string"
+        },
+        "timestampUnit": {
+          "$ref": "#/definitions/TimestampUnit",
+          "description": "Unit of the Unix timestamps in `timestampField`: seconds (`\"s\"`) or milliseconds (`\"ms\"`).\n\n__Default:__ `\"s\"`"
         },
         "type": {
           "const": "json-time",
@@ -9148,6 +9156,14 @@
         "interval"
       ],
       "type": "object"
+    },
+    "TimestampUnit": {
+      "description": "Unit of Unix timestamps: seconds or milliseconds.",
+      "enum": [
+        "s",
+        "ms"
+      ],
+      "type": "string"
     },
     "Tooltip": {
       "additionalProperties": false,

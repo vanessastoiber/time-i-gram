@@ -94,6 +94,13 @@ describe('csv-time data fetcher: date parsing', () => {
         });
     });
 
+    it('reads timestampField in seconds by default and in milliseconds with timestampUnit', async () => {
+        const seconds = await loadCsv('t\n1327968000', { timestampField: 't' });
+        expect(seconds.rows[0].t).toEqual(utc(2012, 1, 31));
+        const millis = await loadCsv('t\n1327968000000', { timestampField: 't', timestampUnit: 'ms' });
+        expect(millis.rows[0].t).toEqual(utc(2012, 1, 31));
+    });
+
     it('warns once and does not place unparseable dates at 1970', async () => {
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const { rows } = await loadCsv('date\nnot a date\n2012-02-30', { dateFields: ['date'] });
