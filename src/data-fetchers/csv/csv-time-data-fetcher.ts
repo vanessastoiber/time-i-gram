@@ -44,23 +44,19 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
                         this.values.push(row);
                         return row;
                     }
-                    // TODO
-                    const intervalSpec = this.dataConfig.interval;
-                    if (intervalSpec && this.isValidTimestamp(Number(row[intervalSpec[0]])) && this.isValidTimestamp(Number(row[intervalSpec[1]]))) {
-                        this.values.push(row);
-                        return row;
-                    } else if (intervalSpec && row[intervalSpec[0]] !== undefined && row[intervalSpec[1]] !== undefined) {
-                        if (typeof row[intervalSpec[0]] === 'string' && typeof row[intervalSpec[1]] === 'string' && row[intervalSpec[0]] && row[intervalSpec[1]] && !this.isValidDate(row[intervalSpec[0]] || "") && !this.isValidDate(row[intervalSpec[1]] || "")) {
-                            if (intervalSpec[0] !== undefined && intervalSpec[1] !== undefined) {
-                                row[intervalSpec[0]] = intervalSpec[0] && row[intervalSpec[0]] ? this.processRow(row, [...intervalSpec[0]]) : row[intervalSpec[0]];
-                                row[intervalSpec[1]] = intervalSpec[1] && row[intervalSpec[1]] ? this.processRow(row, [...intervalSpec[1]]) : row[intervalSpec[1]];
-                                this.values.push(row);
-                                return row;
-                            }
-                        }
-                    }
-                    const convertToDate = this.dataConfig.dateFields;
-                    const convertedRow = this.processRow(row, convertToDate);
+                    // Convert the start and end columns of an interval individually: numbers are
+                    // taken as Unix timestamps, anything else is parsed as a date.
+                    const intervalSpec = this.dataConfig.interval ?? [];
+                    intervalSpec.forEach(field => {
+                        const value = row[field];
+                        if (value === undefined || value === '') return;
+                        (row as any)[field] = /^-?\d+(\.\d+)?$/.test(value.trim())
+                            ? Number(value)
+                            : this.parseAndConvertToSeconds(value);
+                    });
+                    // Interval columns are already converted, so leave them out of `dateFields`.
+                    const convertToDate = this.dataConfig.dateFields?.filter(field => !intervalSpec.includes(field));
+                    const convertedRow = this.processRow(row, convertToDate?.length ? convertToDate : undefined);
                     this.values.push(convertedRow);
                 });
             })

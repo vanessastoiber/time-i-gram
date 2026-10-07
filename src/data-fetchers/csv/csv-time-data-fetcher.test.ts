@@ -39,6 +39,17 @@ describe('csv-time data fetcher: date parsing', () => {
         expect(tile['0.0'].tabularData.map((r: any) => r.v)).toEqual(['1', '2', '3', '4']);
     });
 
+    it('converts both columns of `interval` (dates and timestamps)', async () => {
+        // `Date.parse` rejects both day-first dates in the first row.
+        const { rows } = await loadCsv('start,end\n31.01.2012,15.02.2012\n1327968000,1328054400', {
+            interval: ['start', 'end']
+        });
+        expect(rows.map(r => [r.start, r.end])).toEqual([
+            [utc(2012, 1, 31), utc(2012, 2, 15)],
+            [utc(2012, 1, 31), utc(2012, 2, 1)]
+        ]);
+    });
+
     it('warns once and does not place unparseable dates at 1970', async () => {
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const { rows } = await loadCsv('date\nnot a date\n2012-02-30', { dateFields: ['date'] });
