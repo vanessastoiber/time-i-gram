@@ -55,6 +55,7 @@ import JS_SPEC_ISLANDVIEWER from './spec/islandviewer?raw';
 import { spec as JSON_SPEC_ISLANDVIEWER } from './spec/islandviewer';
 import { EX_SPEC_TEMPORAL_OVERVIEW_DETAIL } from './json-spec/temporal-data_overview-detail';
 import { EX_SPEC_TEMPORAL_SEATTLE_WEATHER } from './spec/temporal-data_seattle-weather';
+import { EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR } from './spec/temporal-data_unemployment-circular-linear';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -517,6 +518,12 @@ const editorExampleObj: {
         group: 'Temporal Data',
         name: 'Seattle Weather',
         spec: EX_SPEC_TEMPORAL_SEATTLE_WEATHER,
+        underDevelopment: true
+    },
+    TEMPORAL_DATA_UNEMPLOYMENT_CIRCULAR_LINEAR: {
+        group: 'Temporal Data',
+        name: 'Unemployment: Circular Overview + Linear Detail',
+        spec: EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR,
         underDevelopment: true
     }
 };
