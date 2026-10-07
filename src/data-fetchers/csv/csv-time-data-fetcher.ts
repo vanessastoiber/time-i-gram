@@ -2,6 +2,7 @@ import { sampleSize } from 'lodash-es';
 import { dsvFormat as d3dsvFormat, type DSVRowString } from 'd3-dsv';
 import type { CSVTimeData } from '@gosling-lang/gosling-schema';
 import { type CommonDataConfig, filterUsingGenoPos } from '../utils';
+import { formatIsoDate, parseDateOnly } from '../time-utils';
 
 type CsvTimeDataConfig = CSVTimeData & CommonDataConfig;
 
@@ -22,6 +23,7 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
         // synchronously, so the first, empty, tile response was cached and nothing
         // re-rendered once the network fetch actually resolved).
         private dataPromise: Promise<void>;
+        private hasWarnedUnparseable = false;
 
         constructor(params: any[]) {
             const [dataConfig] = params;
@@ -99,52 +101,26 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
         return timeRegex.test(timeString);
         }
 
-        isValidYear(year: number | string) {
-            let parsedYear: number;
-            if (typeof year === 'number') {
-                parsedYear = year;
-            } else {
-                parsedYear = parseInt(year, 10);
-            }
-            const currentYear = new Date().getFullYear();
-            
-            // Check if year is a number and within a reasonable range
-            if (isNaN(parsedYear) || parsedYear < 1000 || parsedYear > currentYear) {
-                return false;
-            }
-            
-            return true;
-        }
-
         // parse each date to YYYY-MM-DD format
         parseDate(dateString: string) {
             // only handle dates without time
             if (dateString.includes('T') || dateString.includes(':')) {
                 return dateString;
             };
-            // check which separator is used for the date
-            let separatorChar = "";
-            if (dateString.includes('-')) {
-                separatorChar = '-';
-            } else if (dateString.includes('.')) {
-                separatorChar = '.';
-            } else if (dateString.includes('/')) {
-                separatorChar = '/';
-            // assume that the date is in the format YYYY
-            } else if (this.isValidYear(dateString)) {
-                return `${dateString}-01-01`;
-            }
-            const parts = dateString.split(separatorChar);
-            //todo change year to month
-            const formattedDate = (this.dataConfig.dayFirstDate) ? `${parts[2]}-${parts[1]}-${parts[0]}` : this.dataConfig.yearFirstDate ? `${parts[0]}-${parts[1]}-${parts[2]}` : `${parts[2]}-${parts[0]}-${parts[1]}`;
-            
-            // check again for valid date format
-            const regex = /(((19|20)([2468][048]|[13579][26]|0[48])|2000)[\/-]02[\/-](29|0?[1-9]|1[0-9]|2[0-8])|((19|20)[0-9]{2}[\/-](0?[4678]|1[02])[\/-](0?[1-9]|[12][0-9]|30)|(19|20)[0-9]{2}[\/-](0?[1359]|11)[\/-](0?[1-9]|[12][0-9]|3[01])|(19|20)[0-9]{2}[\/-]0?2[\/-](0?[1-9]|1[0-9]|2[0-8])))/;
-            if (formattedDate.match(regex))  {
-                return formattedDate;
-            } else {
-                return "1970-01-01";
-            }
+            const seconds = parseDateOnly(dateString, this.dataConfig);
+            return isNaN(seconds) ? undefined : formatIsoDate(seconds);
+        }
+
+        /** Warn (once per data source) about a date that cannot be parsed; such rows are not drawn. */
+        warnUnparseable(value: unknown) {
+            if (this.hasWarnedUnparseable) return;
+            this.hasWarnedUnparseable = true;
+            console.warn(
+                `[csv-time] Could not parse the date "${value}" in ${this.dataConfig.url}. ` +
+                    'Rows with unparseable dates are not drawn. ' +
+                    'Use `dayFirstDate` or `yearFirstDate` if the date order is ambiguous. ' +
+                    'Further warnings for this data source are suppressed.'
+            );
         }
 
         createDateFromFields(fields: { year: number; month: number; day: number, hour: number, minute: number, second: number }) {
@@ -164,7 +140,7 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
                             break;
                         case 2:
                             if (this.isValidTimeFormat(row[convertToDate[1]])) {
-                                const fullDate = `${this.parseDate(row[convertToDate[0]])}T${row[convertToDate[1]]}`;
+                                const fullDate = `${this.parseDate(row[convertToDate[0]]) ?? row[convertToDate[0]]}T${row[convertToDate[1]]}`;
                                 row[convertToDate[0]] = this.parseAndConvertToSeconds(fullDate);
                             // Check if we're dealing with a calendar week format in the second convertToDate field
                             } else if (this.dataConfig.includesCalendarWeek && this.containsCalendarWeek(row[convertToDate[1]])) {
@@ -198,7 +174,9 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
         
         parseAndConvertToSeconds(date: string): number {
             const validatedDate = this.parseDate(date);
-            return Date.parse(validatedDate) / 1000;
+            const seconds = validatedDate === undefined ? NaN : Date.parse(validatedDate) / 1000;
+            if (isNaN(seconds)) this.warnUnparseable(date);
+            return seconds;
         }
 
         containsCalendarWeek(date: string): boolean {
