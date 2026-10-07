@@ -47,6 +47,17 @@ describe('stacked marks on a temporal x axis', () => {
         expect(tile.graphics.geometry.graphicsData.length).toBeGreaterThan(0);
     });
 
+    it('skips color categories that have no rows instead of throwing', () => {
+        const model = stackedTemporalModel('area');
+        // the domain lists a category that is absent from the data
+        (model.spec().color as { domain?: string[] }).domain = ['a', 'b', 'absent'];
+        const tile = { graphics: new PIXI.Graphics(), tileData: {} };
+        expect(() =>
+            drawArea({ libraries: { PIXI } } as any, trackMock(), tile as unknown as Tile, model)
+        ).not.toThrow();
+        expect(tile.graphics.geometry.graphicsData.length).toBeGreaterThan(0);
+    });
+
     it('draws stacked text', () => {
         const track = trackMock();
         const tile = { graphics: new PIXI.Graphics(), tileData: {} };

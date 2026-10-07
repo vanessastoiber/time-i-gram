@@ -176,6 +176,10 @@ export function drawArea(HGC: import('@higlass/types').HGC, track: any, tile: Ti
                         prevYEndByGPos[genomicPosCategory] += cy;
                     });
             });
+            if (areaPointsTop.length === 0) {
+                // no rows of this color category in the tile (e.g. a color domain wider than the data)
+                return;
+            }
             const color = model.encodedValue('color', colorCategory);
             graphics.beginFill(colorToHex(color), constantOpacity);
             graphics.drawPolygon([
