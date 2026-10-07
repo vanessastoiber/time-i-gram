@@ -315,7 +315,7 @@
           "type": "array"
         },
         "sampleLength": {
-          "description": "Specify the number of rows loaded from the URL.\n\n__Default:__ `1000`",
+          "description": "Opt-in random sampling: the maximum number of rows per tile. When a tile has more rows, a random sample of this size is drawn, so some rows are not shown.\n\n__Default:__ no sampling (all rows are shown)",
           "type": "number"
         },
         "separator": {
@@ -3745,7 +3745,7 @@
           "type": "array"
         },
         "sampleLength": {
-          "description": "Specify the number of rows loaded from the URL.\n\n__Default:__ `1000`",
+          "description": "Opt-in random sampling: the maximum number of rows per tile. When a tile has more rows, a random sample of this size is drawn, so some rows are not shown.\n\n__Default:__ no sampling (all rows are shown)",
           "type": "number"
         },
         "timestampField": {
