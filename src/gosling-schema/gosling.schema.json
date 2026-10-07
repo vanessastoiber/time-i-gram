@@ -645,6 +645,10 @@
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
         },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
+        },
         "data": {
           "$ref": "#/definitions/DataDeep"
         },
@@ -1289,6 +1293,10 @@
               "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
               "type": "number"
             },
+            "clockwise": {
+              "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+              "type": "boolean"
+            },
             "color": {
               "anyOf": [
                 {
@@ -1443,6 +1451,10 @@
                       "centerRadius": {
                         "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                         "type": "number"
+                      },
+                      "clockwise": {
+                        "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                        "type": "boolean"
                       },
                       "color": {
                         "anyOf": [
@@ -2057,6 +2069,10 @@
               "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
               "type": "number"
             },
+            "clockwise": {
+              "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+              "type": "boolean"
+            },
             "color": {
               "anyOf": [
                 {
@@ -2211,6 +2227,10 @@
                       "centerRadius": {
                         "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                         "type": "number"
+                      },
+                      "clockwise": {
+                        "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                        "type": "boolean"
                       },
                       "color": {
                         "anyOf": [
@@ -2816,6 +2836,10 @@
               "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
               "type": "number"
             },
+            "clockwise": {
+              "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+              "type": "boolean"
+            },
             "description": {
               "type": "string"
             },
@@ -2884,6 +2908,10 @@
                       "centerRadius": {
                         "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                         "type": "number"
+                      },
+                      "clockwise": {
+                        "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                        "type": "boolean"
                       },
                       "color": {
                         "anyOf": [
@@ -3338,6 +3366,10 @@
               "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
               "type": "number"
             },
+            "clockwise": {
+              "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+              "type": "boolean"
+            },
             "description": {
               "type": "string"
             },
@@ -3398,6 +3430,10 @@
                       "centerRadius": {
                         "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                         "type": "number"
+                      },
+                      "clockwise": {
+                        "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                        "type": "boolean"
                       },
                       "id": {
                         "description": "The ID of a view that is maintained for the use of JS API functions, e.g., positions of a view",
@@ -3944,6 +3980,10 @@
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
         },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
+        },
         "id": {
           "description": "The ID of a view that is maintained for the use of JS API functions, e.g., positions of a view",
           "type": "string"
@@ -4186,6 +4226,10 @@
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
         },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
+        },
         "color": {
           "anyOf": [
             {
@@ -4306,6 +4350,10 @@
               "centerRadius": {
                 "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                 "type": "number"
+              },
+              "clockwise": {
+                "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                "type": "boolean"
               },
               "color": {
                 "anyOf": [
@@ -4875,6 +4923,10 @@
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
         },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
+        },
         "color": {
           "anyOf": [
             {
@@ -5244,6 +5296,10 @@
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
         },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
+        },
         "color": {
           "anyOf": [
             {
@@ -5380,6 +5436,10 @@
               "centerRadius": {
                 "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                 "type": "number"
+              },
+              "clockwise": {
+                "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                "type": "boolean"
               },
               "color": {
                 "anyOf": [
@@ -6128,6 +6188,10 @@
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
         },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
+        },
         "color": {
           "anyOf": [
             {
@@ -6487,6 +6551,10 @@
               "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
               "type": "number"
             },
+            "clockwise": {
+              "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+              "type": "boolean"
+            },
             "color": {
               "anyOf": [
                 {
@@ -6634,6 +6702,10 @@
                       "centerRadius": {
                         "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                         "type": "number"
+                      },
+                      "clockwise": {
+                        "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                        "type": "boolean"
                       },
                       "color": {
                         "anyOf": [
@@ -7248,6 +7320,10 @@
               "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
               "type": "number"
             },
+            "clockwise": {
+              "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+              "type": "boolean"
+            },
             "color": {
               "anyOf": [
                 {
@@ -7395,6 +7471,10 @@
                       "centerRadius": {
                         "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                         "type": "number"
+                      },
+                      "clockwise": {
+                        "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                        "type": "boolean"
                       },
                       "color": {
                         "anyOf": [
@@ -8000,6 +8080,10 @@
               "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
               "type": "number"
             },
+            "clockwise": {
+              "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+              "type": "boolean"
+            },
             "id": {
               "description": "The ID of a view that is maintained for the use of JS API functions, e.g., positions of a view",
               "type": "string"
@@ -8061,6 +8145,10 @@
                       "centerRadius": {
                         "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                         "type": "number"
+                      },
+                      "clockwise": {
+                        "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                        "type": "boolean"
                       },
                       "color": {
                         "anyOf": [
@@ -8974,6 +9062,10 @@
         "centerRadius": {
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
+        },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
         },
         "data": {
           "$ref": "#/definitions/DataDeep"

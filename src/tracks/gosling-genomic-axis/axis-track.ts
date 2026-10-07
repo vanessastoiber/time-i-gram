@@ -6,7 +6,7 @@ import RBush from 'rbush';
 import { scaleLinear } from 'd3-scale';
 import { format, precisionPrefix, formatPrefix } from 'd3-format';
 import { computeChromSizes } from '../../core/utils/assembly';
-import { cartesianToPolar } from '../../core/utils/polar';
+import { cartesianToPolar, isAnticlockwise } from '../../core/utils/polar';
 import { getTextStyle } from '../../core/utils/text-style';
 import { createPluginTrack } from '../../core/utils/define-plugin-track';
 
@@ -518,7 +518,7 @@ const factory: PluginTrackFactory<never, AxisTrackOptions> = (HGC, context, opti
             const outerRadius = this.options.outerRadius * factor;
 
             const r = (outerRadius + innerRadius) / 2.0;
-            const centerPos = cartesianToPolar(cx, width, r, width / 2.0, height / 2.0, endAngle, startAngle);
+            const centerPos = cartesianToPolar(cx, width, r, width / 2.0, height / 2.0, startAngle, endAngle);
             textObj.x = centerPos.x;
             textObj.y = centerPos.y;
 
@@ -527,8 +527,7 @@ const factory: PluginTrackFactory<never, AxisTrackOptions> = (HGC, context, opti
             const metric = HGC.libraries.PIXI.TextMetrics.measureText(textObj.text, txtStyle);
 
             // scale the width of text label so that its width is the same when converted into circular form
-            const tw = ((metric.width / (2 * r * Math.PI)) * width * 360) / (endAngle - startAngle);
-            // let [minX, maxX] = [cx - tw / 2.0, cx + tw / 2.0]; // Change the order of minX and maxX
+            const tw = ((metric.width / (2 * r * Math.PI)) * width * 360) / Math.abs(endAngle - startAngle);
             let [minX, maxX] = [cx - tw / 2.0, cx + tw / 2.0];
 
             // make sure not to place the label on the origin
@@ -545,9 +544,11 @@ const factory: PluginTrackFactory<never, AxisTrackOptions> = (HGC, context, opti
             const ropePoints: PIXI.Point[] = [];
             const baseR = innerRadius + metric.height / 2.0 + 3;
             for (let i = maxX; i >= minX; i -= tw / 10.0) {
-                const p = cartesianToPolar(i, width, baseR, width / 2.0, height / 2.0, endAngle, startAngle);
+                const p = cartesianToPolar(i, width, baseR, width / 2.0, height / 2.0, startAngle, endAngle);
                 ropePoints.push(new HGC.libraries.PIXI.Point(p.x, p.y));
             }
+            // the points must run clockwise on screen so that the text reads left to right
+            if (!isAnticlockwise(startAngle, endAngle)) ropePoints.reverse();
 
             if (ropePoints.length === 0) {
                 return undefined;

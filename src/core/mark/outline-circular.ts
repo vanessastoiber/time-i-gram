@@ -1,6 +1,6 @@
 import type { GoslingTrackModel } from '../../tracks/gosling-track/gosling-track-model';
 import { IsChannelDeep } from '@gosling-lang/gosling-schema';
-import { cartesianToPolar, valueToRadian } from '../utils/polar';
+import { cartesianToPolar, isAnticlockwise, valueToRadian } from '../utils/polar';
 import colorToHex from '../utils/color-to-hex';
 import type { CompleteThemeDeep } from '../utils/theme';
 
@@ -17,6 +17,7 @@ export function drawCircularOutlines(trackInfo: any, tm: GoslingTrackModel, them
     const trackOuterRadius = spec.outerRadius ?? 300; // TODO: should be smaller than Math.min(width, height)
     const startAngle = spec.startAngle ?? 0;
     const endAngle = spec.endAngle ?? 360;
+    const ccw = isAnticlockwise(startAngle, endAngle); // `false` for clockwise tracks
     const cx = l + trackWidth / 2.0;
     const cy = t + trackHeight / 2.0;
 
@@ -41,8 +42,8 @@ export function drawCircularOutlines(trackInfo: any, tm: GoslingTrackModel, them
                 (!theme.track.background || theme.track.background === 'transparent' ? 0 : 1)
         );
         g.moveTo(posStartInner.x, posStartInner.y);
-        g.arc(cx, cy, trackInnerRadius, startRad, endRad, true);
-        g.arc(cx, cy, trackOuterRadius, endRad, startRad, false);
+        g.arc(cx, cy, trackInnerRadius, startRad, endRad, ccw);
+        g.arc(cx, cy, trackOuterRadius, endRad, startRad, !ccw);
         g.closePath();
     }
 
@@ -56,8 +57,8 @@ export function drawCircularOutlines(trackInfo: any, tm: GoslingTrackModel, them
         );
         g.beginFill(colorToHex('white'), 0);
         g.moveTo(posStartInner.x, posStartInner.y);
-        g.arc(cx, cy, trackOuterRadius - 0.5, startRad, endRad, true);
-        g.arc(cx, cy, trackOuterRadius, endRad, startRad, false);
+        g.arc(cx, cy, trackOuterRadius - 0.5, startRad, endRad, ccw);
+        g.arc(cx, cy, trackOuterRadius, endRad, startRad, !ccw);
         g.closePath();
     }
 
@@ -83,7 +84,7 @@ export function drawCircularOutlines(trackInfo: any, tm: GoslingTrackModel, them
     );
     g.beginFill(colorToHex('white'), 0);
     g.moveTo(cx, cy);
-    g.arc(cx, cy, trackOuterRadius + 3, startRad, endRad, false);
+    g.arc(cx, cy, trackOuterRadius + 3, startRad, endRad, !ccw);
     g.closePath();
 
     // center white hole

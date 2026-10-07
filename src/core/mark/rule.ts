@@ -2,7 +2,7 @@ import type { Tile } from '@gosling-lang/gosling-track';
 import type { Channel } from '@gosling-lang/gosling-schema';
 import type { GoslingTrackModel } from '../../tracks/gosling-track/gosling-track-model';
 import { getValueUsingChannel } from '@gosling-lang/gosling-schema';
-import { cartesianToPolar, valueToRadian } from '../utils/polar';
+import { cartesianToPolar, isAnticlockwise, valueToRadian } from '../utils/polar';
 import colorToHex from '../utils/color-to-hex';
 
 export function drawRule(HGC: import('@higlass/types').HGC, trackInfo: any, tile: Tile, model: GoslingTrackModel) {
@@ -21,6 +21,7 @@ export function drawRule(HGC: import('@higlass/types').HGC, trackInfo: any, tile
     const trackOuterRadius = spec.outerRadius ?? 300; // TODO: should be smaller than Math.min(width, height)
     const startAngle = spec.startAngle ?? 0;
     const endAngle = spec.endAngle ?? 360;
+    const ccw = isAnticlockwise(startAngle, endAngle); // `false` for clockwise tracks
     const trackRingSize = trackOuterRadius - trackInnerRadius;
     const cx = trackWidth / 2.0;
     const cy = trackHeight / 2.0;
@@ -108,8 +109,8 @@ export function drawRule(HGC: import('@higlass/types').HGC, trackInfo: any, tile
 
                     g.beginFill(colorToHex(color), actualOpacity);
                     g.moveTo(sPos.x, sPos.y);
-                    g.arc(cx, cy, nearR, startRad, endRad, true);
-                    g.arc(cx, cy, farR, endRad, startRad, false);
+                    g.arc(cx, cy, nearR, startRad, endRad, ccw);
+                    g.arc(cx, cy, farR, endRad, startRad, !ccw);
                     g.closePath();
                 } else {
                     if (dashed) {
@@ -152,8 +153,8 @@ export function drawRule(HGC: import('@higlass/types').HGC, trackInfo: any, tile
 
                     g.beginFill(colorToHex(color), actualOpacity);
                     g.moveTo(sPos.x, sPos.y);
-                    g.arc(cx, cy, nearR, startRad, endRad, true);
-                    g.arc(cx, cy, farR, endRad, startRad, false);
+                    g.arc(cx, cy, nearR, startRad, endRad, ccw);
+                    g.arc(cx, cy, farR, endRad, startRad, !ccw);
                     g.closePath();
                 } else if (dashed) {
                     const [dashSize, gapSize] = dashed;

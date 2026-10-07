@@ -75,8 +75,8 @@ export function drawLine(g: PIXI.Graphics, model: GoslingTrackModel, trackWidth:
                             r,
                             trackCenterX,
                             trackCenterY,
-                            endAngle,
-                            startAngle
+                            startAngle,
+                            endAngle
                         );
 
                         if (i === 0) {

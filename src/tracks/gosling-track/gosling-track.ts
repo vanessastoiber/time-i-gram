@@ -1104,7 +1104,8 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                         [mouseX, mouseY],
                         [width / 2.0, height / 2.0],
                         [innerRadius, outerRadius],
-                        [startAngle, endAngle]
+                        // clockwise tracks have swapped angles but cover the same sector
+                        [Math.min(startAngle, endAngle), Math.max(startAngle, endAngle)]
                     )
                 ) {
                     publish(eventType, {

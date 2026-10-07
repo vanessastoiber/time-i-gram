@@ -143,6 +143,13 @@ export interface CommonViewDef {
     centerRadius?: number;
 
     /**
+     * Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).
+     *
+     * __Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`
+     */
+    clockwise?: boolean;
+
+    /**
      * Define the [style](http://gosling-lang.org/docs/visual-channel#style-related-properties) of multive views.
      * Will be overwritten by the style of children elements (e.g., view, track).
      */
@@ -189,6 +196,12 @@ export interface CommonTrackDef extends CommonViewDef {
      * Specify the end angle (in the range of [0, 360]) of circular tracks (`{"layout": "circular"}`).
      */
     endAngle?: number; // [0, 360]
+    /**
+     * Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).
+     *
+     * __Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`
+     */
+    clockwise?: boolean;
 
     // Internally used properties
     /** internal */
