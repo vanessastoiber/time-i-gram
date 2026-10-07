@@ -2,6 +2,7 @@ import type { PIXI } from '@higlass/libraries';
 import { scaleUtc } from 'd3-scale';
 import { utcFormat } from 'd3-time-format';
 import { cartesianToPolar } from '../../core/utils/polar';
+import colorToHex from '../../core/utils/color-to-hex';
 import * as uuid from 'uuid';
 
 const durationSecond = 1000;
@@ -63,17 +64,18 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
     
       this.axisTexts = [];
       this.endpointsTexts = [];
-      this.axisTextFontFamily = 'Arial';
-      this.axisTextFontSize = 12;
+      // Font and colors come from the theme (see `setUnixTimeTrack`), with the previous defaults as fallback.
+      this.axisTextFontFamily = this.options.fontFamily ?? 'Arial';
+      this.axisTextFontSize = this.options.fontSize ?? 12;
+      this.axisTextStyle = {
+        fontSize: `${this.axisTextFontSize}px`,
+        fontFamily: this.axisTextFontFamily,
+        fontWeight: this.options.fontWeight ?? 'normal',
+        fill: this.options.color ?? 'black',
+      };
+      this.tickColor = colorToHex(this.options.tickColor ?? 'black');
       this.timeScale = this._xScale;
-      this.context = new PIXI.Text(
-        'sample',
-        {
-          fontSize: `${this.axisTextFontSize}px`,
-          fontFamily: this.axisTextFontFamily,
-          fill: 'black',
-        },
-      );
+      this.context = new PIXI.Text('sample', this.axisTextStyle);
       this.context.anchor.y = 0.4;
       this.context.anchor.x = 0.5;
       this.pMain.addChild(this.context);
@@ -115,14 +117,7 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
         const tick = ticks[i];
 
         while (this.axisTexts.length <= i) {
-          const newText = new PIXI.Text(
-            tick,
-            {
-              fontSize: `${this.axisTextFontSize}px`,
-              fontFamily: this.axisTextFontFamily,
-              fill: 'black',
-            },
-          );
+          const newText = new PIXI.Text(tick, this.axisTextStyle);
           this.axisTexts.push(newText);
           this.pMain.addChild(newText);
         }
@@ -216,7 +211,7 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       this.context.text = timeFormat(center, tickDiff);
       this.context.x = xPos;
       this.context.y = this.position[1] + tickEndY + betweenCenterTickAndText;
-      if (this.context.text !== ' ') {
+      if (this.context.text !== '') {
         this.pMain.moveTo(xPos, this.position[1] + tickStartY - 10);
         this.pMain.lineTo(xPos, this.position[1] + tickEndY - 5);
       }
@@ -225,7 +220,7 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
     draw() {
       const graphics = this.pMain;
       graphics.clear();
-      graphics.lineStyle(1, 0x000000, 1);
+      graphics.lineStyle(1, this.tickColor, 1);
 
       const tickStartY = (this.dimensions[1] - tickHeight - textHeight - betweenTickAndText) / 2;
       const tickEndY = tickStartY + tickHeight;
