@@ -16,6 +16,12 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
     class CSVTimeDataFetcherClass {
         private dataConfig: CsvTimeDataConfig;
         private values: any;
+        // Resolves once `this.values` is actually populated. `tilesetInfo()` awaits this
+        // before invoking its callback so HiGlass doesn't request tiles against an empty
+        // array while the fetch is still in flight (previously the callback fired
+        // synchronously, so the first, empty, tile response was cached and nothing
+        // re-rendered once the network fetch actually resolved).
+        private dataPromise: Promise<void>;
 
         constructor(params: any[]) {
             const [dataConfig] = params;
@@ -23,12 +29,13 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
 
             if (!dataConfig.url) {
                 console.error('Please provide `values` of the JSON data');
+                this.dataPromise = Promise.resolve();
                 return;
             }
 
             this.values = [];
             const separator = this.dataConfig.separator ?? ',';
-            this.fetchData().then(data => {
+            this.dataPromise = this.fetchData().then(data => {
                 d3dsvFormat(separator).parse(data, (row: DSVRowString<string>) => {
                     const timestampField = this.dataConfig.timestampField;
                     if (timestampField && this.isValidTimestamp(Number(row[timestampField]))) {
@@ -234,7 +241,7 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
             };
 
             if (callback) {
-                callback(retVal);
+                this.dataPromise.then(() => callback(retVal));
             }
 
             return retVal;
@@ -258,7 +265,7 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
                 }
 
                 validTileIds.push(tileId);
-                tilePromises.push(this.tile(z, x, y));
+                tilePromises.push(this.dataPromise.then(() => this.tile(z, x, y)));
             }
 
             Promise.all(tilePromises).then(values => {
