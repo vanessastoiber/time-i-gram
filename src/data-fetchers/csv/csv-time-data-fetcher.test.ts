@@ -50,6 +50,50 @@ describe('csv-time data fetcher: date parsing', () => {
         ]);
     });
 
+    describe('reads date-times without a zone as UTC, whatever the browser time zone', () => {
+        const originalTz = process.env.TZ;
+        beforeAll(() => {
+            process.env.TZ = 'America/New_York';
+        });
+        afterAll(() => {
+            process.env.TZ = originalTz;
+        });
+
+        it('single date-time columns', async () => {
+            const { rows } = await loadCsv(
+                't\n2016-02-29 16:40:21\n4/12/2016 7:21:00 AM\n4/12/2016 7:21:00 PM\n2010-01-03T23:00:00\n2022-01-01T00:00+01:00',
+                { dateFields: ['t'] }
+            );
+            expect(rows.map(r => r.t)).toEqual([
+                utc(2016, 2, 29, 16, 40, 21),
+                utc(2016, 4, 12, 7, 21),
+                utc(2016, 4, 12, 19, 21),
+                utc(2010, 1, 3, 23),
+                utc(2021, 12, 31, 23) // explicit zone is kept
+            ]);
+        });
+
+        it('date and time-of-day columns', async () => {
+            const { rows } = await loadCsv('d,t\n2016-02-29,16:40:21', { dateFields: ['d', 't'] });
+            expect(rows[0].d).toEqual(utc(2016, 2, 29, 16, 40, 21));
+        });
+
+        it('year/month/day/hour component columns', async () => {
+            const { rows } = await loadCsv('year,month,day,hour\n2016,2,29,16', {
+                dateFields: ['year', 'month', 'day', 'hour']
+            });
+            expect(rows[0].year).toEqual(utc(2016, 2, 29, 16));
+        });
+
+        it('calendar weeks start at UTC midnight', async () => {
+            const { rows } = await loadCsv('year,week\n2016,5', {
+                dateFields: ['year', 'week'],
+                includesCalendarWeek: true
+            });
+            expect(rows[0].year % 86400).toEqual(0);
+        });
+    });
+
     it('warns once and does not place unparseable dates at 1970', async () => {
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const { rows } = await loadCsv('date\nnot a date\n2012-02-30', { dateFields: ['date'] });
