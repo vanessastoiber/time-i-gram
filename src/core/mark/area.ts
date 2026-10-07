@@ -50,9 +50,10 @@ export function drawArea(HGC: import('@higlass/types').HGC, track: any, tile: Ti
     if (IsStackedMark(spec)) {
         // TODO: many parts in this scope are identical as the below `else` statement, so encaptulate this?
 
-        const genomicChannel = model.getGenomicChannel();
+        // stack values that share a position on the genomic, or otherwise temporal, axis
+        const genomicChannel = model.getGenomicChannel()?.field ? model.getGenomicChannel() : model.getTemporalChannel();
         if (!genomicChannel || !genomicChannel.field) {
-            console.warn('Genomic field is not provided in the specification');
+            console.warn('Neither a genomic nor a temporal field is provided in the specification');
             return;
         }
         const pivotedData = group(data, d => d[genomicChannel.field as string]);
