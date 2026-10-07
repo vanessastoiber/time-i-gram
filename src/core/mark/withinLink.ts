@@ -2,7 +2,7 @@ import type * as PIXI from 'pixi.js';
 import type { GoslingTrackModel } from '../../tracks/gosling-track/gosling-track-model';
 import type { Channel } from '@gosling-lang/gosling-schema';
 import { IsChannelDeep, getValueUsingChannel, Is2DTrack } from '@gosling-lang/gosling-schema';
-import { cartesianToPolar, positionToRadian } from '../utils/polar';
+import { cartesianToPolar, isAnticlockwise, positionToRadian } from '../utils/polar';
 import colorToHex from '../utils/color-to-hex';
 import { Bezier } from 'bezier-js';
 
@@ -27,6 +27,7 @@ export function drawWithinLink(g: PIXI.Graphics, trackInfo: any, model: GoslingT
     const trackOuterRadius = spec.outerRadius ?? 300;
     const startAngle = spec.startAngle ?? 0;
     const endAngle = spec.endAngle ?? 360;
+    const ccw = isAnticlockwise(startAngle, endAngle); // `false` for clockwise tracks
     const trackRingSize = trackOuterRadius - trackInnerRadius;
     const tcx = trackWidth / 2.0;
     const tcy = trackHeight / 2.0;
@@ -144,7 +145,7 @@ export function drawWithinLink(g: PIXI.Graphics, trackInfo: any, model: GoslingT
                         trackOuterRadius,
                         positionToRadian(posX1E.x, posX1E.y, tcx, tcy),
                         positionToRadian(posX1.x, posX1.y, tcx, tcy),
-                        false
+                        !ccw
                     );
 
                     // inner curve
@@ -156,7 +157,7 @@ export function drawWithinLink(g: PIXI.Graphics, trackInfo: any, model: GoslingT
                         trackOuterRadius,
                         positionToRadian(posXE.x, posXE.y, tcx, tcy),
                         positionToRadian(posX.x, posX.y, tcx, tcy),
-                        false
+                        !ccw
                     );
                     pathForMouseEvent = Array.from(g.currentPath.points);
                     g.endFill();

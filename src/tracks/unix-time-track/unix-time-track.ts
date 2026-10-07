@@ -150,7 +150,7 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       const outerRadius = this.options.outerRadius * factor;
 
       const r = (outerRadius + innerRadius) / 2.0;
-      const centerPos = cartesianToPolar(cx, width, r, width / 2.0, height / 2.0, endAngle, startAngle);
+      const centerPos = cartesianToPolar(cx, width, r, width / 2.0, height / 2.0, startAngle, endAngle);
       textObj.x = centerPos.x;
       textObj.y = centerPos.y;
 
@@ -159,7 +159,7 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       const metric = HGC.libraries.PIXI.TextMetrics.measureText(textObj.text, txtStyle);
 
       // scale the width of text label so that its width is the same when converted into circular form
-      const tw = ((metric.width / (2 * r * Math.PI)) * width * 360) / (startAngle - endAngle); // Change the denominator to (startAngle - endAngle)
+      const tw = ((metric.width / (2 * r * Math.PI)) * width * 360) / Math.abs(endAngle - startAngle);
       // let [minX, maxX] = [cx + tw / 2.0, cx - tw / 2.0]; // Swap the values of minX and maxX
       let [minX, maxX] = [cx - tw / 2.0, cx + tw / 2.0];
       // make sure not to place the label on the origin

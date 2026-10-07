@@ -1271,6 +1271,10 @@
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
         },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
+        },
         "color": {
           "$ref": "#/definitions/ChannelWithBase"
         },

@@ -1,7 +1,7 @@
 import type * as PIXI from 'pixi.js';
 import type { Tile } from '@gosling-lang/gosling-track';
 import type { GoslingTrackModel } from '../../tracks/gosling-track/gosling-track-model';
-import { cartesianToPolar, valueToRadian } from '../utils/polar';
+import { cartesianToPolar, isAnticlockwise, valueToRadian } from '../utils/polar';
 import colorToHex from '../utils/color-to-hex';
 import type { CompleteThemeDeep } from '../utils/theme';
 import { getTextStyle } from '../utils/text-style';
@@ -33,6 +33,7 @@ export function drawCircularTitle(
     const trackOuterRadius = spec.outerRadius ?? 300;
     const startAngle = spec.startAngle ?? 0;
     const endAngle = spec.endAngle ?? 360;
+    const ccw = isAnticlockwise(startAngle, endAngle); // `false` for clockwise tracks
     const cx = tw / 2.0;
     const cy = th / 2.0;
 
@@ -64,7 +65,7 @@ export function drawCircularTitle(
     const metric = HGC.libraries.PIXI.TextMetrics.measureText(textGraphic.text, txtStyle);
 
     // Scale the width of text label so that its width is the same when converted into circular form
-    const txtWidth = ((metric.width / (2 * titleR * Math.PI)) * tw * 360) / (endAngle - startAngle);
+    const txtWidth = ((metric.width / (2 * titleR * Math.PI)) * tw * 360) / Math.abs(endAngle - startAngle);
     const scaledStartX = padding;
     const scaledEndX = padding + txtWidth;
 
@@ -74,6 +75,8 @@ export function drawCircularTitle(
         const p = cartesianToPolar(i, tw, titleR - metric.height / 2.0, cx, cy, startAngle, endAngle);
         ropePoints.push(new HGC.libraries.PIXI.Point(p.x, p.y));
     }
+    // the points must run clockwise on screen so that the text reads left to right
+    if (!ccw) ropePoints.reverse();
 
     /* Background */
     const startRad = valueToRadian(scaledStartX, tw, startAngle, endAngle);
@@ -82,8 +85,8 @@ export function drawCircularTitle(
     g.lineStyle(1, colorToHex('red'), 0, 0.5);
     g.beginFill(colorToHex(theme.track.titleBackground), 0.5); // TODO: support `theme.track.titleBackgroundOpacity`
     g.moveTo(pos.x, pos.y);
-    g.arc(cx, cy, titleR - metric.height, startRad, endRad, true);
-    g.arc(cx, cy, titleR, endRad, startRad, false);
+    g.arc(cx, cy, titleR - metric.height, startRad, endRad, ccw);
+    g.arc(cx, cy, titleR, endRad, startRad, !ccw);
     g.closePath();
 
     // Render a label
