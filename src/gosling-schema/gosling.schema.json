@@ -9506,12 +9506,11 @@
           "description": "Values of the visual channel."
         },
         "type": {
-          "description": "Specify the data type.",
+          "description": "Specify the data type. A `temporal` axis is only supported on `x`.",
           "enum": [
             "quantitative",
             "nominal",
-            "genomic",
-            "temporal"
+            "genomic"
           ],
           "type": "string"
         },

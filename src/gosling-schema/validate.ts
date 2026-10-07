@@ -55,6 +55,17 @@ export function validateTrack(track: Track) {
             valid = false;
         }
 
+        // temporal axes are drawn and scaled on x only
+        (['y', 'ye', 'y1', 'y1e'] as const).forEach(channelKey => {
+            const channel = spec[channelKey];
+            if (IsChannelDeep(channel) && (channel.type as string) === 'temporal') {
+                errorMessages.push(
+                    `\`temporal\` is only supported on x channels (x, xe, x1, x1e), not on \`${channelKey}\``
+                );
+                valid = false;
+            }
+        });
+
         // combination of visual mark and channel
         const color = spec.color;
         if (spec.mark === 'line' && IsChannelDeep(color) && color.type === 'quantitative') {
