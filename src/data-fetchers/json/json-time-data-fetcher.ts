@@ -42,15 +42,7 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
             if (dataConfig.url) {
                 this.values = [];
                 this.dataPromise = this.fetchData(dataConfig.url).then(data => {
-                    data.map((row: any) => {
-                        const timestampField = this.dataConfig.timestampField;
-                        if (timestampField && this.isValidTimestamp(row.timestampField)) {
-                            return row;
-                        }
-                        const convertToDate = this.dataConfig.dateFields;
-                        const convertedRow = this.processRow(row, convertToDate);
-                        this.values.push(convertedRow);
-                    });
+                    data.forEach((row: any) => this.values.push(this.convertRow(row)));
                 })
                     .catch(error => {
                         console.error(error);
@@ -58,13 +50,7 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
             } else {
                 this.values = dataConfig.values.map((row: any) => {
                     try {
-                        const timestampField = this.dataConfig.timestampField;
-                        if (timestampField && this.isValidTimestamp(row.timestampField)) {
-                            return row;
-                        }
-                        const convertToDate = this.dataConfig.dateFields;
-                        const convertedRow = this.processRow(row, convertToDate);
-                        return convertedRow;
+                        return this.convertRow(row);
                     } catch {
                         // skip the rows that had errors in them
                         return undefined;
@@ -91,6 +77,17 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
         isValidTimestamp(value: number) {
             const date = new Date(value);
             return !isNaN(date.getTime());
+        }
+
+        /** Convert the time fields of one row: a Unix timestamp in `timestampField`, otherwise `dateFields`. */
+        convertRow(row: any) {
+            const timestampField = this.dataConfig.timestampField;
+            const timestamp = timestampField ? row[timestampField] : undefined;
+            if (timestampField && timestamp !== '' && timestamp !== null && this.isValidTimestamp(Number(timestamp))) {
+                row[timestampField] = Number(timestamp);
+                return row;
+            }
+            return this.processRow(row, this.dataConfig.dateFields);
         }
 
         createDateFromFields(fields: { year: number; month: number; day: number }) {
