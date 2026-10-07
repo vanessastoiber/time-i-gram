@@ -959,7 +959,15 @@ export interface JsonTimeData {
     sampleLength?: number;
     dateFields?: string[];
     timestampField?: string;
+    /** Unit of the Unix timestamps in `timestampField`: seconds (`"s"`) or milliseconds (`"ms"`).
+     *
+     * __Default:__ `"s"`
+     */
+    timestampUnit?: TimestampUnit;
 }
+
+/** Unit of Unix timestamps: seconds or milliseconds. */
+export type TimestampUnit = 's' | 'ms';
 
 export interface CSVTimeData {
     /**
@@ -981,6 +989,12 @@ export interface CSVTimeData {
     includesCalendarWeek?: boolean;
     interval?: string[];
     timestampField?: string;
+    /** Unit of the Unix timestamps in `timestampField` and in numeric `interval` columns:
+     * seconds (`"s"`) or milliseconds (`"ms"`).
+     *
+     * __Default:__ `"s"`
+     */
+    timestampUnit?: TimestampUnit;
 }
 
 

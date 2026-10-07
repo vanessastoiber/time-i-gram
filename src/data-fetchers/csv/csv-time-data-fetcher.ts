@@ -2,7 +2,7 @@ import { sampleSize } from 'lodash-es';
 import { dsvFormat as d3dsvFormat, type DSVRowString } from 'd3-dsv';
 import type { CSVTimeData } from '@gosling-lang/gosling-schema';
 import { type CommonDataConfig, filterUsingGenoPos } from '../utils';
-import { formatIsoDate, parseDateTime, utcSeconds, TIME_MAX_POS, TIME_MIN_POS } from '../time-utils';
+import { formatIsoDate, parseDateTime, timestampToSeconds, utcSeconds, TIME_MAX_POS, TIME_MIN_POS } from '../time-utils';
 
 type CsvTimeDataConfig = CSVTimeData & CommonDataConfig;
 
@@ -40,7 +40,8 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
             this.dataPromise = this.fetchData().then(data => {
                 d3dsvFormat(separator).parse(data, (row: DSVRowString<string>) => {
                     const timestampField = this.dataConfig.timestampField;
-                    if (timestampField && this.isValidTimestamp(Number(row[timestampField]))) {
+                    if (timestampField && row[timestampField] !== '' && this.isValidTimestamp(Number(row[timestampField]))) {
+                        (row as any)[timestampField] = timestampToSeconds(Number(row[timestampField]), this.dataConfig.timestampUnit);
                         this.values.push(row);
                         return row;
                     }
@@ -51,7 +52,7 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
                         const value = row[field];
                         if (value === undefined || value === '') return;
                         (row as any)[field] = /^-?\d+(\.\d+)?$/.test(value.trim())
-                            ? Number(value)
+                            ? timestampToSeconds(Number(value), this.dataConfig.timestampUnit)
                             : this.parseAndConvertToSeconds(value);
                     });
                     // Interval columns are already converted, so leave them out of `dateFields`.

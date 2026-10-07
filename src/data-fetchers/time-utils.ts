@@ -63,6 +63,11 @@ export function parseDateOnly(value: string, options: DateOrderOptions = {}): nu
     return utcSeconds(year, month, day);
 }
 
+/** Convert a Unix timestamp in the given unit to Unix seconds. */
+export function timestampToSeconds(value: number, unit: 's' | 'ms' = 's'): number {
+    return unit === 'ms' ? value / 1000 : value;
+}
+
 /** Format Unix seconds as an ISO calendar date (`YYYY-MM-DD`, UTC). */
 export function formatIsoDate(seconds: number): string {
     return new Date(seconds * 1000).toISOString().slice(0, 10);

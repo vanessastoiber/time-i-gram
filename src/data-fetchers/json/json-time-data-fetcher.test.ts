@@ -31,6 +31,11 @@ describe('json-time data fetcher: date parsing', () => {
         }
     });
 
+    it('reads timestampField in milliseconds with timestampUnit "ms"', async () => {
+        const { rows } = await loadValues([{ t: 1327968000000 }], { timestampField: 't', timestampUnit: 'ms' });
+        expect(rows[0].t).toEqual(utc(2012, 1, 31));
+    });
+
     it('builds dates from year/month/day columns in UTC', async () => {
         const { rows } = await loadValues([{ year: 2000, month: 3 }], { dateFields: ['year', 'month'] });
         expect(rows[0].year).toEqual(utc(2000, 3, 1));
