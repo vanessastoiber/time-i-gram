@@ -774,6 +774,8 @@ export interface X extends AxisCommon {
 }
 
 export interface Y extends AxisCommon {
+    /** Specify the data type. A `temporal` axis is only supported on `x`. */
+    type?: 'quantitative' | 'nominal' | 'genomic';
     /** Custom baseline of the y-axis. __Default__: `0` */
     baseline?: string | number;
     /** Specify whether to use zero baseline. __Default__: `true`  */
