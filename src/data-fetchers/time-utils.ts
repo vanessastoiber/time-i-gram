@@ -32,12 +32,19 @@ function detectDateOrder(parts: string[], options: DateOrderOptions): DateOrder 
  * Unix seconds of a UTC calendar date and time, or `NaN` if the date does not exist (e.g. Feb 30).
  */
 export function utcSeconds(year: number, month: number, day: number, hour = 0, minute = 0, second = 0): number {
-    // TODO: dates outside 1900-2099 are rejected to match the previous parser.
-    if (year < 1900 || year > 2099) return NaN;
-    const date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
-    if (date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return NaN;
+    const date = new Date(Date.UTC(2000, month - 1, day, hour, minute, second));
+    // `Date.UTC` maps years 0-99 to 1900-1999, so set the full year explicitly.
+    date.setUTCFullYear(year, month - 1, day);
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return NaN;
     return date.getTime() / 1000;
 }
+
+/**
+ * Extent of the tile grid that the temporal data fetchers report to HiGlass,
+ * in Unix seconds: 0001-01-01 to 10000-01-01 (UTC). Rows outside it are never drawn.
+ */
+export const TIME_MIN_POS = -62135596800;
+export const TIME_MAX_POS = 253402300800;
 
 /**
  * Parse a calendar date without a time of day, such as `2012-01-31`, `2012/01/31`, `01/31/2012`,

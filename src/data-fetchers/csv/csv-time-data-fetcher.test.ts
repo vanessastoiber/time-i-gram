@@ -29,6 +29,16 @@ describe('csv-time data fetcher: date parsing', () => {
         expect(rows[0].date).toEqual(utc(2012, 2, 1));
     });
 
+    it('parses dates before 1900 and puts dates before 1970 into tiles', async () => {
+        const { fetcher, rows } = await loadCsv('date,v\n1066-10-14,1\n1850,2\n1969-12-31,3\n2012-01-31,4', {
+            dateFields: ['date'],
+            x: 'date'
+        });
+        expect(rows.map(r => r.date)).toEqual([utc(1066, 10, 14), utc(1850, 1, 1), utc(1969, 12, 31), utc(2012, 1, 31)]);
+        const tile = await new Promise<any>(resolve => fetcher.fetchTilesDebounced(resolve, ['0.0']));
+        expect(tile['0.0'].tabularData.map((r: any) => r.v)).toEqual(['1', '2', '3', '4']);
+    });
+
     it('warns once and does not place unparseable dates at 1970', async () => {
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const { rows } = await loadCsv('date\nnot a date\n2012-02-30', { dateFields: ['date'] });

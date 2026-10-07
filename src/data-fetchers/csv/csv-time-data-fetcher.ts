@@ -2,7 +2,7 @@ import { sampleSize } from 'lodash-es';
 import { dsvFormat as d3dsvFormat, type DSVRowString } from 'd3-dsv';
 import type { CSVTimeData } from '@gosling-lang/gosling-schema';
 import { type CommonDataConfig, filterUsingGenoPos } from '../utils';
-import { formatIsoDate, parseDateOnly } from '../time-utils';
+import { formatIsoDate, parseDateOnly, TIME_MAX_POS, TIME_MIN_POS } from '../time-utils';
 
 type CsvTimeDataConfig = CSVTimeData & CommonDataConfig;
 
@@ -208,14 +208,13 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
 
         tilesetInfo(callback?: any) {
             const TILE_SIZE = 1024;
-            // TODO: Make dynamic
-            const totalLength = 1702153965000;
+            const totalLength = TIME_MAX_POS - TIME_MIN_POS;
             const retVal = {
                 tile_size: TILE_SIZE,
                 max_zoom: Math.ceil(Math.log(totalLength / TILE_SIZE) / Math.log(2)),
                 max_width: totalLength,
-                min_pos: [0, 0],
-                max_pos: [totalLength, totalLength]
+                min_pos: [TIME_MIN_POS, TIME_MIN_POS],
+                max_pos: [TIME_MAX_POS, TIME_MAX_POS]
             };
 
             if (callback) {
