@@ -4,6 +4,11 @@ import { type CommonDataConfig, filterUsingGenoPos } from '../utils';
 
 type CsvTimeDataConfig = JsonTimeData & CommonDataConfig;
 
+// Epoch-second bounds of the synthetic tileset this fetcher reports to HiGlass (~1500 CE to
+// ~2030 CE). Shared between `tilesetInfo()` and `tile()` so the two stay consistent.
+const MIN_POS_SECONDS = -14831769600;
+const MAX_POS_SECONDS = 1893456000;
+
 /**
  * HiGlass data fetcher specific for Gosling which ultimately will accept any types of data other than JSON values.
  */
@@ -15,6 +20,12 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
     class JsonTimeDataFetcherClass {
         private dataConfig: CsvTimeDataConfig;
         private values: any;
+        // Resolves once `this.values` is actually populated. `tilesetInfo()` awaits this
+        // before invoking its callback so HiGlass doesn't request tiles against an empty
+        // array while a `url`-based fetch is still in flight (previously the callback fired
+        // synchronously, so the first, empty, tile response was cached and nothing
+        // re-rendered once the network fetch actually resolved).
+        private dataPromise: Promise<void>;
 
         constructor(params: any[]) {
             const [dataConfig] = params;
@@ -22,12 +33,13 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
 
             if (!dataConfig.values && !dataConfig.url) {
                 console.error('Please provide `values` of the JSON data');
+                this.dataPromise = Promise.resolve();
                 return;
             }
 
             if (dataConfig.url) {
                 this.values = [];
-                this.fetchData(dataConfig.url).then(data => {
+                this.dataPromise = this.fetchData(dataConfig.url).then(data => {
                     data.map((row: any) => {
                         const timestampField = this.dataConfig.timestampField;
                         if (timestampField && this.isValidTimestamp(row.timestampField)) {
@@ -56,6 +68,7 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
                         return undefined;
                     }
                 });
+                this.dataPromise = Promise.resolve();
             }
         }
 
@@ -105,18 +118,26 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
 
         tilesetInfo(callback?: any) {
             const TILE_SIZE = 1024;
-            // TODO: Make dynamic
-            const totalLength = 3088269832;
+            // Epoch-second bounds covering a wide historical/future date range. `max_width`
+            // must equal `max_pos - min_pos` -- HiGlass's tile-grid math (calculateTiles)
+            // derives each tile's span from `min_pos` and `max_width`, so if the two disagree
+            // (as they previously did: `max_width` was a smaller, unrelated constant) the
+            // computed tile grid doesn't actually cover `[min_pos, max_pos]`. Any date whose
+            // seconds value falls outside the resulting (wrong) grid is silently treated as
+            // having zero visible tiles, so it's never fetched or drawn.
+            const minPos = MIN_POS_SECONDS;
+            const maxPos = MAX_POS_SECONDS;
+            const totalLength = maxPos - minPos;
             const retVal = {
                 tile_size: TILE_SIZE,
                 max_zoom: Math.ceil(Math.log(totalLength / TILE_SIZE) / Math.log(2)),
                 max_width: totalLength,
-                min_pos: [-14831769600, -14831769600],
-                max_pos: [1893456000, 1893456000]
+                min_pos: [minPos, minPos],
+                max_pos: [maxPos, maxPos]
             };
 
             if (callback) {
-                callback(retVal);
+                this.dataPromise.then(() => callback(retVal));
             }
 
             return retVal;
@@ -140,7 +161,7 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
                 }
 
                 validTileIds.push(tileId);
-                tilePromises.push(this.tile(z, x, y));
+                tilePromises.push(this.dataPromise.then(() => this.tile(z, x, y)));
             }
 
             Promise.all(tilePromises).then(values => {
@@ -159,12 +180,8 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
             const tsInfo = this.tilesetInfo();
             const tileWidth = +tsInfo.max_width / 2 ** +z;
 
-            // get the bounds of the tile
-            const minX = -14831769600;
-            const maxX = 1893456000;
-
             // filter the data so that visible data is sent to tracks
-            let tabularData = filterUsingGenoPos(this.values, [minX, maxX], this.dataConfig);
+            let tabularData = filterUsingGenoPos(this.values, [MIN_POS_SECONDS, MAX_POS_SECONDS], this.dataConfig);
 
             // sample the data to make it managable for visualization components
             const sizeLimit = this.dataConfig.sampleLength ?? 1000;
