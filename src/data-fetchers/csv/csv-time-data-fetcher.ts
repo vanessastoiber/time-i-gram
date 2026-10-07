@@ -258,8 +258,9 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
             let tabularData = filterUsingGenoPos(this.values, [minX, maxX], this.dataConfig);
 
             // sample the data to make it managable for visualization components
-            const sizeLimit = this.dataConfig.sampleLength ?? 1000;
-            if (sizeLimit < tabularData.length) {
+            // sampling is opt-in: randomly dropping rows of a time series is misleading by default
+            const sizeLimit = this.dataConfig.sampleLength;
+            if (sizeLimit !== undefined && sizeLimit < tabularData.length) {
                 tabularData = sampleSize(tabularData, sizeLimit);
             }
 

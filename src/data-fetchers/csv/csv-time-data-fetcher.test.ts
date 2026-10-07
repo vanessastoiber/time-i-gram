@@ -3,6 +3,9 @@ import CSVTimeDataFetcher from './csv-time-data-fetcher';
 /** Seconds of a UTC date, e.g. utc(2012, 1, 31). */
 const utc = (y: number, m: number, d: number, h = 0, mi = 0, s = 0) => Date.UTC(y, m - 1, d, h, mi, s) / 1000;
 
+/** ISO date of the i-th day after 2000-01-01. */
+const formatDay = (i: number) => new Date(Date.UTC(2000, 0, 1 + i)).toISOString().slice(0, 10);
+
 /** Create a `csv-time` fetcher over in-memory CSV text and return its parsed rows. */
 async function loadCsv(csv: string, config: Record<string, unknown> = {}) {
     const originalFetch = globalThis.fetch;
@@ -99,6 +102,17 @@ describe('csv-time data fetcher: date parsing', () => {
         expect(seconds.rows[0].t).toEqual(utc(2012, 1, 31));
         const millis = await loadCsv('t\n1327968000000', { timestampField: 't', timestampUnit: 'ms' });
         expect(millis.rows[0].t).toEqual(utc(2012, 1, 31));
+    });
+
+    it('keeps every row of a tile unless sampleLength is set', async () => {
+        const csv = 'date\n' + Array.from({ length: 1500 }, (_, i) => formatDay(i)).join('\n');
+        const all = await loadCsv(csv, { dateFields: ['date'], x: 'date' });
+        const allTile = await new Promise<any>(resolve => all.fetcher.fetchTilesDebounced(resolve, ['0.0']));
+        expect(allTile['0.0'].tabularData.length).toEqual(1500);
+
+        const sampled = await loadCsv(csv, { dateFields: ['date'], x: 'date', sampleLength: 100 });
+        const sampledTile = await new Promise<any>(resolve => sampled.fetcher.fetchTilesDebounced(resolve, ['0.0']));
+        expect(sampledTile['0.0'].tabularData.length).toEqual(100);
     });
 
     it('warns once and does not place unparseable dates at 1970', async () => {

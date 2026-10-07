@@ -952,9 +952,10 @@ export interface JsonTimeData {
     /** Values in the form of JSON. */
     values?: Datum[];
 
-    /** Specify the number of rows loaded from the URL.
+    /** Opt-in random sampling: the maximum number of rows per tile. When a tile has more rows,
+     * a random sample of this size is drawn, so some rows are not shown.
      *
-     * __Default:__ `1000`
+     * __Default:__ no sampling (all rows are shown)
      */
     sampleLength?: number;
     dateFields?: string[];
@@ -978,9 +979,10 @@ export interface CSVTimeData {
     url: string;
     separator?: string;
 
-    /** Specify the number of rows loaded from the URL.
+    /** Opt-in random sampling: the maximum number of rows per tile. When a tile has more rows,
+     * a random sample of this size is drawn, so some rows are not shown.
      *
-     * __Default:__ `1000`
+     * __Default:__ no sampling (all rows are shown)
      */
     sampleLength?: number;
     dateFields?: string[];

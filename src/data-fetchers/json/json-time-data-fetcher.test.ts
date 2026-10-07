@@ -36,6 +36,17 @@ describe('json-time data fetcher: date parsing', () => {
         expect(rows[0].t).toEqual(utc(2012, 1, 31));
     });
 
+    it('keeps every row of a tile unless sampleLength is set', async () => {
+        const values = () => Array.from({ length: 1500 }, (_, i) => ({ t: 946684800 + i * 86400 }));
+        const all = await loadValues(values(), { timestampField: 't', x: 't' });
+        const allTile = await new Promise<any>(resolve => all.fetcher.fetchTilesDebounced(resolve, ['0.0']));
+        expect(allTile['0.0'].tabularData.length).toEqual(1500);
+
+        const sampled = await loadValues(values(), { timestampField: 't', x: 't', sampleLength: 100 });
+        const sampledTile = await new Promise<any>(resolve => sampled.fetcher.fetchTilesDebounced(resolve, ['0.0']));
+        expect(sampledTile['0.0'].tabularData.length).toEqual(100);
+    });
+
     it('builds dates from year/month/day columns in UTC', async () => {
         const { rows } = await loadValues([{ year: 2000, month: 3 }], { dateFields: ['year', 'month'] });
         expect(rows[0].year).toEqual(utc(2000, 3, 1));
