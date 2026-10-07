@@ -67,3 +67,54 @@ export function parseDateOnly(value: string, options: DateOrderOptions = {}): nu
 export function formatIsoDate(seconds: number): string {
     return new Date(seconds * 1000).toISOString().slice(0, 10);
 }
+
+/**
+ * Seconds since midnight of a time of day such as `7:21`, `16:40:21`, `16:40:21.5` or `7:21:00 PM`,
+ * or `NaN` if the string is not a valid time.
+ */
+export function parseTimeOfDay(value: string): number {
+    const match = /^(\d{1,2}):(\d{2})(?::(\d{2}(?:\.\d+)?))?\s*([AaPp][Mm])?$/.exec(value.trim());
+    if (!match) return NaN;
+    let hour = +match[1];
+    const [minute, second, meridiem] = [+match[2], +(match[3] ?? 0), match[4]?.toUpperCase()];
+    if (meridiem) {
+        if (hour < 1 || hour > 12) return NaN;
+        hour = (hour % 12) + (meridiem === 'PM' ? 12 : 0);
+    }
+    if (hour > 23 || minute > 59 || second >= 60) return NaN;
+    return hour * 3600 + minute * 60 + second;
+}
+
+/**
+ * Parse a date with an optional time of day into Unix seconds.
+ * A string with an explicit zone (`2022-01-01T00:00Z`, `...+01:00`) keeps that zone; every other
+ * string is read as UTC so that it lines up with the UTC time axis regardless of the browser's
+ * time zone. Formats this parser does not know are handed to `Date.parse`, and the local date and
+ * time it returns are read back as UTC. Returns `NaN` if the string cannot be parsed.
+ */
+export function parseDateTime(value: string, options: DateOrderOptions = {}): number {
+    const s = value.trim();
+    if (/\d[T ]\d/.test(s) && /(Z|[+-]\d{2}:?\d{2})$/.test(s)) {
+        return Date.parse(s) / 1000;
+    }
+    const [datePart, ...rest] = s.split(/[T\s]+/);
+    const timePart = rest.join(' ');
+    const day = parseDateOnly(datePart, options);
+    if (!isNaN(day)) {
+        if (!timePart) return day;
+        const time = parseTimeOfDay(timePart);
+        if (!isNaN(time)) return day + time;
+    }
+    // A numeric date that did not parse is invalid (e.g. Feb 30); do not let `Date.parse` roll it over.
+    if (/^\d+([-./]\d+){2}$|^\d{4}$/.test(datePart)) return NaN;
+    const local = new Date(s);
+    if (isNaN(local.getTime())) return NaN;
+    return utcSeconds(
+        local.getFullYear(),
+        local.getMonth() + 1,
+        local.getDate(),
+        local.getHours(),
+        local.getMinutes(),
+        local.getSeconds() + local.getMilliseconds() / 1000
+    );
+}

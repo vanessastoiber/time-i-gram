@@ -2,7 +2,7 @@ import { sampleSize } from 'lodash-es';
 import { dsvFormat as d3dsvFormat, type DSVRowString } from 'd3-dsv';
 import type { CSVTimeData } from '@gosling-lang/gosling-schema';
 import { type CommonDataConfig, filterUsingGenoPos } from '../utils';
-import { formatIsoDate, parseDateOnly, TIME_MAX_POS, TIME_MIN_POS } from '../time-utils';
+import { formatIsoDate, parseDateTime, utcSeconds, TIME_MAX_POS, TIME_MIN_POS } from '../time-utils';
 
 type CsvTimeDataConfig = CSVTimeData & CommonDataConfig;
 
@@ -88,23 +88,9 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
             return !isNaN(date.getTime());
         }
 
-        isValidDate(dateString: string) {
-            return !isNaN(Date.parse(dateString));
-        }
-
         isValidTimeFormat(timeString: string) {
         const timeRegex = /^\d{2}:\d{2}:\d{2}$/;
         return timeRegex.test(timeString);
-        }
-
-        // parse each date to YYYY-MM-DD format
-        parseDate(dateString: string) {
-            // only handle dates without time
-            if (dateString.includes('T') || dateString.includes(':')) {
-                return dateString;
-            };
-            const seconds = parseDateOnly(dateString, this.dataConfig);
-            return isNaN(seconds) ? undefined : formatIsoDate(seconds);
         }
 
         /** Warn (once per data source) about a date that cannot be parsed; such rows are not drawn. */
@@ -136,12 +122,12 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
                             break;
                         case 2:
                             if (this.isValidTimeFormat(row[convertToDate[1]])) {
-                                const fullDate = `${this.parseDate(row[convertToDate[0]]) ?? row[convertToDate[0]]}T${row[convertToDate[1]]}`;
+                                const fullDate = `${row[convertToDate[0]]} ${row[convertToDate[1]]}`;
                                 row[convertToDate[0]] = this.parseAndConvertToSeconds(fullDate);
                             // Check if we're dealing with a calendar week format in the second convertToDate field
                             } else if (this.dataConfig.includesCalendarWeek && this.containsCalendarWeek(row[convertToDate[1]])) {
                                 const calendarWeekMonday = this.weekToDate(row[convertToDate[0]], row[convertToDate[1]]);
-                                row[convertToDate[0]] = (calendarWeekMonday) ? this.parseAndConvertToSeconds(calendarWeekMonday) : 0;
+                                row[convertToDate[0]] = (calendarWeekMonday) ? this.parseAndConvertToSeconds(calendarWeekMonday) : NaN;
                             } else {
                                 convertToDate.forEach((field, i) => {
                                     row[field] = this.parseAndConvertToSeconds(row[field]);
@@ -155,9 +141,15 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
                                     timeFormat[field as keyof typeof timeFormat] = row[field];
                                 }
                             }
-                            row[convertToDate[0]] = this.parseAndConvertToSeconds(
-                                `${timeFormat.year}-${timeFormat.month}-${timeFormat.day}T${timeFormat.hour}:${timeFormat.minute}:${timeFormat.second}`
+                            row[convertToDate[0]] = utcSeconds(
+                                +timeFormat.year,
+                                +timeFormat.month,
+                                +timeFormat.day,
+                                +timeFormat.hour,
+                                +timeFormat.minute,
+                                +timeFormat.second
                             );
+                            if (isNaN(row[convertToDate[0]])) this.warnUnparseable(JSON.stringify(timeFormat));
                             break;
                     }
                 }
@@ -168,9 +160,9 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
             }
         }
         
+        /** Parse a date or date-time string into Unix seconds (UTC unless the string has a zone). */
         parseAndConvertToSeconds(date: string): number {
-            const validatedDate = this.parseDate(date);
-            const seconds = validatedDate === undefined ? NaN : Date.parse(validatedDate) / 1000;
+            const seconds = parseDateTime(date, this.dataConfig);
             if (isNaN(seconds)) this.warnUnparseable(date);
             return seconds;
         }
@@ -192,14 +184,14 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
             if (weekNumber === undefined) {
                 return undefined;
             }
-            var date = new Date(Number(year), 0, 1 + (weekNumber - 1) * 7);
-            if (date.getDay() <= 4)
-                date.setDate(date.getDate() - date.getDay() + 1);
+            const date = new Date(Date.UTC(2000, 0, 1 + (weekNumber - 1) * 7));
+            date.setUTCFullYear(Number(year));
+            if (date.getUTCDay() <= 4)
+                date.setUTCDate(date.getUTCDate() - date.getUTCDay() + 1);
             else
-                date.setDate(date.getDate() + 8 - date.getDay());
-            
-            // Format the date as a string
-            return `${date.getFullYear()}-${("0" + (date.getMonth() + 1)).slice(-2)}-${("0" + date.getDate()).slice(-2)}`;
+                date.setUTCDate(date.getUTCDate() + 8 - date.getUTCDay());
+
+            return formatIsoDate(date.getTime() / 1000);
         }
 
         tilesetInfo(callback?: any) {
