@@ -7,6 +7,9 @@ import { EX_SPEC_TEMPORAL_OVERVIEW_DETAIL } from './json-spec/temporal-data_over
 import { EX_SPEC_TEMPORAL_SEATTLE_WEATHER } from './spec/temporal-data_seattle-weather';
 import { EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR } from './spec/temporal-data_unemployment-circular-linear';
 import { EX_SPEC_TEMPORAL_SUPP_UNEMPLOYMENT } from './spec/temporal-data_supp-unemployment';
+import { EX_SPEC_TEMPORAL_SUPP_SEATTLE_WEATHER } from './spec/temporal-data_supp-seattle-weather';
+import { EX_SPEC_TEMPORAL_SUPP_SOLAR_WEATHER } from './spec/temporal-data_supp-solar-weather';
+import { EX_SPEC_TEMPORAL_SUPP_NYC_TAXI } from './spec/temporal-data_supp-nyc-taxi';
 
 /** The JS code blocks of README.md that build a spec, evaluated to the spec object. */
 function readmeSpecs(): Record<string, GoslingSpec> {
@@ -24,6 +27,9 @@ const examples: Record<string, GoslingSpec> = {
     'seattle-weather': EX_SPEC_TEMPORAL_SEATTLE_WEATHER,
     'unemployment-circular-linear': EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR,
     'supp S3 unemployment': EX_SPEC_TEMPORAL_SUPP_UNEMPLOYMENT,
+    'supp S4 seattle weather': EX_SPEC_TEMPORAL_SUPP_SEATTLE_WEATHER,
+    'supp S5 solar and weather': EX_SPEC_TEMPORAL_SUPP_SOLAR_WEATHER,
+    'supp S6 NYC taxi': EX_SPEC_TEMPORAL_SUPP_NYC_TAXI,
     ...readmeSpecs()
 };
 

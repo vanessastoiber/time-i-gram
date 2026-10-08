@@ -1,9 +1,10 @@
 import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 
 // Supplementary material, Fig. S5 (Solar Power Generation and Local Weather; paper Fig. 1B).
-// Copied verbatim from the supplementary PDF. The printed spec is a fragment
-// (root keys without the enclosing braces); it is wrapped in a root object here
-// and the trailing `];` became `]`. Not yet fixed: see docs/grammar-audit.md §7.
+// Copied from the supplementary PDF (a fragment, wrapped in a root object). Fixed since
+// (docs/grammar-audit.md §7): the Overview reads the PV file's date column instead of `time`, and
+// `type` / `legend` are removed from fixed colors (`{ value }`), where they were ignored and made the
+// spec schema-invalid. The data is daily for 2022 (the paper describes hourly data for 2021-2024).
 
 const spec = {
     xDomain: {
@@ -28,7 +29,7 @@ const spec = {
             alignment: 'overlay',
 
             x: {
-                field: 'time',
+                field: 'Datum und Uhrzeit',
                 type: 'temporal',
                 axis: 'bottom'
             },
@@ -75,9 +76,7 @@ const spec = {
                 {
                     mark: 'area',
                     color: {
-                        value: '#bae4b3',
-                        type: 'nominal',
-                        legend: true
+                        value: '#bae4b3'
                     },
                     y: {
                         field: 'Energie ins Netz eingespeist',
@@ -105,8 +104,7 @@ const spec = {
                 {
                     mark: 'area',
                     color: {
-                        value: '#fcae91',
-                        legend: true
+                        value: '#fcae91'
                     },
                     y: {
                         field: 'Eigenverbrauch',
