@@ -37,8 +37,17 @@ import {
     parseSubJSON,
     replaceString,
     splitExon,
-    inferSvType
+    inferSvType,
+    truncateTime,
+    binByTimeUnit
 } from '../../core/utils/data-transform';
+import {
+    ABSOLUTE_TIME,
+    getTrackTimeCoordinates,
+    getTrackTimeUnit,
+    getTrackTimeUnitTiling,
+    isRowInTile
+} from '../../core/utils/time-coordinate-system';
 import { publish } from '../../api/pubsub';
 import { getRelativeGenomicPosition } from '../../core/utils/assembly';
 import { getTextStyle } from '../../core/utils/text-style';
@@ -876,6 +885,23 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
         }
 
         /**
+         * Rows of a tile for one resolved track of a track that aggregates by time unit. The time data fetchers
+         * return every row whose unit starts in the tile, for the units of all overlaid tracks (and, for
+         * overlaid tracks without a unit, every row in the tile). Each resolved track keeps the rows of its own
+         * units, or its raw rows, so that every unit is aggregated once, from all of its rows.
+         */
+        #rowsOfTileForTimeUnit(tile: Tile, resolvedSpec: SingleTrack, rows: Datum[]): Datum[] {
+            const tiling = getTrackTimeUnitTiling(resolvedSpec);
+            if (!tiling || !tile.tileData.tilePos || !this.tilesetInfo) return Array.from(rows);
+            const { tileX, tileWidth } = this.getTilePosAndDimensions(tile.tileData.zoomLevel, tile.tileData.tilePos);
+            const coordinates = getTrackTimeCoordinates(resolvedSpec);
+            const coordField = coordinates?.fields.find(f => f.source === tiling.source)?.coord ?? tiling.source;
+            const unit = getTrackTimeUnit(resolvedSpec)?.unit;
+            const system = coordinates?.system ?? ABSOLUTE_TIME;
+            return rows.filter(row => isRowInTile(row, [tileX, tileX + tileWidth], unit, tiling.source, coordField, system));
+        }
+
+        /**
          * Apply data transformation to each of the overlaid tracks and generate GoslingTrackModels.
          */
         transformDataAndCreateModels(tile: Tile) {
@@ -892,11 +918,14 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
 
             const resolvedTracks = this.#getResolvedTracks();
             resolvedTracks.forEach(resolvedSpec => {
-                let tabularDataTransformed = Array.from(tileInfo.tabularData);
+                let tabularDataTransformed = this.#rowsOfTileForTimeUnit(tile, resolvedSpec, tileInfo.tabularData);
                 resolvedSpec.dataTransform?.forEach(t => {
                     switch (t.type) {
                         case 'filter':
                             tabularDataTransformed = filterData(t, tabularDataTransformed);
+                            break;
+                        case 'timeUnit':
+                            tabularDataTransformed = truncateTime(t, tabularDataTransformed);
                             break;
                         case 'interval':
                             tabularDataTransformed = enableInterval(t, tabularDataTransformed);
@@ -930,6 +959,13 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                             break;
                     }
                 });
+
+                // `x.timeUnit`: place rows at their unit and aggregate (after the data transforms, e.g. filters)
+                const timeUnit = getTrackTimeUnit(resolvedSpec);
+                if (timeUnit) {
+                    const system = getTrackTimeCoordinates(resolvedSpec)?.system ?? ABSOLUTE_TIME;
+                    tabularDataTransformed = binByTimeUnit(timeUnit, tabularDataTransformed, system);
+                }
 
                 // TODO: Remove the following block entirely and use the `rawData` API in the Editor (June-02-2022)
                 // Send data preview to the editor so that it can be shown to users.

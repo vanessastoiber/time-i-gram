@@ -1,4 +1,5 @@
 import type {
+    TimeUnit,
     ChannelDeep,
     CommonTrackDef,
     CommonViewDef,
@@ -9,7 +10,7 @@ import type {
 } from '@gosling-lang/gosling-schema';
 import { IsChannelDeep, IsOverlaidTrack } from '@gosling-lang/gosling-schema';
 import { getTemporalChannelFromTrack } from '../gosling-schema/validate';
-import { parseDuration, parseTimeValue } from '../core/utils/time-units';
+import { TIME_UNITS, parseDuration, parseTimeValue } from '../core/utils/time-units';
 import {
     ABSOLUTE_TIME,
     PERIOD_UNITS,
@@ -22,7 +23,14 @@ import {
     setTrackTimeCoordinates,
     timeCoordinateSignature,
     type TimeCoordinateSystem,
-    type TrackTimeCoordinates
+    type TrackTimeCoordinates,
+    TIME_AGGREGATE_OPS,
+    getTrackTimeUnit,
+    setTrackTimeUnit,
+    setTrackTimeUnitTiling,
+    unitsWithinPeriod,
+    type TimeAggregateOp,
+    type TimeUnitBinning
 } from '../core/utils/time-coordinate-system';
 import { traverseTracksAndViews } from './spec-preprocess';
 
@@ -121,7 +129,118 @@ function resolveTrack(track: Track, warn: Warn) {
         }
     });
 
-    if (isTemporal) resolveTimeCoordinates(track, warn);
+    if (isTemporal) {
+        resolveTimeCoordinates(track, warn);
+        resolveTimeUnits(track, warn);
+    }
+}
+
+const NOMINAL_CHANNELS = ['color', 'row', 'stroke', 'strokeWidth', 'opacity', 'size', 'text'] as const;
+const AGGREGATABLE_CHANNELS = ['y', 'ye', 'color', 'size', 'opacity', 'stroke', 'strokeWidth', 'text'] as const;
+
+/**
+ * `x.timeUnit` (channel form): for each resolved member of the track with a time unit, write the binning spec
+ * (`_timeUnit`) into the member, point `x` (and, for bars and rects, `xe`) at the unit start and end fields
+ * that the track computes, and move `aggregate`s from the channels into the binning spec (so the experimental
+ * nominal aggregation does not run as well). Inherited channels are copied into the members first.
+ * The track gets `_timeUnitTiling`, which makes the data fetcher assign whole units to tiles.
+ */
+function resolveTimeUnits(track: Track, warn: Warn) {
+    const timeCoordinates = getTrackTimeCoordinates(track);
+    const system = timeCoordinates?.system ?? ABSOLUTE_TIME;
+    const isOverlay = IsOverlaidTrack(track);
+    const base = track as Partial<SingleTrack>;
+    const targets: Partial<SingleTrack>[] = isOverlay ? track.overlay : [base];
+
+    const units: TimeUnit[] = [];
+    let source: string | undefined;
+    let raw = false;
+    let binnedAny = false;
+
+    targets.forEach(target => {
+        const merged = (isOverlay ? { ...base, ...target } : target) as Partial<SingleTrack>;
+        if (merged.mark === 'brush') return;
+        const x = merged.x;
+        if (!IsChannelDeep(x) || x.type !== 'temporal' || !x.field) return;
+        const existing = getTrackTimeUnit(target);
+        if (existing) {
+            // already resolved (the compiler runs this again after a responsive re-fix)
+            units.push(existing.unit);
+            source = source ?? existing.source;
+            return;
+        }
+        if (!('timeUnit' in x) || !x.timeUnit) {
+            raw = true;
+            return;
+        }
+
+        const unit = x.timeUnit as TimeUnit;
+        const xSource = timeCoordinates?.fields.find(f => f.coord === x.field)?.source ?? x.field;
+        if (!TIME_UNITS.includes(unit)) {
+            warn(`timeUnit "${unit}" is not one of ${TIME_UNITS.join(', ')}, so it is ignored.`);
+            target.x = { ...x, timeUnit: undefined };
+            raw = true;
+            return;
+        }
+        if (system.kind === 'period' && !unitsWithinPeriod(system).includes(unit)) {
+            warn(
+                `timeUnit "${unit}" does not lie within the ${describeTimeCoordinates(system)}; ` +
+                    `use one of ${unitsWithinPeriod(system).join(', ')}. The timeUnit is ignored.`
+            );
+            target.x = { ...x, timeUnit: undefined };
+            raw = true;
+            return;
+        }
+
+        const field = `__${unit}_${xSource}`;
+        const binning: TimeUnitBinning = {
+            unit,
+            source: xSource,
+            field,
+            endField: `${field}_end`,
+            groupby: [],
+            aggregates: []
+        };
+        NOMINAL_CHANNELS.forEach(key => {
+            const channel = merged[key];
+            if (IsChannelDeep(channel) && channel.type === 'nominal' && channel.field && !binning.groupby.includes(channel.field)) {
+                binning.groupby.push(channel.field);
+            }
+        });
+        AGGREGATABLE_CHANNELS.forEach(key => {
+            const channel = merged[key];
+            if (!IsChannelDeep(channel) || !('aggregate' in channel) || !channel.aggregate || !channel.field) return;
+            if (!(TIME_AGGREGATE_OPS as string[]).includes(channel.aggregate)) {
+                warn(`aggregate "${channel.aggregate}" is not supported with timeUnit; use ${TIME_AGGREGATE_OPS.join(', ')}.`);
+                return;
+            }
+            binning.aggregates.push({ field: channel.field, op: channel.aggregate as TimeAggregateOp });
+            (target as Record<string, unknown>)[key] = { ...channel, aggregate: undefined };
+        });
+
+        target.x = { ...x, field, timeUnit: undefined };
+        if ((merged.mark === 'bar' || merged.mark === 'rect') && !merged.xe) {
+            target.xe = { field: binning.endField, type: 'temporal' };
+        }
+        setTrackTimeUnit(target, binning);
+        units.push(unit);
+        source = source ?? xSource;
+        binnedAny = true;
+    });
+
+    if (isOverlay && binnedAny) {
+        // the members now hold their own copies of the inherited time unit and aggregates
+        if (IsChannelDeep(base.x)) base.x = { ...base.x, timeUnit: undefined };
+        AGGREGATABLE_CHANNELS.forEach(key => {
+            const channel = base[key];
+            if (IsChannelDeep(channel) && 'aggregate' in channel && channel.aggregate) {
+                (base as Record<string, unknown>)[key] = { ...channel, aggregate: undefined };
+            }
+        });
+    }
+    if (units.length > 0 && source) {
+        setTrackTimeUnitTiling(track, { source, units: Array.from(new Set(units)), raw });
+    }
 }
 
 /**

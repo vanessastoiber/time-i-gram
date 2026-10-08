@@ -3,10 +3,13 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
     "Aggregate": {
+      "description": "How to aggregate a channel. With `x.timeUnit`, `count`, `sum`, `mean`, `median`, `min` and `max` reduce the rows of each time unit and group; without it, the experimental aggregation supports `min` and `max` by one nominal field.",
       "enum": [
         "max",
         "min",
         "mean",
+        "median",
+        "sum",
         "bin",
         "count"
       ],
@@ -787,6 +790,9 @@
         },
         {
           "$ref": "#/definitions/IntervalTransform"
+        },
+        {
+          "$ref": "#/definitions/TimeUnitTransform"
         },
         {
           "$ref": "#/definitions/StrConcatTransform"
@@ -9376,6 +9382,54 @@
       ],
       "type": "object"
     },
+    "TimeUnit": {
+      "description": "The calendar granularity hierarchy, all in UTC. `week` is the ISO week (Monday to Sunday); quarters start in January, April, July and October; decades start in years divisible by 10.",
+      "enum": [
+        "millisecond",
+        "second",
+        "minute",
+        "hour",
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year",
+        "decade"
+      ],
+      "type": "string"
+    },
+    "TimeUnitTransform": {
+      "additionalProperties": false,
+      "description": "Truncate a time field (Unix seconds) to the start of the calendar unit that contains it (UTC), e.g. the first instant of its month. Rows are kept; to aggregate by unit, use `x.timeUnit` with an `aggregate` channel.",
+      "properties": {
+        "endField": {
+          "description": "If specified, a field that receives the end of the unit (the start of the next one), e.g. for `xe`.",
+          "type": "string"
+        },
+        "field": {
+          "description": "Field with times in Unix seconds, e.g. a `dateFields` field of `csv-time` or `json-time` data.",
+          "type": "string"
+        },
+        "newField": {
+          "description": "Field that receives the start of the unit. __Default:__ `field` itself",
+          "type": "string"
+        },
+        "type": {
+          "const": "timeUnit",
+          "type": "string"
+        },
+        "unit": {
+          "$ref": "#/definitions/TimeUnit",
+          "description": "The calendar unit. `week` is the ISO week (Monday to Sunday)."
+        }
+      },
+      "required": [
+        "type",
+        "field",
+        "unit"
+      ],
+      "type": "object"
+    },
     "TimeValue": {
       "description": "A time: Unix epoch seconds, or a date string such as `\"2010-12\"` or `\"2010-01-03T23:00:00Z\"` (UTC).",
       "type": [
@@ -9584,6 +9638,10 @@
         "range": {
           "$ref": "#/definitions/ValueExtent",
           "description": "Values of the visual channel."
+        },
+        "timeUnit": {
+          "$ref": "#/definitions/TimeUnit",
+          "description": "Show time by calendar unit (\"show by month\"): every row is placed at the start of the unit that contains its time (for `bar` and `rect` marks without `xe`, each mark spans its unit). If another channel of the track has an `aggregate`, rows are grouped by the unit and by the fields of the track's nominal channels (`color`, `row`, `stroke`, ...), and each aggregated channel is reduced with its operation: one mark per unit and group.\n\nWith `period`, units are taken in absolute time and must lie within the period (e.g. months of a year).\n\nOnly for `type: \"temporal\"` on `x`."
         },
         "type": {
           "description": "Specify the data type.",

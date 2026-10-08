@@ -276,3 +276,95 @@ describe('linking across time coordinate systems', () => {
         expect(lockedViews(hg)).toEqual(2);
     });
 });
+
+describe('timeUnit (channel form)', () => {
+    const monthly = (extra: object = {}) =>
+        timeTrack({
+            mark: 'bar',
+            x: { field: 'date', type: 'temporal', timeUnit: 'month' },
+            y: { field: 'v', type: 'quantitative', aggregate: 'sum' },
+            color: { field: 'series', type: 'nominal' },
+            ...extra
+        });
+
+    it('is schema-valid, with the new aggregates', () => {
+        expect(validateGoslingSpec({ tracks: [monthly()] }).state).toEqual('success');
+        const transform = { type: 'timeUnit', field: 'date', unit: 'week', newField: 'week', endField: 'weekEnd' };
+        expect(validateGoslingSpec({ tracks: [timeTrack({ dataTransform: [transform] })] }).state).toEqual('success');
+        expect(validateGoslingSpec({ tracks: [monthly({ x: { field: 'date', type: 'temporal', timeUnit: 'fortnight' } })] }).state).toEqual('warn');
+    });
+
+    it('binds x and xe (bars) to the unit and moves the aggregate into the binning spec', () => {
+        const { hg } = compiled({ tracks: [monthly()] } as GoslingSpec);
+        const { options, data } = dataTrack(hg);
+        expect(options.spec._timeUnit).toEqual({
+            unit: 'month',
+            source: 'date',
+            field: '__month_date',
+            endField: '__month_date_end',
+            groupby: ['series'],
+            aggregates: [{ field: 'v', op: 'sum' }]
+        });
+        expect(options.spec.x.field).toEqual('__month_date');
+        expect(options.spec.xe).toEqual({ field: '__month_date_end', type: 'temporal' });
+        expect(options.spec.y.aggregate).toBeUndefined();
+        // the fetcher assigns whole months to tiles, by the raw time field
+        expect(data.x).toEqual('date');
+        expect(data.timeUnitTiling).toEqual({ source: 'date', units: ['month'], raw: false });
+    });
+
+    it('resolves inherited time units and aggregates per overlaid track', () => {
+        const { hg } = compiled({
+            tracks: [
+                {
+                    ...monthly({ mark: undefined, color: undefined }),
+                    alignment: 'overlay',
+                    tracks: [
+                        { mark: 'line', color: { field: 'series', type: 'nominal' } },
+                        { mark: 'point', x: { field: 'date', type: 'temporal' }, y: { field: 'v', type: 'quantitative' } }
+                    ]
+                }
+            ]
+        } as unknown as GoslingSpec);
+        const { options, data } = dataTrack(hg);
+        const [line, point] = options.spec.overlay;
+        expect(line._timeUnit.groupby).toEqual(['series']);
+        expect(line._timeUnit.aggregates).toEqual([{ field: 'v', op: 'sum' }]);
+        expect(point._timeUnit).toBeUndefined();
+        expect(options.spec.y.aggregate).toBeUndefined();
+        expect(data.timeUnitTiling).toEqual({ source: 'date', units: ['month'], raw: true });
+    });
+
+    it('works inside a period when the unit lies within it, and warns otherwise', () => {
+        const { hg } = compiled({
+            tracks: [monthly({ x: { field: 'date', type: 'temporal', timeUnit: 'month', period: 'year' } })]
+        } as GoslingSpec);
+        const { options, data } = dataTrack(hg);
+        expect(options.spec._timeUnit.source).toEqual('date');
+        expect(data.x).toEqual('__period_date');
+        expect(data.timeCoordinates.system.unit).toEqual('year');
+
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const weeks = compiled({
+            tracks: [monthly({ x: { field: 'date', type: 'temporal', timeUnit: 'week', period: 'year' } })]
+        } as GoslingSpec);
+        expect(dataTrack(weeks.hg).options.spec._timeUnit).toBeUndefined();
+        expect(warn.mock.calls.flat().join(' ')).toMatch(/timeUnit "week" does not lie within the period \(year\)/);
+        warn.mockRestore();
+    });
+
+    it('is idempotent', () => {
+        const { gs } = compiled({ tracks: [monthly()] } as GoslingSpec);
+        const copy = JSON.parse(JSON.stringify(gs));
+        resolveTemporalSugar(copy);
+        expect(copy).toEqual(JSON.parse(JSON.stringify(gs)));
+    });
+
+    it('keeps the experimental nominal aggregation when there is no timeUnit', () => {
+        const { hg } = compiled({
+            tracks: [timeTrack({ y: { field: 'v', type: 'quantitative', aggregate: 'max' } })]
+        } as GoslingSpec);
+        expect(dataTrack(hg).options.spec.y.aggregate).toEqual('max');
+        expect(dataTrack(hg).data.timeUnitTiling).toBeUndefined();
+    });
+});

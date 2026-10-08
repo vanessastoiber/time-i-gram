@@ -789,6 +789,18 @@ export interface X extends Omit<AxisCommon, 'domain'> {
      * Only for `type: "temporal"` on `x`. The domain is always the whole period: a `domain` is ignored.
      */
     period?: PeriodUnit | Period;
+    /**
+     * Show time by calendar unit ("show by month"): every row is placed at the start of the unit that contains
+     * its time (for `bar` and `rect` marks without `xe`, each mark spans its unit). If another channel of the
+     * track has an `aggregate`, rows are grouped by the unit and by the fields of the track's nominal channels
+     * (`color`, `row`, `stroke`, ...), and each aggregated channel is reduced with its operation: one mark per
+     * unit and group.
+     *
+     * With `period`, units are taken in absolute time and must lie within the period (e.g. months of a year).
+     *
+     * Only for `type: "temporal"` on `x`.
+     */
+    timeUnit?: TimeUnit;
 }
 
 /** Calendar periods by which a temporal axis can be wrapped. */
@@ -980,7 +992,11 @@ export type TimeUnit =
     | 'year'
     | 'decade';
 
-export type Aggregate = 'max' | 'min' | 'mean' | 'bin' | 'count';
+/**
+ * How to aggregate a channel. With `x.timeUnit`, `count`, `sum`, `mean`, `median`, `min` and `max` reduce the rows
+ * of each time unit and group; without it, the experimental aggregation supports `min` and `max` by one nominal field.
+ */
+export type Aggregate = 'max' | 'min' | 'mean' | 'median' | 'sum' | 'bin' | 'count';
 export type BinAggregate = 'mean' | 'sum';
 
 /* ----------------------------- DATA ----------------------------- */
@@ -1445,6 +1461,7 @@ export interface MatrixData {
 export type DataTransform =
     | FilterTransform
     | IntervalTransform
+    | TimeUnitTransform
     | StrConcatTransform
     | StrReplaceTransform
     | LogTransform
@@ -1473,6 +1490,22 @@ export interface IntervalTransform {
     /** Field that receives the start date of the following year. */
     newField: string;
 } ;
+
+/**
+ * Truncate a time field (Unix seconds) to the start of the calendar unit that contains it (UTC), e.g. the first
+ * instant of its month. Rows are kept; to aggregate by unit, use `x.timeUnit` with an `aggregate` channel.
+ */
+export interface TimeUnitTransform {
+    type: 'timeUnit';
+    /** Field with times in Unix seconds, e.g. a `dateFields` field of `csv-time` or `json-time` data. */
+    field: string;
+    /** The calendar unit. `week` is the ISO week (Monday to Sunday). */
+    unit: TimeUnit;
+    /** Field that receives the start of the unit. __Default:__ `field` itself */
+    newField?: string;
+    /** If specified, a field that receives the end of the unit (the start of the next one), e.g. for `xe`. */
+    endField?: string;
+}
 
 interface CommonFilterTransform {
     type: 'filter';

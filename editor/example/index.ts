@@ -64,6 +64,7 @@ import { EX_SPEC_TEMPORAL_SUPP_WHO_FLU } from './spec/temporal-data_supp-who-flu
 import { EX_SPEC_TEMPORAL_SUPP_FITBIT } from './spec/temporal-data_supp-fitbit';
 import { EX_SPEC_TEMPORAL_WHO_FLU_PERIOD } from './spec/temporal-data_who-flu-period';
 import { EX_SPEC_TEMPORAL_FITBIT_CYCLES } from './spec/temporal-data_fitbit-cycles';
+import { EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY } from './spec/temporal-data_unemployment-granularity';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -580,6 +581,12 @@ const editorExampleObj: {
         group: 'Temporal Data',
         name: 'Period: FitBit Weekly and Daily Cycles',
         spec: EX_SPEC_TEMPORAL_FITBIT_CYCLES,
+        underDevelopment: true
+    },
+    TEMPORAL_DATA_UNEMPLOYMENT_GRANULARITY: {
+        group: 'Temporal Data',
+        name: 'Granularity: Unemployment by Year and Month',
+        spec: EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY,
         underDevelopment: true
     }
 };

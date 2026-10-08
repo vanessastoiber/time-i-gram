@@ -13,7 +13,7 @@
  * time axis labels ticks, and which views may be linked: only views with the same system share coordinates.
  */
 
-import type { Period, PeriodUnit } from '@gosling-lang/gosling-schema';
+import type { Period, PeriodUnit, TimeUnit } from '@gosling-lang/gosling-schema';
 import { floorTime, isoWeekDate, isoWeekStart, offsetTime, utcParts } from './time-units';
 
 export type TimeCoordinateSystem = AbsoluteTime | PeriodTime;
@@ -322,4 +322,114 @@ export function getTrackTimeCoordinates(track: object): TrackTimeCoordinates | u
 
 export function setTrackTimeCoordinates(track: object, config: TrackTimeCoordinates | undefined) {
     (track as { _timeCoordinates?: TrackTimeCoordinates })._timeCoordinates = config;
+}
+
+/* ----------------------------- Time units ----------------------------- */
+
+/** Aggregations computed per time unit (`x.timeUnit` with an `aggregate` channel). */
+export type TimeAggregateOp = 'count' | 'sum' | 'mean' | 'median' | 'min' | 'max';
+export const TIME_AGGREGATE_OPS: readonly TimeAggregateOp[] = ['count', 'sum', 'mean', 'median', 'min', 'max'];
+
+/** Internal spec of `x.timeUnit` on a resolved track, set by `resolveTemporalSugar()`. */
+export interface TimeUnitBinning {
+    unit: TimeUnit;
+    /** Field with the raw times (Unix seconds). */
+    source: string;
+    /** Fields that receive the coordinates of the start (`x`) and end (`xe`) of each row's unit. */
+    field: string;
+    endField: string;
+    /** Fields of nominal channels: rows are grouped by unit and by these fields. */
+    groupby: string[];
+    /** Aggregated channels; empty if rows are only truncated. */
+    aggregates: { field: string; op: TimeAggregateOp }[];
+}
+
+/**
+ * Units of the members of a HiGlass track, used to assign rows to tiles so that each unit lies entirely in one
+ * tile: a row belongs to the tiles that contain the start of its unit, for any of `units`, or (with `raw`) its
+ * own coordinate.
+ */
+export interface TimeUnitTiling {
+    source: string;
+    units: TimeUnit[];
+    raw: boolean;
+}
+
+export function getTrackTimeUnit(track: object): TimeUnitBinning | undefined {
+    return (track as { _timeUnit?: TimeUnitBinning })._timeUnit;
+}
+
+export function setTrackTimeUnit(track: object, binning: TimeUnitBinning | undefined) {
+    (track as { _timeUnit?: TimeUnitBinning })._timeUnit = binning;
+}
+
+export function getTrackTimeUnitTiling(track: object): TimeUnitTiling | undefined {
+    return (track as { _timeUnitTiling?: TimeUnitTiling })._timeUnitTiling;
+}
+
+export function setTrackTimeUnitTiling(track: object, tiling: TimeUnitTiling | undefined) {
+    (track as { _timeUnitTiling?: TimeUnitTiling })._timeUnitTiling = tiling;
+}
+
+/** Units that lie within a period, i.e. that can be aggregated inside a period coordinate system. */
+export function unitsWithinPeriod(cs: PeriodTime): TimeUnit[] {
+    const subDay: TimeUnit[] = ['millisecond', 'second', 'minute', 'hour'];
+    switch (cs.unit) {
+        case 'year':
+            return cs.weekBased ? [...subDay, 'day', 'week'] : [...subDay, 'day', 'month', 'quarter'];
+        case 'month':
+        case 'week':
+            return [...subDay, 'day'];
+        case 'day':
+            return subDay;
+    }
+}
+
+/** Coordinate of the start of the unit that contains `t` (Unix seconds) in a time coordinate system. */
+export function unitStartCoordinate(t: number, unit: TimeUnit, cs: TimeCoordinateSystem): number {
+    const start = floorTime(t, unit);
+    return cs.kind === 'period' ? toPeriodCoordinate(start, cs) : start;
+}
+
+/** Coordinate of the end of the unit that contains `t`. */
+export function unitEndCoordinate(t: number, unit: TimeUnit, cs: TimeCoordinateSystem): number {
+    const end = offsetTime(floorTime(t, unit), unit, 1);
+    return cs.kind === 'period' ? toPeriodEndCoordinate(end, cs) : end;
+}
+
+/**
+ * Whether a row belongs to the tile `(minX, maxX]`: by the start of its unit (`unit`), or by its own coordinate
+ * (`coordField`) when `unit` is undefined.
+ */
+export function isRowInTile(
+    row: Record<string, unknown>,
+    [minX, maxX]: [number, number],
+    unit: TimeUnit | undefined,
+    source: string,
+    coordField: string,
+    cs: TimeCoordinateSystem
+): boolean {
+    const value = unit ? unitStartCoordinate(+(row[source] as number), unit, cs) : +(row[coordField] as number);
+    return minX < value && value <= maxX;
+}
+
+/**
+ * The rows of a tile `(minX, maxX]` of a track that aggregates by time unit: rows whose unit starts in the tile,
+ * for any unit of the track's members, plus (if a member draws raw rows) rows whose own coordinate is in it.
+ * So every unit is aggregated from all of its rows, in exactly one tile.
+ */
+export function filterByTimeUnits<T extends Record<string, unknown>>(
+    rows: T[],
+    tile: [number, number],
+    config: { x?: string; timeUnitTiling?: TimeUnitTiling; timeCoordinates?: TimeCoordinatesConfig }
+): T[] {
+    const tiling = config.timeUnitTiling;
+    if (!tiling) return rows;
+    const cs = config.timeCoordinates?.system ?? ABSOLUTE_TIME;
+    const coordField = config.x ?? tiling.source;
+    return rows.filter(
+        row =>
+            (tiling.raw && isRowInTile(row, tile, undefined, tiling.source, coordField, cs)) ||
+            tiling.units.some(unit => isRowInTile(row, tile, unit, tiling.source, coordField, cs))
+    );
 }

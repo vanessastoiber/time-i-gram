@@ -14,6 +14,7 @@ import { EX_SPEC_TEMPORAL_SUPP_WHO_FLU } from './spec/temporal-data_supp-who-flu
 import { EX_SPEC_TEMPORAL_SUPP_FITBIT } from './spec/temporal-data_supp-fitbit';
 import { EX_SPEC_TEMPORAL_WHO_FLU_PERIOD } from './spec/temporal-data_who-flu-period';
 import { EX_SPEC_TEMPORAL_FITBIT_CYCLES } from './spec/temporal-data_fitbit-cycles';
+import { EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY } from './spec/temporal-data_unemployment-granularity';
 
 /** The JS code blocks of README.md that build a spec, evaluated to the spec object. */
 function readmeSpecs(): Record<string, GoslingSpec> {
@@ -38,6 +39,7 @@ const examples: Record<string, GoslingSpec> = {
     'supp S8 FitBit': EX_SPEC_TEMPORAL_SUPP_FITBIT,
     'period: WHO flu': EX_SPEC_TEMPORAL_WHO_FLU_PERIOD,
     'period: FitBit cycles': EX_SPEC_TEMPORAL_FITBIT_CYCLES,
+    'granularity: unemployment': EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY,
     ...readmeSpecs()
 };
 
