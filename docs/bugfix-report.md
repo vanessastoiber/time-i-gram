@@ -18,31 +18,31 @@ Two problems not on the list were fixed along the way (rows marked "—").
 
 | # | Item | Status | Commits |
 |---|---|---|---|
-| — | Test setup: Node ≥ 19 has a read-only global `crypto`, so every test file failed before running | fixed | `0c5146a` |
-| 1 | CSV: ISO dates fell back to 1970; date order is now detected (ISO / US / day-first), `dayFirstDate` / `yearFirstDate` resolve ambiguous dates, unparseable dates warn and are not drawn | fixed | `2bc1d66` |
-| 2 | CSV: years limited to 1900–2099, tile grid started at 0 (no data before 1970) | fixed: any year; tile grid covers years 1–9999 | `f5f23c1` |
-| 3 | CSV: `interval` spread column names into characters | fixed | `cf9efe0` |
-| 4 | CSV: date-times parsed in the browser's time zone | fixed: read as UTC (also time-of-day columns, component columns, calendar weeks); explicit zones kept | `be8891d` |
-| 5 | JSON: only literal `year`/`month`/`day` keys worked in `dateFields` | fixed: a single date or date-time column works; components built in UTC | `33c87cc` |
-| 6 | JSON: `row.timestampField` instead of `row[timestampField]` | fixed: both the url and inline branches store the rows | `f9a6cb7` |
-| 7 | Both: millisecond timestamps | added: `timestampUnit: "s" \| "ms"` (default `"s"`) | `ee21cc6` |
-| 8 | Both: random sampling to 1,000 rows by default | fixed: sampling only when `sampleLength` is set (documented) | `6bae959` |
-| 9 | JSON: every tile returned the whole dataset | fixed: rows filtered to the tile's x-range | `53cd1a0` |
-| 10 | Stacked area / text skipped temporal tracks | fixed | `75576c8` |
-| — | Stacked area threw on a color category without rows, aborting the whole render loop (latent upstream bug, reachable after item 10) | fixed | `ee5060f` |
-| 11 | Circular brush shaded the mirrored sector | fixed: drawing (part of item 15) and drag → domain conversion | `bc07aec`, `2d032e2` |
-| 12 | Time axis: stray center tick; hard-coded Arial 12 / black | fixed: theme font, size, weight, label and tick colors | `9c987e8` |
+| — | Test setup: Node ≥ 19 has a read-only global `crypto`, so every test file failed before running | fixed | `96bcf7b` |
+| 1 | CSV: ISO dates fell back to 1970; date order is now detected (ISO / US / day-first), `dayFirstDate` / `yearFirstDate` resolve ambiguous dates, unparseable dates warn and are not drawn | fixed | `cedb986` |
+| 2 | CSV: years limited to 1900–2099, tile grid started at 0 (no data before 1970) | fixed: any year; tile grid covers years 1–9999 | `5e674cd` |
+| 3 | CSV: `interval` spread column names into characters | fixed | `9ec5a61` |
+| 4 | CSV: date-times parsed in the browser's time zone | fixed: read as UTC (also time-of-day columns, component columns, calendar weeks); explicit zones kept | `31c1146` |
+| 5 | JSON: only literal `year`/`month`/`day` keys worked in `dateFields` | fixed: a single date or date-time column works; components built in UTC | `3a4b01b` |
+| 6 | JSON: `row.timestampField` instead of `row[timestampField]` | fixed: both the url and inline branches store the rows | `21ef605` |
+| 7 | Both: millisecond timestamps | added: `timestampUnit: "s" \| "ms"` (default `"s"`) | `de55d29` |
+| 8 | Both: random sampling to 1,000 rows by default | fixed: sampling only when `sampleLength` is set (documented) | `1698be3` |
+| 9 | JSON: every tile returned the whole dataset | fixed: rows filtered to the tile's x-range | `612217b` |
+| 10 | Stacked area / text skipped temporal tracks | fixed | `690a5c2` |
+| — | Stacked area threw on a color category without rows, aborting the whole render loop (latent upstream bug, reachable after item 10) | fixed | `ab0b073` |
+| 11 | Circular brush shaded the mirrored sector | fixed: drawing (part of item 15) and drag → domain conversion | `4b6307a`, `b7d61d0` |
+| 12 | Time axis: stray center tick; hard-coded Arial 12 / black | fixed: theme font, size, weight, label and tick colors | `d76238b` |
 | 13 | Brush/detail range offset | **not a bug**, no code change (see note C) | — |
-| 14 | Temporal on y produced no scale | **rejected**: schema restricts `y` to quantitative / nominal / genomic; `validateTrack` reports "`temporal` is only supported on x channels" (note D) | `5a5eb3d` |
-| 15 | Clockwise circular layout was global (and partial) | fixed: `clockwise` option on views and tracks; default `true` for a temporal x, `false` otherwise (upstream) | `bc07aec` |
-| 16 | JS API `location` event disabled | restored for genomic tracks (verified in the browser); skipped for temporal tracks | `b7c86af` |
-| 17 | `preverseZoomStatus` disabled | restored for genomic views; skipped for temporal views, for a measured reason (note E) | `daeff20` |
-| 18 | `HIGLASS_AXIS_SIZE` 30 → 45 for every axis | fixed: 30 again; `TIME_AXIS_SIZE` (45) only for time axes, in the axis track and the reserved layout space | `52d00c6` |
-| 19 | Unused `higlass-unix-time-track` dependency | removed (it was also missing from `yarn.lock`, so `yarn check` failed) | `33996ee` |
-| 20 | Exported HTML loaded upstream gosling.js and two missing local scripts | fixed: imports the time-i-gram embed bundle; **needs a new npm release** (note F) | `a505f36` |
-| 21 | Genomic wording in temporal schema docs | fixed: Unix seconds, date parsing rules, all `csv-time` / `json-time` options and the `interval` transform documented | `4f3fd10` |
-| 22 | Example specs | fixed: all 9 editor examples and both README specs render (table below) | `5a3d555`, `92f7b68`, `d95a645`, `da8005e`, `38e6282` |
-| 23 | `uuid` alias broke `yarn start` | fixed | `ce02d6a` |
+| 14 | Temporal on y produced no scale | **rejected**: schema restricts `y` to quantitative / nominal / genomic; `validateTrack` reports "`temporal` is only supported on x channels" (note D) | `c4aa7cd` |
+| 15 | Clockwise circular layout was global (and partial) | fixed: `clockwise` option on views and tracks; default `true` for a temporal x, `false` otherwise (upstream) | `4b6307a` |
+| 16 | JS API `location` event disabled | restored for genomic tracks (verified in the browser); skipped for temporal tracks | `e2cb090` |
+| 17 | `preverseZoomStatus` disabled | restored for genomic views; skipped for temporal views, for a measured reason (note E) | `9734bfb` |
+| 18 | `HIGLASS_AXIS_SIZE` 30 → 45 for every axis | fixed: 30 again; `TIME_AXIS_SIZE` (45) only for time axes, in the axis track and the reserved layout space | `60cd95b` |
+| 19 | Unused `higlass-unix-time-track` dependency | removed (it was also missing from `yarn.lock`, so `yarn check` failed) | `1ce791b` |
+| 20 | Exported HTML loaded upstream gosling.js and two missing local scripts | fixed: imports the time-i-gram embed bundle; **needs a new npm release** (note F) | `c03f0f9` |
+| 21 | Genomic wording in temporal schema docs | fixed: Unix seconds, date parsing rules, all `csv-time` / `json-time` options and the `interval` transform documented | `e742bce` |
+| 22 | Example specs | fixed: all 9 editor examples and both README specs render (table below) | `66f188f`, `fd1b56f`, `bfb7123`, `991a87f`, `05399c5` |
+| 23 | `uuid` alias broke `yarn start` | fixed | `5e3d479` |
 
 ## Notes
 
@@ -119,7 +119,7 @@ Each fix has a test that fails before it and passes after. I checked this by run
 
 ## Screenshots
 
-Headless Chromium, viewport 1300×950. "Before" was taken on `eaeda37`, before any code fix; "after" on `38e6282`. Editor views use `?example=<ID>&full=true`. The `embed-*` and `readme-*` images use `embed()`, because the editor refuses schema-invalid specs (`Editor.tsx:542`) and the README spec isn't registered.
+Headless Chromium, viewport 1300×950. "Before" was taken on `cb7f84f`, before any code fix; "after" on `05399c5`. Editor views use `?example=<ID>&full=true`. The `embed-*` and `readme-*` images use `embed()`, because the editor refuses schema-invalid specs (`Editor.tsx:542`) and the README spec isn't registered.
 
 | Example | Before | After |
 |---|---|---|
