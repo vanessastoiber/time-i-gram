@@ -11,6 +11,7 @@ import { EX_SPEC_TEMPORAL_SUPP_SEATTLE_WEATHER } from './spec/temporal-data_supp
 import { EX_SPEC_TEMPORAL_SUPP_SOLAR_WEATHER } from './spec/temporal-data_supp-solar-weather';
 import { EX_SPEC_TEMPORAL_SUPP_NYC_TAXI } from './spec/temporal-data_supp-nyc-taxi';
 import { EX_SPEC_TEMPORAL_SUPP_WHO_FLU } from './spec/temporal-data_supp-who-flu';
+import { EX_SPEC_TEMPORAL_SUPP_FITBIT } from './spec/temporal-data_supp-fitbit';
 
 /** The JS code blocks of README.md that build a spec, evaluated to the spec object. */
 function readmeSpecs(): Record<string, GoslingSpec> {
@@ -32,6 +33,7 @@ const examples: Record<string, GoslingSpec> = {
     'supp S5 solar and weather': EX_SPEC_TEMPORAL_SUPP_SOLAR_WEATHER,
     'supp S6 NYC taxi': EX_SPEC_TEMPORAL_SUPP_NYC_TAXI,
     'supp S7 WHO flu': EX_SPEC_TEMPORAL_SUPP_WHO_FLU,
+    'supp S8 FitBit': EX_SPEC_TEMPORAL_SUPP_FITBIT,
     ...readmeSpecs()
 };
 
@@ -83,5 +85,18 @@ describe.each(Object.entries(examples))('temporal example "%s"', (_, spec) => {
 
     it('gives every track that draws marks a data source', () => {
         expect(tracksWithoutData(spec)).toEqual([]);
+    });
+});
+
+describe('temporal example "supp S8 FitBit"', () => {
+    const spec = EX_SPEC_TEMPORAL_SUPP_FITBIT as any;
+    const dailyActivity = spec.views[0].views[1];
+
+    it('starts at the recording period of the heart-rate data (12 April to 12 May 2016)', () => {
+        expect(spec.xDomain.interval).toEqual([Date.UTC(2016, 3, 12) / 1000, Date.UTC(2016, 4, 13) / 1000]);
+    });
+
+    it('colors calories as a quantitative field', () => {
+        expect(dailyActivity.tracks[0].color.type).toEqual('quantitative');
     });
 });

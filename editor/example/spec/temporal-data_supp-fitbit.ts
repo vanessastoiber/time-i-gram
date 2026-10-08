@@ -1,13 +1,15 @@
 import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 
 // Supplementary material, Fig. S8 (FitBit Activity and Heart Rate Data; paper Fig. 5).
-// Copied verbatim from the supplementary PDF; only the export was changed.
-// Not yet fixed: see docs/grammar-audit.md §7.
+// Copied from the supplementary PDF. Fixed since (docs/grammar-audit.md §7): the domain covers the
+// recording period (12 April to 12 May 2016) instead of March to June, and calories are colored as a
+// quantitative field (as a nominal field with domain [0, 50], colors were assigned arbitrarily).
+// Quantitative colors use a predefined scale, so the printed list of seven colors became `hot`.
 
 const fitbitSpec = {
     arrangement: 'horizontal',
     xDomain: {
-        interval: [1456790400, 1464739200]
+        interval: [1460419200, 1463097600]
     },
     views: [
         {
@@ -78,9 +80,8 @@ const fitbitSpec = {
                             size: { value: 3 },
                             color: {
                                 field: 'Calories',
-                                type: 'nominal',
-                                domain: [0, 50],
-                                range: ['#fed976', '#feb24c', '#fd8d3c', '#fc4e2a', '#e31a1c', '#bd0026', '#800026']
+                                type: 'quantitative',
+                                range: 'hot'
                             },
                             y: {
                                 field: 'TotalSteps',
