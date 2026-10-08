@@ -408,6 +408,25 @@ describe('timeUnit (channel form)', () => {
         warn.mockRestore();
     });
 
+    it('allows quarters only in years that start on a quarter boundary', () => {
+        const quarterly = (start: number) =>
+            compiled({
+                tracks: [
+                    monthly({
+                        x: { field: 'date', type: 'temporal', timeUnit: 'quarter', period: { unit: 'year', start } }
+                    })
+                ]
+            } as GoslingSpec);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        expect(dataTrack(quarterly(1).hg).options.spec._timeUnit.unit).toEqual('quarter');
+        expect(dataTrack(quarterly(10).hg).options.spec._timeUnit.unit).toEqual('quarter');
+        expect(warn).not.toHaveBeenCalled();
+        // August-July seasons: the quarter July-September straddles the season boundary
+        expect(dataTrack(quarterly(8).hg).options.spec._timeUnit).toBeUndefined();
+        expect(warn.mock.calls.flat().join(' ')).toMatch(/timeUnit "quarter" does not lie within the period/);
+        warn.mockRestore();
+    });
+
     it('is idempotent', () => {
         const { gs } = compiled({ tracks: [monthly()] } as GoslingSpec);
         const copy = JSON.parse(JSON.stringify(gs));

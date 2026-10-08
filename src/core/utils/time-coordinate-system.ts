@@ -489,12 +489,18 @@ export function setTrackTimeUnitTiling(track: object, tiling: TimeUnitTiling | u
     (track as { _timeUnitTiling?: TimeUnitTiling })._timeUnitTiling = tiling;
 }
 
-/** Units that lie within a period, i.e. that can be aggregated inside a period coordinate system. */
+/**
+ * Units that lie within a period, i.e. that can be aggregated inside a period coordinate system. Quarters only
+ * nest in years that start on a quarter boundary (January, April, July or October).
+ */
 export function unitsWithinPeriod(cs: PeriodTime): TimeUnit[] {
     const subDay: TimeUnit[] = ['millisecond', 'second', 'minute', 'hour'];
     switch (cs.unit) {
-        case 'year':
-            return cs.weekBased ? [...subDay, 'day', 'week'] : [...subDay, 'day', 'month', 'quarter'];
+        case 'year': {
+            if (cs.weekBased) return [...subDay, 'day', 'week'];
+            const quarters: TimeUnit[] = (cs.start - 1) % 3 === 0 ? ['quarter'] : [];
+            return [...subDay, 'day', 'month', ...quarters];
+        }
         case 'month':
         case 'week':
             return [...subDay, 'day'];
