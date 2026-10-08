@@ -1,108 +1,168 @@
 # Bugfix report: branch `fix/temporal-bugs`
 
-**Status: in progress (paused 2026-10-07).** This file is the resume note. The final report (one line per item, before/after screenshots, follow-ups) replaces it once all items are done.
+Phase 1 of the time-i-gram cleanup. Item numbers follow the Phase 1 request; audit references point to [grammar-audit.md](grammar-audit.md).
 
-Item numbers refer to the Phase 1 list in the request; audit references are to [grammar-audit.md](grammar-audit.md).
+**Result.** All 23 items are handled:
+- 21 are fixed;
+- item 13 turned out not to be a bug (investigated, documented);
+- item 14 is resolved by rejecting temporal y with a clear error rather than implementing it.
 
-## State at pause
+Two problems not on the list were fixed along the way (rows marked "—").
 
-- Working tree is clean. Every finished item is committed; nothing is half done. `paper/` is deliberately untracked. Nothing has been pushed.
-- Last check, run on commit `daeff20`:
-  - `npx vitest run`: **185 passed, 0 failed**. The baseline before Phase 1 was 146 passed and 2 failed: the upstream `polar.test.ts` tests, broken by the global clockwise change and fixed by item 15.
-  - `npx tsc --noEmit`: clean.
-- "Before" screenshots are committed in [`bugfix-report/before/`](bugfix-report/before/) (commit `eaeda37`). They were taken before any rendering or fetcher change. The "after" set has not been taken yet.
+**Status of the branch:**
+- **Tests:** 229 pass, 0 fail (`npx vitest run`). Before Phase 1, no test file could run on Node 22. Once the setup was fixed, 146 passed and 2 failed: the upstream `polar.test.ts` tests, broken by the global clockwise change.
+- **Types:** `npx tsc --noEmit` is clean.
+- **Publishing:** not pushed. A push to `denisseram/time-i-gram` failed with a GitHub-side HTTP 500; see the note at the end.
 
 ## Items
 
-| # | Item | Status | Commit |
+| # | Item | Status | Commits |
 |---|---|---|---|
-| — | Test setup: Node ≥ 19 has a read-only global `crypto`, so every test file failed (prerequisite, not on the list) | done | `0c5146a` |
-| 1 | CSV: detect date order (ISO / US / day-first); warn instead of 1970 | done | `2bc1d66` |
-| 2 | CSV: dates before 1900 and before 1970, tile grid now covers years 1–9999 | done | `f5f23c1` |
-| 3 | CSV: `interval` option spread column names into characters | done | `cf9efe0` |
-| 4 | CSV: date-times read as UTC (also time-of-day columns, component columns, calendar weeks) | done | `be8891d` |
-| 5 | JSON: single date column in `dateFields` | done | `33c87cc` |
-| 6 | JSON: `row[timestampField]`, rows stored in the url branch | done | `f9a6cb7` |
-| 7 | Both: `timestampUnit: "s" \| "ms"` (default `"s"`) | done | `ee21cc6` |
-| 8 | Both: random sampling only when `sampleLength` is set | done | `6bae959` |
-| 9 | JSON: `tile()` filters rows to the tile's x-range | done | `53cd1a0` |
-| 10 | Stacked area / text on a temporal x | done | `75576c8`, plus `ee5060f` (see note A) |
-| 11 | Circular brush mirrored | done | `bc07aec` (drawing) + `2d032e2` (drag → domain) |
-| 12 | Time axis: stray center tick; theme font and colors | done | `9c987e8` |
-| 13 | Brush/detail range offset | **investigated, no bug, no code change** (note B) | — |
-| 14 | Temporal on y | done: **rejected** in schema + `validateTrack` message (note C) | `5a5eb3d` |
-| 15 | Clockwise circular layout opt-in (`clockwise`) | done (note D) | `bc07aec` |
-| 16 | JS API `location` event restored for genomic tracks | done (verified in browser) | `b7c86af` |
-| 17 | `preverseZoomStatus` | done: **restored for genomic, skipped for temporal views** (note E) | `daeff20` |
-| 18 | `HIGLASS_AXIS_SIZE` 30 → 45 globally; scope to the time axis | **next** | — |
-| 19 | Remove unused `higlass-unix-time-track` dependency | to do | — |
-| 20 | `editor/html-template.ts`: exported HTML loads upstream gosling.js and two missing scripts | to do | — |
-| 21 | Schema docs: genomic wording in temporal parts | to do (partly done: `sampleLength`, `timestampUnit`, `clockwise`, `Y.type` docs) | — |
-| 22 | Fix the example specs so they all render | to do | — |
-| 23 | `uuid` alias breaks `yarn start` | done (`yarn start` works again) | `ce02d6a` |
+| — | Test setup: Node ≥ 19 has a read-only global `crypto`, so every test file failed before running | fixed | `0c5146a` |
+| 1 | CSV: ISO dates fell back to 1970; date order is now detected (ISO / US / day-first), `dayFirstDate` / `yearFirstDate` resolve ambiguous dates, unparseable dates warn and are not drawn | fixed | `2bc1d66` |
+| 2 | CSV: years limited to 1900–2099, tile grid started at 0 (no data before 1970) | fixed: any year; tile grid covers years 1–9999 | `f5f23c1` |
+| 3 | CSV: `interval` spread column names into characters | fixed | `cf9efe0` |
+| 4 | CSV: date-times parsed in the browser's time zone | fixed: read as UTC (also time-of-day columns, component columns, calendar weeks); explicit zones kept | `be8891d` |
+| 5 | JSON: only literal `year`/`month`/`day` keys worked in `dateFields` | fixed: a single date or date-time column works; components built in UTC | `33c87cc` |
+| 6 | JSON: `row.timestampField` instead of `row[timestampField]` | fixed: both the url and inline branches store the rows | `f9a6cb7` |
+| 7 | Both: millisecond timestamps | added: `timestampUnit: "s" \| "ms"` (default `"s"`) | `ee21cc6` |
+| 8 | Both: random sampling to 1,000 rows by default | fixed: sampling only when `sampleLength` is set (documented) | `6bae959` |
+| 9 | JSON: every tile returned the whole dataset | fixed: rows filtered to the tile's x-range | `53cd1a0` |
+| 10 | Stacked area / text skipped temporal tracks | fixed | `75576c8` |
+| — | Stacked area threw on a color category without rows, aborting the whole render loop (latent upstream bug, reachable after item 10) | fixed | `ee5060f` |
+| 11 | Circular brush shaded the mirrored sector | fixed: drawing (part of item 15) and drag → domain conversion | `bc07aec`, `2d032e2` |
+| 12 | Time axis: stray center tick; hard-coded Arial 12 / black | fixed: theme font, size, weight, label and tick colors | `9c987e8` |
+| 13 | Brush/detail range offset | **not a bug**, no code change (see note C) | — |
+| 14 | Temporal on y produced no scale | **rejected**: schema restricts `y` to quantitative / nominal / genomic; `validateTrack` reports "`temporal` is only supported on x channels" (note D) | `5a5eb3d` |
+| 15 | Clockwise circular layout was global (and partial) | fixed: `clockwise` option on views and tracks; default `true` for a temporal x, `false` otherwise (upstream) | `bc07aec` |
+| 16 | JS API `location` event disabled | restored for genomic tracks (verified in the browser); skipped for temporal tracks | `b7c86af` |
+| 17 | `preverseZoomStatus` disabled | restored for genomic views; skipped for temporal views, for a measured reason (note E) | `daeff20` |
+| 18 | `HIGLASS_AXIS_SIZE` 30 → 45 for every axis | fixed: 30 again; `TIME_AXIS_SIZE` (45) only for time axes, in the axis track and the reserved layout space | `52d00c6` |
+| 19 | Unused `higlass-unix-time-track` dependency | removed (it was also missing from `yarn.lock`, so `yarn check` failed) | `33996ee` |
+| 20 | Exported HTML loaded upstream gosling.js and two missing local scripts | fixed: imports the time-i-gram embed bundle; **needs a new npm release** (note F) | `a505f36` |
+| 21 | Genomic wording in temporal schema docs | fixed: Unix seconds, date parsing rules, all `csv-time` / `json-time` options and the `interval` transform documented | `4f3fd10` |
+| 22 | Example specs | fixed: all 9 editor examples and both README specs render (table below) | `5a3d555`, `92f7b68`, `d95a645`, `da8005e`, `38e6282` |
+| 23 | `uuid` alias broke `yarn start` | fixed | `ce02d6a` |
 
-## Notes for resuming
+## Notes
 
-**A. Stacked area crash (`ee5060f`).**
-- Enabling stacked areas on temporal tracks (item 10) exposed a latent upstream bug: a color category with no rows made `reduce` throw.
-- The README / S3 spec triggers it, because each area track filters to one series but lists all five in the color domain. The exception aborted the whole render loop, so lines and brush linking stopped working too.
-- Fixed by skipping empty categories, with a test.
+**A. Taxi arcs below ~67 minutes come from the spec, not the code.**
+- The supplementary S6 spec puts a visibility rule on the `withinLink` track: `visibility: [{ operation: "less-than", measure: "zoomLevel", threshold: 4000, target: "track" }]`.
+- The threshold is the visible span in seconds (4000 s ≈ 67 min), so at the printed 8-month domain only the bars show.
+- The arcs themselves use Gosling's `withinLink` unchanged. With only `x` (pickup) and `x1` (dropoff) set, it draws an arc between them (`withinLink.ts:82-89`).
 
-**B. Item 13: no offset bug.**
-- I probed HiGlass's internal view scales in the browser:
-  - Dragging the brush **body** pans it. The brush spans the view's full domain (2000–2011) and is clipped at the view edge, so a panned brush *looks* like a 2000–2006 selection while the detail views correctly show 1995–2006.
-  - Dragging the brush's right **handle** (≈2 px wide, at x≈1028 in the README layout) resizes it, and the detail views show exactly the brushed range (`[2000, 2006.05]`).
-- The hard-coded zoom-lock seeds in `create-higlass-models.ts:79-80` are harmless: every member gets the same seed, so HiGlass's zoom ratio is 1 and its location offset 0.
-- The "before" screenshot `readme-running-example-brushed.png` shows a *pan*. For the "after" set, use a handle drag (mouse down at x=1028, y=540).
+**B. Item 15: one direction mechanism instead of scattered flips.**
+- The earlier change flipped only line marks, axis labels and y-axis ticks. Bar, rect, area, point, rule, grid, link, title, outline and brush stayed anticlockwise, so marks on the same circle were mirrored against each other (the cause of item 11). Circular genomic plots changed too.
+- `polar.ts`, `axis.ts`, `line.ts` and `axis-track.ts` are restored to upstream. The compiler expresses clockwise tracks as swapped start/end angles, which `valueToRadian` already traverses in reverse. Arc sweep flags, label widths and curved-text ropes follow the direction.
+- The genomic `VISUAL_ENCODING_CIRCULAR` example matches its upstream thumbnail again, and the two upstream `polar` tests pass.
 
-**C. Item 14: rejected rather than implemented.**
-- Temporal y is not small to implement: there's no time-scale path for y in `generateScales`, and the time axis track is horizontal only.
-- `Y.type` is now `quantitative | nominal | genomic`, and `validateTrack` reports "`temporal` is only supported on x channels (x, xe, x1, x1e), not on `y`".
+**C. Item 13 is not a bug.** HiGlass's internal view scales were read in the browser:
+- **Dragging the brush body pans the brush.** The timeline brush spans the view's full domain (2000–2011) and is clipped at the view edge, so a panned brush looks like a 2000–2006 selection while the detail views correctly show 1995–2006. The "before" screenshot `readme-running-example-brushed.png` shows such a pan.
+- **Dragging the brush's right handle resizes it.** The detail views then show exactly the brushed range, `[2000, 2006.05]`; see `readme-running-example-brush-resized.png` in the "after" set.
+- **The hard-coded zoom-lock seeds are harmless.** The seeds in `create-higlass-models.ts:79-80` are equal for every member, so HiGlass's zoom ratio is 1 and its location offset 0.
 
-**D. Item 15: one mechanism instead of scattered flips.**
-- The old change flipped only lines, axis labels and y ticks. Bars, areas, points, rects, rules, grid, links, title, outline and brush stayed anticlockwise, which is the real cause of the mirrored brush.
-- `polar.ts`, `axis.ts`, `line.ts` and `axis-track.ts` are restored to upstream.
-- The compiler swaps `startAngle`/`endAngle` for clockwise tracks (`isClockwiseTrack` in `bounding-box.ts`). Arc sweep flags, label widths and curved-text ropes follow the direction.
-- `clockwise` (view or track) defaults to `true` for a temporal x, `false` otherwise.
-- Verified that the genomic `VISUAL_ENCODING_CIRCULAR` example matches its upstream thumbnail.
+**D. Item 14: rejected, not implemented.** Temporal y would need a time-scale path for y (none exists in `generateScales`) and a vertical time axis track. That is not a small change, so I didn't count it as a bug fix.
 
-**E. Item 17: there was a temporal reason.**
-- Measured in a reactive-mode harness (`GoslingComponent` with `experimental.reactive`, which the editor uses): HiGlass view uids change on every compile, so the function finds no linked view in the previous config and sets `initialXDomain = undefined`.
-  - **Temporal views** then show an empty domain (`[1970, 1970]`) and no data. These are skipped now.
-  - **Genomic views** fall back to the whole genome, losing the spec domain. That's upstream behavior, restored unchanged, but worth reporting upstream.
+**E. Item 17: the temporal reason.** Measured with `GoslingComponent` in reactive mode, which the editor uses:
+- HiGlass view uids change on every compile, so `preverseZoomStatus` finds no linked view in the previous config and sets `initialXDomain = undefined`.
+- **Temporal views** then fall back to an empty domain, `[1970, 1970]`, and show no data; they are skipped now.
+- **Genomic views** fall back to the whole genome, losing the spec's domain. This is upstream behavior, restored unchanged; worth reporting to the Gosling project.
 
-**Taxi arcs (your question).** The arcs show only below about 67 minutes because of a **visibility rule in the spec**, not code. S6 sets `visibility: [{ operation: "less-than", measure: "zoomLevel", threshold: 4000, target: "track" }]` on the `withinLink` track. The threshold is the visible span in seconds: 4000 s ≈ 67 min.
+**F. Item 20 needs a release.**
+- The exported page imports `embed` from `@vanessa_stoiber1999/time-i-gram@0.0.1` (constant `TIME_I_GRAM_EMBED_URL` in `editor/html-template.ts`).
+- That release dates from 2024-04-28 and predates every fix here. With it, the exported running example draws axes but no data.
+- With a bundle built from this branch (`yarn build-lib`), the exported page renders completely.
+- After publishing a new version, bump the version in the URL.
 
-**Figures that need regenerating** once item 22 is done:
-- **S6 / Fig 1C (taxi):** UTC parsing (item 4) shifts the displayed clock times by the renderer's UTC offset; the old figure was made in local time.
-- **S8 / Fig 5 (FitBit):** daily bars move to the correct day; heart-rate times shift (item 4).
-- **S3 / Fig 4 (running example) and README GIF:** area layers now draw (item 10), circular direction and brush are consistent (items 11 and 15), the time axis uses theme styles with no stray tick (item 12), and the rows that were randomly dropped are back (item 8).
-- **S7 / Fig 1A (influenza):** after the spec fix in item 22. The ring direction also follows item 15.
+## Example fixes (item 22)
 
-## What's next (in order)
+| Example | Problem | Fix |
+|---|---|---|
+| `overview-detail` | Overview had no data (`values: []`); view started at 1970–2067; two series shared a color | Overview shows all series; 2000–2010 domain; distinct colors |
+| `seattle-weather` | Empty (ISO dates → 1970), then no domain | Dates parse (item 1); 2012–2015 domain |
+| `unemployment-circular-linear` | Worked, with comments describing fetcher bugs | Reads the single `date` column; comments corrected |
+| README running example, S3 | `genomicFields` made the spec invalid → blank in the editor; areas not drawn | `genomicFields` removed; areas draw (item 10) |
+| README Quick Start | No domain (1970–2067) | 2012–2015 domain |
+| S4 Seattle | — | No change needed |
+| S5 solar | `type` / `legend` on fixed colors made it invalid; Overview read a missing `time` column | Removed; Overview reads `Datum und Uhrzeit` |
+| S6 NYC taxi | — | No change needed; the `interval` option now takes effect (item 3) |
+| S7 WHO flu | Circular view inherited a 2.6-year domain (no ring); comparison views had no data and were dropped | Circular view shows 2010; comparison views read the superimposed file; the hand-made file and its ISO week-1 placement are documented in the spec, **not changed** |
+| S8 FitBit | Domain 3× the data; `Calories` nominal with `domain: [0, 50]` (arbitrary colors) | Domain 12 Apr–12 May 2016; `Calories` quantitative on the `hot` scale (Gosling accepts only predefined scales for quantitative colors) |
 
-1. **Item 18.** `HIGLASS_AXIS_SIZE` is used for the genomic axis in `higlass-model.ts` (`setAxisTrack`), the time axis (`setUnixTimeTrack`), `bounding-box.ts`, `gosling-track.ts` and the circular axis radii in `gosling-to-higlass.ts`. Plan:
-   - restore 30 for everything upstream;
-   - add a separate constant (45) used only by `setUnixTimeTrack` and the matching radius/size calculations for temporal axes;
-   - test that a genomic axis track gets height 30 and a time axis 45.
-2. **Items 19, 20, 21:** cleanup.
-3. **Item 22:** fix the specs. Agreed decisions:
-   - supp specs are fixed in place;
-   - S7: add a 2010 domain to the circular view and data to the two comparison views; do **not** edit the superimposed data or fix week 1, only document it;
-   - S5: fix against the daily 2022 data;
-   - remove `genomicFields` from the README / S3 spec;
-   - Seattle needs a domain, overview-detail needs a domain, overview data and distinct colors.
-4. Take the **"after" screenshots** with the same script as the "before" set, add a handle-drag variant, and write the final report.
+Not done, but worth deciding:
+- **S7.** Fig 1A's middle panel appears to show the two comparison views as August–December and January–July, i.e. one flu season. That would need a domain per view, which the printed spec doesn't have. Currently both views show the same root range.
+- **S5.** The Overview track has no `y` channel in the printed spec, so its line is flat (a brush target only).
 
-## How to resume (tooling)
+## Tests added
 
-- **Dev server:** `yarn start` now works (`npx vite --mode editor --port 3459 --strictPort`). The scratchpad Vite workaround is no longer needed.
-- **Helper scripts** were in this session's scratchpad (temporary, may be gone). What they did:
-  - `check.sh`: `npx vitest run` + `npx tsc --noEmit -p tsconfig.json`.
-  - `fails-before.sh <test> <files…>`: temporarily restores the listed tracked files from `HEAD`, runs the test, restores the working copies. Used to show each new test fails before its fix.
-  - `render-all.mjs <outdir> [port]`: Playwright renders.
-    - Editor views: `?example=<ID>&full=true` for the 9 temporal examples.
-    - `embed()` renders, by importing `/src/index.ts` in the page: the README spec (read from `README.md`), S3 and S5 (which the editor won't show while they're schema-invalid, see `Editor.tsx:542`), and S6 in a 1-hour window.
-    - A brush drag on the README spec.
-    - Viewport 1300×950. Large CSVs (S6, S8) need about 60 s.
-- **Data:** all supplementary data URLs were reachable on 2026-10-07 (audit §7.1).
+Each fix has a test that fails before it and passes after. I checked this by running the test with the changed sources reverted to the previous commit.
+
+| Test file | Covers |
+|---|---|
+| `scripts/vite-alias.test.ts` | 23 |
+| `src/data-fetchers/csv/csv-time-data-fetcher.test.ts` | 1, 2, 3, 4, 7, 8 |
+| `src/data-fetchers/json/json-time-data-fetcher.test.ts` | 5, 6, 7, 8, 9 |
+| `src/core/mark/stacked-temporal.test.ts` | 10, empty color categories |
+| `src/compiler/clockwise.test.ts` | 15, `radianToValue` |
+| `src/tracks/gosling-brush/brush-track.test.ts` | 11 |
+| `src/tracks/unix-time-track/unix-time-track.test.ts` | 12 |
+| `src/gosling-schema/validate.test.ts` (2 tests added) | 14 |
+| `src/tracks/gosling-track/gosling-track.test.ts` (2 tests added) | 16 |
+| `src/core/utils/preserve-zoom-status.test.ts` | 17 (the temporal-skip test fails if the skip is removed) |
+| `src/compiler/axis-size.test.ts` | 18 |
+| `scripts/dependencies.test.ts` | 19 (every declared dependency is in `yarn.lock`) |
+| `editor/html-template.test.ts` | 20 |
+| `src/gosling-schema/temporal-docs.test.ts` | 21 |
+| `editor/example/temporal-examples.test.ts` | 22 (all temporal examples are schema-valid, start at an explicit time domain, give every drawing track data; S8 domain and color) |
+
+**Upstream tests repaired:** the two `polar.test.ts` tests (item 15).
+
+## Screenshots
+
+Headless Chromium, viewport 1300×950. "Before" was taken on `eaeda37`, before any code fix; "after" on `38e6282`. Editor views use `?example=<ID>&full=true`. The `embed-*` and `readme-*` images use `embed()`, because the editor refuses schema-invalid specs (`Editor.tsx:542`) and the README spec isn't registered.
+
+| Example | Before | After |
+|---|---|---|
+| Overview + detail | ![](bugfix-report/before/overview-detail.png) | ![](bugfix-report/after/overview-detail.png) |
+| Seattle weather | ![](bugfix-report/before/seattle-weather.png) | ![](bugfix-report/after/seattle-weather.png) |
+| Circular + linear | ![](bugfix-report/before/unemployment-circular-linear.png) | ![](bugfix-report/after/unemployment-circular-linear.png) |
+| README running example | ![](bugfix-report/before/readme-running-example.png) | ![](bugfix-report/after/readme-running-example.png) |
+| README, brush body dragged (pan) | ![](bugfix-report/before/readme-running-example-brushed.png) | ![](bugfix-report/after/readme-running-example-brushed.png) |
+| README, brush handle dragged (resize) | — | ![](bugfix-report/after/readme-running-example-brush-resized.png) |
+| S3 unemployment (editor) | ![](bugfix-report/before/supp-S3-unemployment.png) | ![](bugfix-report/after/supp-S3-unemployment.png) |
+| S3 unemployment (`embed`) | ![](bugfix-report/before/embed-supp-S3-unemployment.png) | ![](bugfix-report/after/embed-supp-S3-unemployment.png) |
+| S4 Seattle | ![](bugfix-report/before/supp-S4-seattle-weather.png) | ![](bugfix-report/after/supp-S4-seattle-weather.png) |
+| S5 solar (editor) | ![](bugfix-report/before/supp-S5-solar-weather.png) | ![](bugfix-report/after/supp-S5-solar-weather.png) |
+| S5 solar (`embed`) | ![](bugfix-report/before/embed-supp-S5-solar-weather.png) | ![](bugfix-report/after/embed-supp-S5-solar-weather.png) |
+| S6 taxi | ![](bugfix-report/before/supp-S6-nyc-taxi.png) | ![](bugfix-report/after/supp-S6-nyc-taxi.png) |
+| S6 taxi, 1-hour window | ![](bugfix-report/before/embed-supp-S6-nyc-taxi-1h.png) | ![](bugfix-report/after/embed-supp-S6-nyc-taxi-1h.png) |
+| S7 WHO flu | ![](bugfix-report/before/supp-S7-who-flu.png) | ![](bugfix-report/after/supp-S7-who-flu.png) |
+| S8 FitBit | ![](bugfix-report/before/supp-S8-fitbit.png) | ![](bugfix-report/after/supp-S8-fitbit.png) |
+
+Console errors and warnings per render are in `bugfix-report/{before,after}/console.json`. After the fixes, only two generic HiGlass warnings remain ("unknown data type", "No dataConfig children"); they also appear for upstream examples.
+
+## Paper figures that need regenerating
+
+| Figure | Why |
+|---|---|
+| Fig 4 / S3, README GIF | Area layers now draw; circular direction and brush consistent; time axis uses theme styles, no stray tick; rows no longer randomly dropped |
+| Fig 1A / S7 | The printed spec didn't produce the ring; the ring now runs clockwise |
+| Fig 1B / S5 | Overview now has data; spec now valid. Data is daily for 2022, while §5.2 describes hourly data for 2021–2024 (ask the author) |
+| Fig 1C / S6 | Times are now UTC: the clock times shown change by the original renderer's UTC offset (the old figure was rendered in local time) |
+| Fig 5 / S8 | Daily bars move to the correct day, heart-rate times shift (UTC), domain and calorie colors changed |
+
+## Follow-ups (not fixed here)
+
+- **Lines and areas break at tile boundaries.** They are drawn per tile and not joined, which is visible as a gap around late 2002 in the unemployment examples. The gaps used to be hidden by random sampling. This is inherited Gosling behavior.
+- **HTML export (item 20, note F).** Publish a new npm release of the embed bundle and bump `TIME_I_GRAM_EMBED_URL`.
+- **`preverseZoomStatus` loses the domain of genomic views** whenever view uids change (note E). This is an upstream issue.
+- **Dead code in the time fetchers and the time axis:** `createDateFromFields` (both fetchers), `parseCalendarWeek`, and in the time axis `calculateZoomLevel`, `zoomText` and the commented-out curved labels.
+- **The `interval` transform** requires a `field` key that it never reads.
+- **Circular brushes** are still removed from circular `parallel` / `serial` view groups (`bounding-box.ts`, inherited).
+- **Grammar features** for the next branch, as agreed: a period-based cyclic layout (would replace the hand-made S7 superimposed file), calendar granularity syntax, a relative time scale, spans.
+
+## Environment notes
+
+- `yarn start` works again (item 23).
+- `yarn install --frozen-lockfile`, run while fixing item 19, removed Playwright from `node_modules`, because it was installed locally without being declared. For the renders I used Playwright 1.63 installed outside the repo; this branch doesn't change how Playwright is installed.
+- **Publishing.** `git push -u denisseram fix/temporal-bugs` returned HTTP 500 from GitHub, and so did adding an SSH key on github.com. The branch is not on GitHub yet. Retry the push once GitHub accepts writes again; if it keeps failing, contact GitHub Support with Request ID `FBB0:238C1F:2427579:22E99EE:6AC66081`.
