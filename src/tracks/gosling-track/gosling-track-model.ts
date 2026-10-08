@@ -7,7 +7,8 @@ import type {
     SingleTrack,
     Channel,
     Color,
-    Stroke
+    Stroke,
+    Domain
 } from '@gosling-lang/gosling-schema';
 import { validateTrack, getGenomicChannelFromTrack, getGenomicChannelKeyFromTrack, getTemporalChannelFromTrack } from '@gosling-lang/gosling-schema';
 import {
@@ -661,8 +662,8 @@ export class GoslingTrackModel {
                                 : (d3min(data.map(d => +d[channel.field as string]) as number[]) as number) ?? 0;
                         const max = (d3max(data.map(d => +d[channel.field as string]) as number[]) as number) ?? 0;
                         channel.domain = [min, max]; // TODO: what if data ranges in negative values
-                    } else if (channel.type === 'genomic' && !IsDomainArray(channel.domain)) {
-                        channel.domain = getNumericDomain(channel.domain);
+                    } else if (channel.type === 'genomic' && !IsDomainArray(channel.domain as Domain)) {
+                        channel.domain = getNumericDomain(channel.domain as Domain);
                     }
 
                     if (
@@ -900,7 +901,7 @@ export class GoslingTrackModel {
      */
     public getChannelDomainArray(channelKey: keyof typeof ChannelTypes): string[] | number[] | undefined {
         const c = this.spec()[channelKey];
-        return IsChannelDeep(c) && IsDomainArray(c.domain) ? c.domain : undefined;
+        return IsChannelDeep(c) && IsDomainArray(c.domain as Domain) ? (c.domain as string[] | number[]) : undefined;
     }
 
     /**

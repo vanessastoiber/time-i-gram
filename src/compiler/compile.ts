@@ -1,6 +1,7 @@
 import type { GoslingSpec, TemplateTrackDef, VisUnitApiData } from '@gosling-lang/gosling-schema';
 import type { HiGlassSpec } from '@gosling-lang/higlass-schema';
 import { traverseToFixSpecDownstream, overrideDataTemplates } from './spec-preprocess';
+import { resolveTemporalSugar } from './temporal-preprocess';
 import { replaceTrackTemplates } from '../core/utils/template';
 import { getRelativeTrackInfo, type Size } from './bounding-box';
 import type { CompleteThemeDeep } from '../core/utils/theme';
@@ -39,6 +40,9 @@ export function compile(
     // Fix track specs by looking into the root-level spec
     traverseToFixSpecDownstream(specCopy);
 
+    // Date strings and durations on temporal axes become seconds
+    resolveTemporalSugar(specCopy);
+
     // Generate arrangement data
     const trackInfosAndSize = getRelativeTrackInfo(specCopy, theme);
     let { trackInfos } = trackInfosAndSize;
@@ -64,6 +68,7 @@ export function compile(
     // Do the downstream-fix and track arrangement again using the updated spec
     if (replaced) {
         traverseToFixSpecDownstream(specCopy);
+        resolveTemporalSugar(specCopy);
         trackInfos = getRelativeTrackInfo(specCopy, theme).trackInfos;
     }
 

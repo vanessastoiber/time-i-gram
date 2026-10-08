@@ -265,7 +265,8 @@ export class HiGlassModel {
      * Set limits of zoom levels in base pairs.
      */
     public setZoomLimits(zoomLimits: ZoomLimits) {
-        this.getLastView().zoomLimits = zoomLimits;
+        // durations on temporal axes are already seconds (`resolveTemporalSugar`)
+        this.getLastView().zoomLimits = zoomLimits as [number | null, number | null];
         return this;
     }
 

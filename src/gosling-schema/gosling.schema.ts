@@ -86,7 +86,11 @@ export type Orientation = 'horizontal' | 'vertical';
 /** Custom chromosome sizes, e.g., [["foo", 1000], ["bar", 300], ["baz", 240]] */
 export type ChromSizes = [string, number][];
 export type Assembly = 'hg38' | 'hg19' | 'hg18' | 'hg17' | 'hg16' | 'mm10' | 'mm9' | 'unknown' | ChromSizes;
-export type ZoomLimits = [number | null, number | null];
+/**
+ * The smallest and largest visible span of the x-axis, in x units (base pairs, or seconds on a temporal axis).
+ * On a temporal axis, a span can also be a duration such as `"1 hour"` or `"20 years"`.
+ */
+export type ZoomLimits = [number | Duration | null, number | Duration | null];
 
 export interface CommonViewDef {
     /** The ID of a view that is maintained for the use of JS API functions, e.g., positions of a view */
@@ -123,8 +127,9 @@ export interface CommonViewDef {
      */
     assembly?: Assembly;
 
-    /** Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis */
-    xDomain?: DomainInterval | DomainChrInterval | DomainChr;
+    /** Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis
+     * (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `["2000-01", "2010-12"]`) */
+    xDomain?: DomainInterval | DomainChrInterval | DomainChr | TimeInterval;
 
     /** Specify the visible region of genomic y-axis */
     yDomain?: DomainInterval | DomainChrInterval | DomainChr;
@@ -702,10 +707,11 @@ export interface ZoomLevelVisibilityCondition extends CommonVisibilityCondition 
      */
     measure: 'zoomLevel';
     /**
-     * Set a threshold in the unit of the x-axis: base pairs (bp) on a genomic axis, seconds on a temporal axis
-     * (e.g., `86400` is one day of visible time)
+     * Set a threshold for the visible span of the x-axis, in its unit: base pairs (bp) on a genomic axis,
+     * seconds on a temporal axis (e.g., `86400` is one day of visible time). On a temporal axis the threshold
+     * can also be a duration such as `"3 months"`.
      */
-    threshold: number;
+    threshold: number | Duration;
 }
 
 export type LogicalOperation =
@@ -769,7 +775,7 @@ export interface AxisCommon {
     grid?: boolean;
 }
 
-export interface X extends AxisCommon {
+export interface X extends Omit<AxisCommon, 'domain'> {
     type?: 'genomic' | 'temporal';
     domain?: GenomicDomain | TemporalDomain;
 }
@@ -895,9 +901,42 @@ export interface DomainInterval {
 }
 
 export interface TimeInterval {
-    /** Show a certain time interval, as `[start, end]` in Unix epoch seconds (e.g., `[946684800, 1262304000]` for 2000-2010) */
-    interval: [number, number]; // This is consistent to HiGlass's initXDomain and initYDomain.
+    /**
+     * Show a certain time interval, as `[start, end]`. Each bound is Unix epoch seconds or a date string:
+     * a partial date (`"2010"`, `"2010-12"`, `"2010-12-31"`, `"2010-Q4"`, `"2015-W53"`) starts at the first
+     * instant of the unit it names and, as the end, includes the whole unit (`["2000-01", "2010-12"]` covers
+     * January 2000 through December 2010); a date-time (`"2010-01-03T23:00:00Z"`) is that exact instant,
+     * read as UTC without a zone.
+     */
+    interval: [TimeValue, TimeValue];
 }
+
+/** A time: Unix epoch seconds, or a date string such as `"2010-12"` or `"2010-01-03T23:00:00Z"` (UTC). */
+export type TimeValue = number | string;
+
+/**
+ * A length of time: `<number> <unit>`, e.g. `"90 minutes"`, `"2 weeks"`, `"3 months"`, or with a short unit
+ * (`ms`, `s`, `min`, `h`, `d`, `wk`, `mo`, `q`, `y`, `dec`). Units up to a week are exact; a month is 30.436875
+ * days (1/12 of a mean Gregorian year), a quarter 3 months, a year 365.2425 days, a decade 10 years.
+ * @pattern ^\s*[+-]?(\d+(\.\d+)?|\.\d+)\s*[a-zA-Z]+\s*$
+ */
+export type Duration = string;
+
+/**
+ * The calendar granularity hierarchy, all in UTC. `week` is the ISO week (Monday to Sunday);
+ * quarters start in January, April, July and October; decades start in years divisible by 10.
+ */
+export type TimeUnit =
+    | 'millisecond'
+    | 'second'
+    | 'minute'
+    | 'hour'
+    | 'day'
+    | 'week'
+    | 'month'
+    | 'quarter'
+    | 'year'
+    | 'decade';
 
 export type Aggregate = 'max' | 'min' | 'mean' | 'bin' | 'count';
 export type BinAggregate = 'mean' | 'sum';

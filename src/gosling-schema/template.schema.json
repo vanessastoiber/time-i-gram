@@ -85,8 +85,7 @@
                 {
                   "$ref": "#/definitions/TemporalDomain"
                 }
-              ],
-              "description": "Values of the data"
+              ]
             },
             "field": {
               "description": "Name of the data field.",
@@ -850,6 +849,11 @@
       ],
       "type": "object"
     },
+    "Duration": {
+      "description": "A length of time: `<number> <unit>`, e.g. `\"90 minutes\"`, `\"2 weeks\"`, `\"3 months\"`, or with a short unit (`ms`, `s`, `min`, `h`, `d`, `wk`, `mo`, `q`, `y`, `dec`). Units up to a week are exact; a month is 30.436875 days (1/12 of a mean Gregorian year), a quarter 3 months, a year 365.2425 days, a decade 10 years.",
+      "pattern": "^\\s*[+-]?(\\d+(\\.\\d+)?|\\.\\d+)\\s*[a-zA-Z]+\\s*$",
+      "type": "string"
+    },
     "EventStyle": {
       "additionalProperties": false,
       "description": "The styles defined here will be applied to the target marks of mouse events, such as a point mark after the user clicks on it.",
@@ -1403,9 +1407,12 @@
             },
             {
               "$ref": "#/definitions/DomainChr"
+            },
+            {
+              "$ref": "#/definitions/TimeInterval"
             }
           ],
-          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -1460,9 +1467,9 @@
       "additionalProperties": false,
       "properties": {
         "interval": {
-          "description": "Show a certain time interval, as `[start, end]` in Unix epoch seconds (e.g., `[946684800, 1262304000]` for 2000-2010)",
+          "description": "Show a certain time interval, as `[start, end]`. Each bound is Unix epoch seconds or a date string: a partial date (`\"2010\"`, `\"2010-12\"`, `\"2010-12-31\"`, `\"2010-Q4\"`, `\"2015-W53\"`) starts at the first instant of the unit it names and, as the end, includes the whole unit (`[\"2000-01\", \"2010-12\"]` covers January 2000 through December 2010); a date-time (`\"2010-01-03T23:00:00Z\"`) is that exact instant, read as UTC without a zone.",
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/TimeValue"
           },
           "maxItems": 2,
           "minItems": 2,
@@ -1473,6 +1480,13 @@
         "interval"
       ],
       "type": "object"
+    },
+    "TimeValue": {
+      "description": "A time: Unix epoch seconds, or a date string such as `\"2010-12\"` or `\"2010-01-03T23:00:00Z\"` (UTC).",
+      "type": [
+        "number",
+        "string"
+      ]
     },
     "Tooltip": {
       "additionalProperties": false,
@@ -1551,8 +1565,15 @@
           "type": "string"
         },
         "threshold": {
-          "description": "Set a threshold in the unit of the x-axis: base pairs (bp) on a genomic axis, seconds on a temporal axis (e.g., `86400` is one day of visible time)",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/Duration"
+            }
+          ],
+          "description": "Set a threshold for the visible span of the x-axis, in its unit: base pairs (bp) on a genomic axis, seconds on a temporal axis (e.g., `86400` is one day of visible time). On a temporal axis the threshold can also be a duration such as `\"3 months\"`."
         },
         "transitionPadding": {
           "description": "Specify the buffer size (in pixel) of width or height for smooth transition.\n\n__Default__: `0`",
@@ -1568,10 +1589,18 @@
       "type": "object"
     },
     "ZoomLimits": {
+      "description": "The smallest and largest visible span of the x-axis, in x units (base pairs, or seconds on a temporal axis). On a temporal axis, a span can also be a duration such as `\"1 hour\"` or `\"20 years\"`.",
       "items": {
-        "type": [
-          "number",
-          "null"
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "$ref": "#/definitions/Duration"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "maxItems": 2,
