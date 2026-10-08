@@ -103,8 +103,12 @@ describe('week-based (ISO) years', () => {
         const [refStart] = periodReference(flu);
         const week = (t: number) => (toPeriodCoordinate(t, flu) - refStart) / (7 * 86400);
         expect(week(s('2010-10-04'))).toEqual(0); // 2010-W40
-        expect(week(s('2011-01-03'))).toEqual(14); // 2011-W01, after a reserved week 53
-        expect(week(s('2011-09-26'))).toEqual(52); // 2011-W39, the last week of the season
+        expect(week(s('2011-01-03'))).toEqual(13); // 2011-W01, right after 2010-W52
+        expect(week(s('2011-09-26'))).toEqual(51); // 2011-W39, the last week of the season
+        // a season with a week 53 fills every slot; without one, the empty slot is the last one
+        expect(week(s('2015-12-28'))).toEqual(13); // 2015-W53
+        expect(week(s('2016-01-04'))).toEqual(14); // 2016-W01
+        expect(week(s('2016-09-26'))).toEqual(52); // 2016-W39
         expect(periodKey(s('2011-01-03'), flu)).toEqual('2010/11');
         expect(iso(periodEndOf(s('2011-01-03'), flu))).toEqual('2011-10-03T00:00:00.000Z');
     });

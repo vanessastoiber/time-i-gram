@@ -183,7 +183,14 @@ function calendarPeriodTicks(domain: [number, number], cs: PeriodTime, count: nu
 function weekBasedTicks(domain: [number, number], cs: PeriodTime, count: number): TimeAxisTicks {
     const [refStart] = periodReference(cs);
     const weekOf = (t: number) => Math.floor((t - refStart) / (WEEK / 1000));
-    const weekNumber = (offset: number) => ((cs.start - 1 + offset) % WEEKS_IN_REF_YEAR) + 1;
+    // slots count weeks since the season start; labels follow seasons of 52 weeks, and the last slot holds
+    // week 53 (calendar years) or the last week of a season that has a week 53
+    const weekNumber = (offset: number) =>
+        offset < WEEKS_IN_REF_YEAR - 1
+            ? ((cs.start - 1 + offset) % (WEEKS_IN_REF_YEAR - 1)) + 1
+            : cs.start === 1
+            ? 53
+            : cs.start - 1;
     const weekLabel = (t: number) => `W${weekNumber(weekOf(t))}`;
     const spanWeeks = ((domain[1] - domain[0]) * 1000) / WEEK;
 
@@ -206,7 +213,8 @@ function weekBasedTicks(domain: [number, number], cs: PeriodTime, count: number)
     for (let offset = 0; offset < WEEKS_IN_REF_YEAR; offset++) {
         const t = refStart + (offset * WEEK) / 1000;
         const week = weekNumber(offset);
-        if (t >= domain[0] && t <= domain[1] && (week - 1) % step === 0 && week !== WEEKS_IN_REF_YEAR) ticks.push(t);
+        if (t >= domain[0] && t <= domain[1] && (week - 1) % step === 0 && offset !== WEEKS_IN_REF_YEAR - 1)
+            ticks.push(t);
     }
     return { ticks, labels: ticks.map(weekLabel), context: '' };
 }

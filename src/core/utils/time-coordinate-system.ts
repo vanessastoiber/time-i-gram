@@ -195,9 +195,10 @@ export function toPeriodCoordinate(t: number, cs: PeriodTime): number {
     switch (cs.unit) {
         case 'year': {
             if (cs.weekBased) {
-                const { week, weekday } = isoWeekDate(t);
-                // weeks before `start` belong to the previous season, which always has room for a week 53
-                const weeks = week >= cs.start ? week - cs.start : week + WEEKS_IN_REF_YEAR - cs.start;
+                // weeks since the start of the season: week 1 follows the last week of the previous year, so a
+                // season without a week 53 leaves the last of the 53 slots empty
+                const { weekday } = isoWeekDate(t);
+                const weeks = Math.round((floorTime(t, 'week') - periodStartOf(t, cs)) / WEEK);
                 return refStart + weeks * WEEK + (weekday - 1) * DAY + secondsOfDay;
             }
             const { month, day } = utcParts(t);

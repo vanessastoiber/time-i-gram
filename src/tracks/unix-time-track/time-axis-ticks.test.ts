@@ -91,3 +91,18 @@ describe('period axes zoomed out past the period', () => {
         });
     });
 });
+
+describe('week-based seasons', () => {
+    it('label week 1 right after week 52, with the spare week-53 slot at the end of the season', () => {
+        const flu = periodCoordinates({ unit: 'year', weekBased: true, start: 40 });
+        const [refStart] = periodReference(flu);
+        const WEEK = 7 * 86400;
+        const { ticks, labels } = timeAxisTicks([refStart, refStart + 53 * WEEK], flu, 60);
+        const at = (offset: number) => labels[ticks.indexOf(refStart + offset * WEEK)];
+        expect(at(0)).toEqual('W40');
+        expect(at(12)).toEqual('W52');
+        expect(at(13)).toEqual('W1');
+        expect(at(51)).toEqual('W39');
+        expect(ticks.indexOf(refStart + 52 * WEEK)).toEqual(-1);
+    });
+});
