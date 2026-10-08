@@ -65,6 +65,7 @@ import { EX_SPEC_TEMPORAL_SUPP_FITBIT } from './spec/temporal-data_supp-fitbit';
 import { EX_SPEC_TEMPORAL_WHO_FLU_PERIOD } from './spec/temporal-data_who-flu-period';
 import { EX_SPEC_TEMPORAL_FITBIT_CYCLES } from './spec/temporal-data_fitbit-cycles';
 import { EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY } from './spec/temporal-data_unemployment-granularity';
+import { EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT } from './spec/temporal-data_relative-alignment';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -587,6 +588,12 @@ const editorExampleObj: {
         group: 'Temporal Data',
         name: 'Granularity: Unemployment by Month or Year (zoom)',
         spec: EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY,
+        underDevelopment: true
+    },
+    TEMPORAL_DATA_RELATIVE_ALIGNMENT: {
+        group: 'Temporal Data',
+        name: 'Relative: Flu Seasons and Unemployment Aligned to Events',
+        spec: EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT,
         underDevelopment: true
     }
 };

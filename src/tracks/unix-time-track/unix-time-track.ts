@@ -186,7 +186,7 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       this.context.text = (this.axisTicks as TimeAxisTicks).context;
       this.context.x = xPos;
       this.context.y = this.position[1] + tickEndY + betweenCenterTickAndText;
-      if (this.context.text !== '') {
+      if (this.context.text !== '' && (this.axisTicks as TimeAxisTicks).contextTick) {
         this.pMain.moveTo(xPos, this.position[1] + tickStartY - 10);
         this.pMain.lineTo(xPos, this.position[1] + tickEndY - 5);
       }

@@ -1,11 +1,16 @@
 import { scaleUtc } from 'd3-scale';
 import { utcFormat } from 'd3-time-format';
+import { scaleLinear } from 'd3-scale';
+import { format } from 'd3-format';
+import type { TimeUnit } from '@gosling-lang/gosling-schema';
 import {
     ABSOLUTE_TIME,
     periodReference,
     type PeriodTime,
+    type RelativeTime,
     type TimeCoordinateSystem
 } from '../../core/utils/time-coordinate-system';
+import { UNIT_SECONDS } from '../../core/utils/time-units';
 
 /** Ticks of a time axis: positions (in axis coordinates, i.e. seconds) and labels, plus a context label. */
 export interface TimeAxisTicks {
@@ -13,6 +18,8 @@ export interface TimeAxisTicks {
     labels: string[];
     /** Label shown in the middle of the axis, under the ticks (e.g. the year when months are labeled). */
     context: string;
+    /** Whether to mark the middle of the axis with a tick: the context of absolute dates applies there. */
+    contextTick?: boolean;
 }
 
 const SECOND = 1000;
@@ -50,7 +57,61 @@ export function timeAxisTicks(domain: [number, number], cs: TimeCoordinateSystem
             return absoluteTicks(domain, count);
         case 'period':
             return periodTicks(domain, cs, count);
+        case 'relative':
+            return relativeTicks(domain, cs, count);
     }
+}
+
+/** Short unit names of offset labels ("+3 wk"). */
+export const SHORT_UNIT_NAMES: Record<TimeUnit, string> = {
+    millisecond: 'ms',
+    second: 's',
+    minute: 'min',
+    hour: 'h',
+    day: 'd',
+    week: 'wk',
+    month: 'mo',
+    quarter: 'q',
+    year: 'y',
+    decade: 'dec'
+};
+
+const PLURAL_UNIT_NAMES: Record<TimeUnit, string> = {
+    millisecond: 'milliseconds',
+    second: 'seconds',
+    minute: 'minutes',
+    hour: 'hours',
+    day: 'days',
+    week: 'weeks',
+    month: 'months',
+    quarter: 'quarters',
+    year: 'years',
+    decade: 'decades'
+};
+
+/** Units for offset labels, from coarse to fine (quarters and decades only when asked for). */
+const AUTO_RELATIVE_UNITS: TimeUnit[] = ['year', 'month', 'week', 'day', 'hour', 'minute', 'second', 'millisecond'];
+
+/** The largest unit of which at least two fit in the visible span. */
+function autoRelativeUnit(span: number): TimeUnit {
+    return AUTO_RELATIVE_UNITS.find(u => span / UNIT_SECONDS[u] >= 2) ?? 'millisecond';
+}
+
+const formatOffset = format('~g');
+
+/** Ticks of a relative axis: nice multiples of the unit, labeled as signed offsets ("-2 wk", "0", "+3 wk"). */
+function relativeTicks(domain: [number, number], cs: RelativeTime, count: number): TimeAxisTicks {
+    const unit = cs.unit ?? autoRelativeUnit(domain[1] - domain[0]);
+    const length = UNIT_SECONDS[unit];
+    const steps = scaleLinear()
+        .domain([domain[0] / length, domain[1] / length])
+        .ticks(count);
+    const label = (k: number) => (k === 0 ? '0' : `${k > 0 ? '+' : '\u2212'}${formatOffset(Math.abs(k))} ${SHORT_UNIT_NAMES[unit]}`);
+    return {
+        ticks: steps.map(k => k * length),
+        labels: steps.map(label),
+        context: cs.anchorLabel ? `${PLURAL_UNIT_NAMES[unit]} from ${cs.anchorLabel}` : ''
+    };
 }
 
 function absoluteTicks(domain: [number, number], count: number): TimeAxisTicks {
@@ -62,7 +123,8 @@ function absoluteTicks(domain: [number, number], count: number): TimeAxisTicks {
     return {
         ticks: dates.map(d => +d / 1000),
         labels: dates.map(d => format(d)),
-        context: absoluteContext(center, delta)
+        context: absoluteContext(center, delta),
+        contextTick: true
     };
 }
 

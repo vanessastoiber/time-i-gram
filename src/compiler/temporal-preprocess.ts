@@ -1,4 +1,5 @@
 import type {
+    PeriodUnit,
     TimeUnit,
     TimeUnitRule,
     X,
@@ -12,12 +13,17 @@ import type {
 } from '@gosling-lang/gosling-schema';
 import { IsChannelDeep, IsOverlaidTrack } from '@gosling-lang/gosling-schema';
 import { getTemporalChannelFromTrack } from '../gosling-schema/validate';
-import { TIME_UNITS, parseDuration, parseTimeValue } from '../core/utils/time-units';
+import { TIME_UNITS, UNIT_SECONDS, parseDuration, parseTimeValue } from '../core/utils/time-units';
 import {
     ABSOLUTE_TIME,
     PERIOD_UNITS,
     describeTimeCoordinates,
+    describeAnchor,
     getTrackTimeCoordinates,
+    RELATIVE_UNITS,
+    type RelativeAnchor,
+    type RelativeConfig,
+    type RelativeTime,
     periodCoordinates,
     periodKeyField,
     periodReference,
@@ -253,9 +259,20 @@ function resolveTimeUnits(track: Track, warn: Warn) {
         }
 
         const unit = x.timeUnit as TimeUnit;
-        const xSource = timeCoordinates?.fields.find(f => f.coord === x.field)?.source ?? x.field;
+        // units count raw times, except on a relative axis, where they count offsets from the anchor
+        const xSource =
+            system.kind === 'relative' ? x.field : timeCoordinates?.fields.find(f => f.coord === x.field)?.source ?? x.field;
         if (!TIME_UNITS.includes(unit)) {
             warn(`timeUnit "${unit}" is not one of ${TIME_UNITS.join(', ')}, so it is ignored.`);
+            target.x = { ...x, timeUnit: undefined };
+            raw = true;
+            return;
+        }
+        if (system.kind === 'relative' && !RELATIVE_UNITS.includes(unit)) {
+            warn(
+                `timeUnit "${unit}" has no fixed length, so it cannot count offsets on a relative axis; ` +
+                    `use one of ${RELATIVE_UNITS.join(', ')}. The timeUnit is ignored.`
+            );
             target.x = { ...x, timeUnit: undefined };
             raw = true;
             return;
@@ -366,6 +383,18 @@ function resolveTimeCoordinates(track: Track, warn: Warn) {
         });
         if (sourceOf.x && sourceOf.xe) config.interval = [sourceOf.x, sourceOf.xe];
 
+        if (system.kind === 'relative' && !config.relative) {
+            const relative = resolveRelative(x as X, () => {});
+            if (relative) {
+                const { system: _, ...relativeConfig } = relative;
+                config.relative = relativeConfig;
+            }
+            if (!x.domain) {
+                warn('A `relative` axis has no domain, so it shows one year before and after the anchor; set `domain`.');
+                x.domain = { interval: DEFAULT_RELATIVE_DOMAIN };
+            }
+        }
+
         // the x domain of a period axis is the reference period
         if (system.kind === 'period') {
             // `traverseToFixSpecDownstream()` copies the view's `xDomain` into `x.domain`: only warn about own domains
@@ -387,9 +416,59 @@ function coordinateField(field: string, system: TimeCoordinateSystem) {
     return `__${system.kind}_${field}`;
 }
 
+/** Default domain of a relative axis without one: one year before and after the anchor. */
+const DEFAULT_RELATIVE_DOMAIN: [number, number] = [-UNIT_SECONDS.year, UNIT_SECONDS.year];
+
+/** Validate `x.relative` of one track definition; `undefined` (after a warning) if it is invalid. */
+function resolveRelative(x: X, warn: Warn): ({ system: RelativeTime } & RelativeConfig) | undefined {
+    const relative = x.relative!;
+    const { anchor } = relative;
+    let resolved: RelativeAnchor | undefined;
+    if (anchor === 'first' || anchor === 'last') resolved = { kind: anchor };
+    else if (typeof anchor === 'number' || typeof anchor === 'string') {
+        const time = parseTimeValue(anchor, 'start');
+        if (!isNaN(time)) resolved = { kind: 'fixed', time };
+    } else if (anchor && typeof anchor === 'object') {
+        if ('argmax' in anchor) resolved = { kind: 'argmax', field: anchor.argmax };
+        else if ('argmin' in anchor) resolved = { kind: 'argmin', field: anchor.argmin };
+        else if ('field' in anchor) resolved = { kind: 'field', field: anchor.field };
+    }
+    if (!resolved) {
+        warn(
+            `relative.anchor ${JSON.stringify(anchor)} is not a date, "first", "last", { argmax }, { argmin } or { field }, ` +
+                'so the axis stays absolute.'
+        );
+        return undefined;
+    }
+    if (relative.unit !== undefined && !TIME_UNITS.includes(relative.unit)) {
+        warn(`relative.unit "${relative.unit}" is not a time unit, so the unit is chosen from the visible span.`);
+    }
+    const unit = relative.unit && TIME_UNITS.includes(relative.unit) ? relative.unit : undefined;
+    const system: RelativeTime = { kind: 'relative', unit, anchorLabel: describeAnchor(resolved) };
+    const { groupby } = relative;
+    if (groupby && typeof groupby === 'object' && !Array.isArray(groupby)) {
+        const period = groupby.period;
+        const unitName = typeof period === 'string' ? period : period?.unit;
+        if (!PERIOD_UNITS.includes(unitName as PeriodUnit)) {
+            warn(`relative.groupby.period "${unitName}" is not one of ${PERIOD_UNITS.join(', ')}, so all rows form one group.`);
+            return { system, anchor: resolved, groupby: [] };
+        }
+        const keyField = typeof period === 'object' ? period.newField : undefined;
+        return { system, anchor: resolved, groupby: [], groupPeriod: { system: periodCoordinates(period), keyField } };
+    }
+    return { system, anchor: resolved, groupby: groupby === undefined ? [] : ([] as string[]).concat(groupby) };
+}
+
 /** Validate and normalize `x.period` of one track definition and return its coordinate system. */
 function resolveMemberSystem(member: Partial<SingleTrack>, warn: Warn): TimeCoordinateSystem {
     const x = member.x;
+    if (IsChannelDeep(x) && 'relative' in x && x.relative) {
+        if ('period' in x && x.period) {
+            warn('`period` and `relative` cannot be combined on one axis, so `period` is ignored.');
+            x.period = undefined;
+        }
+        return resolveRelative(x as X, warn)?.system ?? ABSOLUTE_TIME;
+    }
     if (!IsChannelDeep(x) || !('period' in x) || x.period === undefined) return ABSOLUTE_TIME;
     const period = typeof x.period === 'string' ? { unit: x.period } : { ...x.period };
     if (!PERIOD_UNITS.includes(period.unit)) {
@@ -416,10 +495,18 @@ function resolveMemberSystem(member: Partial<SingleTrack>, warn: Warn): TimeCoor
     return periodCoordinates(period);
 }
 
-/** Convert both bounds of an interval to seconds; `undefined` (after a warning) if a bound is invalid. */
+/**
+ * Convert both bounds of an interval to seconds; `undefined` (after a warning) if a bound is invalid.
+ * A bound is a time value (Unix seconds or a date string) or, for relative axes, a duration: a signed offset
+ * such as `"-36 months"` (date strings and durations never look alike).
+ */
 function resolveInterval(interval: (number | string)[], warn: Warn): [number, number] | undefined {
-    const start = parseTimeValue(interval[0], 'start');
-    const end = parseTimeValue(interval[1], 'end');
+    const bound = (value: number | string, which: 'start' | 'end') => {
+        const time = parseTimeValue(value, which);
+        return isNaN(time) ? parseDuration(value) : time;
+    };
+    const start = bound(interval[0], 'start');
+    const end = bound(interval[1], 'end');
     if (isNaN(start) || isNaN(end)) {
         const bad = isNaN(start) ? interval[0] : interval[1];
         warn(`interval ${JSON.stringify(interval)}: "${bad}" is not a date (e.g. "2010", "2010-12", "2010-12-31", "2010-12-31T12:00:00Z"), so the domain is ignored.`);

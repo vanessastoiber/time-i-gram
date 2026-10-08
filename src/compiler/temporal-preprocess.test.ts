@@ -486,3 +486,144 @@ describe('granularity transition rules', () => {
         expect(copy).toEqual(JSON.parse(JSON.stringify(gs)));
     });
 });
+
+describe('relative (time coordinate system)', () => {
+    const WEEK = 7 * 86400;
+    const relativeTrack = (relative: unknown, extra: object = {}) =>
+        timeTrack({
+            x: { field: 'date', type: 'temporal', relative, domain: { interval: ['-4 weeks', '30 weeks'] }, axis: 'top' },
+            ...extra
+        });
+
+    it('is schema-valid with every kind of anchor', () => {
+        for (const anchor of ['2008-09-15', 1221436800, 'first', 'last', { argmax: 'v' }, { argmin: 'v' }, { field: 'onset' }]) {
+            expect(validateGoslingSpec({ tracks: [relativeTrack({ anchor, groupby: 'g', unit: 'week' })] }).state).toEqual('success');
+        }
+        expect(validateGoslingSpec({ tracks: [relativeTrack({ anchor: { peak: 'v' } })] }).state).toEqual('warn');
+    });
+
+    it('maps rows to offsets in the fetcher, takes durations as the domain, and labels offsets', () => {
+        const { hg } = compiled({
+            tracks: [relativeTrack({ anchor: { argmax: 'v' }, groupby: ['g'], unit: 'week' })]
+        } as GoslingSpec);
+        const { data, options } = dataTrack(hg);
+        expect(data.x).toEqual('__relative_date');
+        expect(data.timeCoordinates).toEqual({
+            system: { kind: 'relative', unit: 'week', anchorLabel: 'the maximum of v' },
+            fields: [{ source: 'date', coord: '__relative_date' }],
+            keyFields: [],
+            relative: { anchor: { kind: 'argmax', field: 'v' }, groupby: ['g'] }
+        });
+        expect(options.spec.x.field).toEqual('__relative_date');
+        expect(hg.views[0].initialXDomain).toEqual([-4 * WEEK, 30 * WEEK]);
+        expect(timeAxis(hg).options.timeCoordinates.kind).toEqual('relative');
+    });
+
+    it('resolves a fixed date anchor', () => {
+        const { hg } = compiled({ tracks: [relativeTrack({ anchor: '2008-09-15' })] } as GoslingSpec);
+        expect(dataTrack(hg).data.timeCoordinates.relative.anchor).toEqual({ kind: 'fixed', time: Date.UTC(2008, 8, 15) / 1000 });
+    });
+
+    it('defaults to one year around the anchor without a domain, with a warning', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const { hg } = compiled({
+            tracks: [timeTrack({ x: { field: 'date', type: 'temporal', relative: { anchor: 'first' } } })]
+        } as GoslingSpec);
+        expect(hg.views[0].initialXDomain).toEqual([-365.2425 * 86400, 365.2425 * 86400]);
+        expect(warn.mock.calls.flat().join(' ')).toMatch(/A `relative` axis has no domain/);
+        warn.mockRestore();
+    });
+
+    it('rejects period + relative and invalid anchors', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const both = compiled({ tracks: [relativeTrack({ anchor: 'first' }, { x: undefined })] } as GoslingSpec);
+        expect(dataTrack(both.hg).data.timeCoordinates).toBeUndefined();
+        compiled({
+            tracks: [
+                timeTrack({ x: { field: 'date', type: 'temporal', period: 'year', relative: { anchor: 'first' }, domain: { interval: [0, 1] } } })
+            ]
+        } as GoslingSpec);
+        compiled({ tracks: [relativeTrack({ anchor: 'yesterday' })] } as GoslingSpec);
+        const messages = warn.mock.calls.flat().join(' ');
+        expect(messages).toMatch(/`period` and `relative` cannot be combined/);
+        expect(messages).toMatch(/relative.anchor "yesterday" is not a date/);
+        warn.mockRestore();
+    });
+
+    it('bins offsets with fixed-length units only', () => {
+        const binned = compiled({
+            tracks: [
+                relativeTrack(
+                    { anchor: 'first', unit: 'week' },
+                    {
+                        x: {
+                            field: 'date',
+                            type: 'temporal',
+                            relative: { anchor: 'first' },
+                            timeUnit: 'week',
+                            domain: { interval: ['-4 weeks', '30 weeks'] }
+                        },
+                        y: { field: 'v', type: 'quantitative', aggregate: 'mean' }
+                    }
+                )
+            ]
+        } as GoslingSpec);
+        const { options, data } = dataTrack(binned.hg);
+        expect(options.spec._timeUnit.source).toEqual('__relative_date');
+        expect(data.x).toEqual('__relative_date');
+        expect(data.timeUnitTiling.source).toEqual('__relative_date');
+
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const monthly = compiled({
+            tracks: [
+                timeTrack({
+                    x: { field: 'date', type: 'temporal', relative: { anchor: 'first' }, timeUnit: 'month', domain: { interval: [0, 1] } }
+                })
+            ]
+        } as GoslingSpec);
+        expect(dataTrack(monthly.hg).options.spec._timeUnit).toBeUndefined();
+        expect(warn.mock.calls.flat().join(' ')).toMatch(/timeUnit "month" has no fixed length/);
+        warn.mockRestore();
+    });
+
+    it('links relative views with each other, but not with absolute ones', () => {
+        const view = (x: object) => ({
+            tracks: [timeTrack({ x: { field: 'date', type: 'temporal', linkingId: 'link', domain: { interval: [0, 1000] }, ...x } })]
+        });
+        const lockedViews = (hg: HiGlassSpec) => Object.keys(hg.zoomLocks.locksByViewUid).length;
+        const both = compiled({
+            views: [view({ relative: { anchor: 'first' } }), view({ relative: { anchor: '2008' } })]
+        } as unknown as GoslingSpec);
+        expect(lockedViews(both.hg)).toEqual(2);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const mixed = compiled({ views: [view({ relative: { anchor: 'first' } }), view({})] } as unknown as GoslingSpec);
+        expect(lockedViews(mixed.hg)).toEqual(1);
+        expect(warn.mock.calls.flat().join(' ')).toMatch(/relative time and absolute time/);
+        warn.mockRestore();
+    });
+});
+
+describe('relative groupby period', () => {
+    it('compiles to a period grouping of the anchors', () => {
+        const { hg } = compiled({
+            tracks: [
+                timeTrack({
+                    x: {
+                        field: 'date',
+                        type: 'temporal',
+                        relative: {
+                            anchor: { argmax: 'v' },
+                            groupby: { period: { unit: 'year', weekBased: true, start: 40, newField: 'season' } }
+                        },
+                        domain: { interval: ['-20 weeks', '20 weeks'] }
+                    }
+                })
+            ]
+        } as GoslingSpec);
+        expect(dataTrack(hg).data.timeCoordinates.relative).toEqual({
+            anchor: { kind: 'argmax', field: 'v' },
+            groupby: [],
+            groupPeriod: { system: { kind: 'period', unit: 'year', weekBased: true, start: 40 }, keyField: 'season' }
+        });
+    });
+});

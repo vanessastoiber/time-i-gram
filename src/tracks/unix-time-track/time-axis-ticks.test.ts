@@ -49,3 +49,25 @@ describe('time axis ticks', () => {
         expect(timeAxisTicks(periodReference(month), month).labels.slice(0, 2)).toEqual(['1', '3']);
     });
 });
+
+describe('relative time axis ticks', () => {
+    const WEEK = 7 * 86400;
+
+    it('label signed offsets in the chosen unit, with a context naming the anchor', () => {
+        const { ticks, labels, context } = timeAxisTicks([-4 * WEEK, 10 * WEEK], {
+            kind: 'relative',
+            unit: 'week',
+            anchorLabel: 'the maximum of INF_A'
+        });
+        expect(labels).toContain('0');
+        expect(labels).toContain('−2 wk');
+        expect(labels).toContain('+4 wk');
+        expect(ticks[labels.indexOf('0')]).toEqual(0);
+        expect(context).toEqual('weeks from the maximum of INF_A');
+    });
+
+    it('choose a unit from the visible span when none is given', () => {
+        expect(timeAxisTicks([-3 * 86400, 3 * 86400], { kind: 'relative' }).labels).toContain('+1 d');
+        expect(timeAxisTicks([-3 * 365.2425 * 86400, 2 * 365.2425 * 86400], { kind: 'relative' }).labels).toContain('+1 y');
+    });
+});

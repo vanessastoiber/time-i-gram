@@ -14,9 +14,9 @@
  */
 
 import type { Period, PeriodUnit, TimeUnit } from '@gosling-lang/gosling-schema';
-import { floorTime, isoWeekDate, isoWeekStart, offsetTime, utcParts } from './time-units';
+import { UNIT_SECONDS, floorTime, isoWeekDate, isoWeekStart, offsetTime, parseTimeValue, utcParts } from './time-units';
 
-export type TimeCoordinateSystem = AbsoluteTime | PeriodTime;
+export type TimeCoordinateSystem = AbsoluteTime | PeriodTime | RelativeTime;
 
 export interface AbsoluteTime {
     kind: 'absolute';
@@ -30,6 +30,14 @@ export interface PeriodTime {
     start: number;
 }
 
+export interface RelativeTime {
+    kind: 'relative';
+    /** Unit of the axis labels; chosen from the visible span if undefined. */
+    unit?: TimeUnit;
+    /** Description of the reference event, for the axis (e.g. "the peak of INF_A"). */
+    anchorLabel?: string;
+}
+
 export const ABSOLUTE_TIME: AbsoluteTime = { kind: 'absolute' };
 
 /** Short identifier of a coordinate system: two axes can share coordinates only if their signatures match. */
@@ -39,6 +47,9 @@ export function timeCoordinateSignature(cs: TimeCoordinateSystem): string {
             return 'absolute';
         case 'period':
             return `period:${cs.unit}${cs.weekBased ? ':iso-weeks' : ''}:${cs.start}`;
+        case 'relative':
+            // offsets are comparable whatever the anchor and the label unit
+            return 'relative';
     }
 }
 
@@ -52,6 +63,8 @@ export function describeTimeCoordinates(cs: TimeCoordinateSystem): string {
             if (cs.start !== defaultPeriodStart(cs.unit, cs.weekBased)) details.push(`start ${cs.start}`);
             return `period (${details.join(', ')})`;
         }
+        case 'relative':
+            return 'relative time';
     }
 }
 
@@ -244,6 +257,86 @@ export interface TimeCoordinatesConfig {
     keyFields?: string[];
     /** Source fields of an interval (`x`, `xe`) that is split where it crosses a period boundary. */
     interval?: [string, string];
+    /** Reference events of a relative system. */
+    relative?: RelativeConfig;
+}
+
+/** Anchors of a relative system: per group of fields, or per calendar period (`groupPeriod`). */
+export interface RelativeConfig {
+    anchor: RelativeAnchor;
+    groupby: string[];
+    groupPeriod?: { system: PeriodTime; keyField?: string };
+}
+
+/** A resolved `x.relative.anchor`. */
+export type RelativeAnchor =
+    | { kind: 'fixed'; time: number }
+    | { kind: 'first' | 'last' }
+    | { kind: 'argmax' | 'argmin'; field: string }
+    | { kind: 'field'; field: string };
+
+/** Description of an anchor, e.g. for the axis: "the peak of INF_A". */
+export function describeAnchor(anchor: RelativeAnchor): string {
+    switch (anchor.kind) {
+        case 'fixed':
+            return new Date(anchor.time * 1000).toISOString().replace('T00:00:00.000Z', '').replace('.000Z', 'Z');
+        case 'first':
+            return 'the first record';
+        case 'last':
+            return 'the last record';
+        case 'argmax':
+            return `the maximum of ${anchor.field}`;
+        case 'argmin':
+            return `the minimum of ${anchor.field}`;
+        case 'field':
+            return anchor.field;
+    }
+}
+
+/** A reference time read from a row: Unix seconds, or a date string as in `parseTimeValue`. */
+function readTime(value: unknown): number {
+    if (typeof value === 'number') return value;
+    if (typeof value !== 'string' || value.trim() === '') return NaN;
+    return /^-?\d+(\.\d+)?$/.test(value.trim()) ? +value : parseTimeValue(value.trim());
+}
+
+/**
+ * The anchor (Unix seconds) of every row of a relative system: one per group for `first`, `last`, `argmax` and
+ * `argmin`, computed over all rows; `NaN` if a row has no valid anchor.
+ */
+export function relativeAnchors(
+    rows: Record<string, unknown>[],
+    timeField: string,
+    { anchor, groupby, groupPeriod }: RelativeConfig
+): number[] {
+    if (anchor.kind === 'fixed') return rows.map(() => anchor.time);
+    if (anchor.kind === 'field') return rows.map(row => readTime(row[anchor.field]));
+
+    const keyOf = (row: Record<string, unknown>) =>
+        groupPeriod
+            ? periodKey(+(row[timeField] as number), groupPeriod.system)
+            : JSON.stringify(groupby.map(g => row[g]));
+    const valueField = anchor.kind === 'argmax' || anchor.kind === 'argmin' ? anchor.field : '';
+    const best = new Map<string, { time: number; value: number }>();
+    rows.forEach(row => {
+        const time = +(row[timeField] as number);
+        if (!isFinite(time)) return;
+        const key = keyOf(row);
+        const current = best.get(key);
+        if (anchor.kind === 'first' || anchor.kind === 'last') {
+            const better = !current || (anchor.kind === 'first' ? time < current.time : time > current.time);
+            if (better) best.set(key, { time, value: time });
+            return;
+        }
+        const value = +(row[valueField] as number);
+        if (!isFinite(value)) return;
+        const better =
+            !current ||
+            (anchor.kind === 'argmax' ? value > current.value : value < current.value) ||
+            (value === current.value && time < current.time);
+        if (better) best.set(key, { time, value });
+    });
+    return rows.map(row => best.get(keyOf(row))?.time ?? NaN);
 }
 
 /** Coordinates of a value at the end of an interval: the end of a period is the end of the reference period. */
@@ -264,6 +357,22 @@ export function applyTimeCoordinates<T extends Record<string, unknown>>(
     config: TimeCoordinatesConfig
 ): (T & Record<string, unknown>)[] {
     const { system } = config;
+    if (system.kind === 'relative') {
+        if (!config.relative || config.fields.length === 0) return rows;
+        const anchors = relativeAnchors(rows, config.fields[0].source, config.relative);
+        const output: (T & Record<string, unknown>)[] = [];
+        const { groupPeriod } = config.relative;
+        rows.forEach((row, i) => {
+            if (!isFinite(anchors[i])) return;
+            const copy: Record<string, unknown> = { ...row };
+            config.fields.forEach(({ source, coord }) => (copy[coord] = +(row[source] as number) - anchors[i]));
+            if (groupPeriod?.keyField) {
+                copy[groupPeriod.keyField] = periodKey(+(row[config.fields[0].source] as number), groupPeriod.system);
+            }
+            output.push(copy as T & Record<string, unknown>);
+        });
+        return output;
+    }
     if (system.kind === 'absolute') {
         return rows.map(row => {
             const copy: Record<string, unknown> = { ...row };
@@ -333,7 +442,7 @@ export const TIME_AGGREGATE_OPS: readonly TimeAggregateOp[] = ['count', 'sum', '
 /** Internal spec of `x.timeUnit` on a resolved track, set by `resolveTemporalSugar()`. */
 export interface TimeUnitBinning {
     unit: TimeUnit;
-    /** Field with the raw times (Unix seconds). */
+    /** Field with the raw times (Unix seconds), or with the offsets in a relative system. */
     source: string;
     /** Fields that receive the coordinates of the start (`x`) and end (`xe`) of each row's unit. */
     field: string;
@@ -385,14 +494,22 @@ export function unitsWithinPeriod(cs: PeriodTime): TimeUnit[] {
     }
 }
 
-/** Coordinate of the start of the unit that contains `t` (Unix seconds) in a time coordinate system. */
+/** Units that can bin a relative axis: those with a fixed length, counted from the anchor. */
+export const RELATIVE_UNITS: readonly TimeUnit[] = ['millisecond', 'second', 'minute', 'hour', 'day', 'week'];
+
+/**
+ * Coordinate of the start of the unit that contains `t` in a time coordinate system. `t` is Unix seconds, except
+ * in a relative system, where it is the offset from the anchor and units count from the anchor.
+ */
 export function unitStartCoordinate(t: number, unit: TimeUnit, cs: TimeCoordinateSystem): number {
+    if (cs.kind === 'relative') return Math.floor(t / UNIT_SECONDS[unit]) * UNIT_SECONDS[unit];
     const start = floorTime(t, unit);
     return cs.kind === 'period' ? toPeriodCoordinate(start, cs) : start;
 }
 
 /** Coordinate of the end of the unit that contains `t`. */
 export function unitEndCoordinate(t: number, unit: TimeUnit, cs: TimeCoordinateSystem): number {
+    if (cs.kind === 'relative') return unitStartCoordinate(t, unit, cs) + UNIT_SECONDS[unit];
     const end = offsetTime(floorTime(t, unit), unit, 1);
     return cs.kind === 'period' ? toPeriodEndCoordinate(end, cs) : end;
 }

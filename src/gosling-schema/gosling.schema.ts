@@ -808,6 +808,43 @@ export interface X extends Omit<AxisCommon, 'domain'> {
      * Only for `type: "temporal"` on `x`.
      */
     timeUnit?: TimeUnit | TimeUnitRule[];
+    /**
+     * Re-express time as an offset from a reference event, which sets the axis' time coordinate system to
+     * `relative`: each row is placed at its signed offset from the anchor of its group (a fixed date, the group's
+     * first or last record, the time of the group's largest or smallest value of a field, or a date read from the
+     * row itself). The axis labels offsets in `unit` ("-2 wk", "0", "+3 wk"), with 0 at the anchor.
+     *
+     * Set the domain as offsets, e.g. `{ "interval": ["-36 months", "24 months"] }` (durations or seconds).
+     * Only for `type: "temporal"` on `x`; cannot be combined with `period`.
+     */
+    relative?: Relative;
+}
+
+/** The reference event of a relative time axis (`x.relative`). */
+export interface Relative {
+    /**
+     * The reference event (offset 0):
+     * - a date (`"2008-09-15"`) or Unix seconds: the same instant for all rows;
+     * - `"first"` | `"last"`: the earliest or latest time in the row's group;
+     * - `{ "argmax": field }` | `{ "argmin": field }`: the time of the group's largest or smallest value of `field`
+     *   (the earliest one if several rows tie);
+     * - `{ "field": name }`: a per-row reference time in a column (Unix seconds or an ISO date).
+     */
+    anchor: TimeValue | 'first' | 'last' | { argmax: string } | { argmin: string } | { field: string };
+    /**
+     * The groups for `"first"`, `"last"`, `argmax` and `argmin`: field(s), or `{ "period": ... }` to group rows by
+     * the calendar period they fall in (e.g. flu seasons: `{ "period": { "unit": "year", "weekBased": true,
+     * "start": 40, "newField": "season" } }`); the period's `newField` receives each row's period.
+     *
+     * __Default:__ all rows form one group
+     */
+    groupby?: string | string[] | { period: PeriodUnit | Period };
+    /**
+     * Unit of the axis labels ("+3 wk") and of `timeUnit` bins, which count whole units from the anchor.
+     * Units from `month` up are labeled with nominal lengths (a month is 30.44 days).
+     * __Default:__ chosen from the visible span
+     */
+    unit?: TimeUnit;
 }
 
 /** A granularity transition rule of `x.timeUnit`. */

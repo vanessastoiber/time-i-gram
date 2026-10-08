@@ -39,3 +39,21 @@ describe('unix time axis track', () => {
         expect(track.pMain.geometry.graphicsData[0].lineStyle.color).toEqual(0xff0000);
     });
 });
+
+describe('unix time axis track: time coordinate systems', () => {
+    it('labels a relative axis with offsets and no center tick', () => {
+        const track = createTrack({ timeCoordinates: { kind: 'relative', unit: 'week', anchorLabel: 'the peak' } });
+        track._xScale = scaleLinear().domain([-4 * 604800, 10 * 604800]).range([0, 500]);
+        track.draw();
+        expect(track.axisTexts.map((t: any) => t.text)).toContain('+4 wk');
+        expect(track.context.text).toEqual('weeks from the peak');
+        expect(countLines(track)).toEqual(track.axisTicks.ticks.length);
+    });
+
+    it('labels a period axis by position within the period', () => {
+        const track = createTrack({ timeCoordinates: { kind: 'period', unit: 'year', weekBased: false, start: 1 } });
+        track._xScale = scaleLinear().domain([946684800, 978307200]).range([0, 500]);
+        track.draw();
+        expect(track.axisTexts.map((t: any) => t.text).slice(0, 2)).toEqual(['Jan', 'Feb']);
+    });
+});

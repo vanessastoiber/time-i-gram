@@ -136,7 +136,11 @@ export function binByTimeUnit(binning: TimeUnitBinning, data: Datum[], cs: TimeC
     });
     return Array.from(groups.values()).map(rows => {
         const first = rows[0];
-        const row: Datum = { [source]: floorTime(+first[source], unit), [field]: first[field], [endField]: first[endField] };
+        const row: Datum = {
+            [source]: cs.kind === 'relative' ? first[field] : floorTime(+first[source], unit),
+            [field]: first[field],
+            [endField]: first[endField]
+        };
         groupby.forEach(g => (row[g] = first[g]));
         aggregates.forEach(({ field: f, op }) => {
             const values = rows.map(r => +r[f]).filter(v => isFinite(v));
