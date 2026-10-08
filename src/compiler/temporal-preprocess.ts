@@ -51,7 +51,8 @@ const X_CHANNELS = ['x', 'xe', 'x1', 'x1e'] as const;
  * Downstream code (compiler, tracks, fetchers) therefore only sees numbers. Invalid uses are removed with a
  * warning; the returned messages are the same warnings.
  *
- * Idempotent: numbers are kept as they are, so the function can run again after a responsive re-fix.
+ * Idempotent: resolved tracks are flagged and skipped (see `RESOLVED`), and numbers in view domains are kept as
+ * they are, so the function can run again after a responsive re-fix.
  */
 export function resolveTemporalSugar(spec: GoslingSpec): string[] {
     // a new spec: render-time warnings may be given again
@@ -154,10 +155,19 @@ function checkDomainKinds(track: Track, warn: Warn) {
     });
 }
 
+/**
+ * Set on every temporal track that `resolveTemporalSugar()` has resolved. The compiler runs the pass again after
+ * a responsive re-fix, which swaps in unresolved views: tracks with the flag are skipped, the others resolved.
+ * Other tracks are not flagged (so their compiled specs stay as they were): resolving them again changes nothing.
+ */
+const RESOLVED = '_temporalResolved';
+
 function resolveTrack(track: Track, warn: Warn) {
+    if ((track as Record<string, unknown>)[RESOLVED]) return;
     removeTemporalOnlyProperties(track, warn);
     checkDomainKinds(track, warn);
     const isTemporal = !!getTemporalChannelFromTrack(track as SingleTrack);
+    if (isTemporal) (track as Record<string, unknown>)[RESOLVED] = true;
     if (isTemporal) expandGranularityRules(track, warn);
     const members: Partial<SingleTrack>[] = IsOverlaidTrack(track) ? [track, ...track.overlay] : [track as SingleTrack];
 
@@ -336,13 +346,6 @@ function resolveTimeUnits(track: Track, warn: Warn) {
         if (merged.mark === 'brush') return;
         const x = merged.x;
         if (!IsChannelDeep(x) || x.type !== 'temporal' || !x.field) return;
-        const existing = getTrackTimeUnit(target);
-        if (existing) {
-            // already resolved (the compiler runs this again after a responsive re-fix)
-            units.push(existing.unit);
-            source = source ?? existing.source;
-            return;
-        }
         if (!('timeUnit' in x) || !x.timeUnit) {
             raw = true;
             return;
@@ -446,8 +449,6 @@ function resolveTimeUnits(track: Track, warn: Warn) {
  * Absolute time needs no mapping, so such tracks are left exactly as they are.
  */
 function resolveTimeCoordinates(track: Track, warn: Warn) {
-    // already resolved (the compiler runs this again after a responsive re-fix)
-    if (getTrackTimeCoordinates(track)) return;
     const members: Partial<SingleTrack>[] = IsOverlaidTrack(track) ? [track, ...track.overlay] : [track as SingleTrack];
     const inheritedDomain = (track as CommonTrackDef).xDomain;
 

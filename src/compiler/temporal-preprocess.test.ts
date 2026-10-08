@@ -332,6 +332,27 @@ describe('period (time coordinate system)', () => {
         expect(copy).toEqual(JSON.parse(JSON.stringify(gs)));
     });
 
+    it('marks resolved tracks with one flag, which alone decides whether a track is resolved again', () => {
+        const { gs } = compiled({
+            tracks: [
+                timeTrack(),
+                periodTrack('year'),
+                timeTrack({ x: { field: 'date', type: 'temporal', timeUnit: 'month' } })
+            ]
+        } as GoslingSpec);
+        const tracks = (gs as any).tracks;
+        tracks.forEach((t: any) => expect(t._temporalResolved).toBe(true));
+        // a resolved track is skipped, whatever it holds
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        tracks[0].x.period = 'fortnight';
+        expect(resolveTemporalSugar(gs)).toEqual([]);
+        expect(tracks[0].x.period).toEqual('fortnight');
+        // tracks without the flag (e.g. a responsive alternative swapped in) are resolved
+        delete tracks[0]._temporalResolved;
+        expect(resolveTemporalSugar(gs).join(' ')).toMatch(/period "fortnight"/);
+        warn.mockRestore();
+    });
+
     it('leaves absolute temporal and genomic tracks unchanged', () => {
         const { hg } = compiled({ tracks: [timeTrack()] } as GoslingSpec);
         expect(dataTrack(hg).data.timeCoordinates).toBeUndefined();
