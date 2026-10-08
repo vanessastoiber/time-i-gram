@@ -15,7 +15,18 @@
 
 import type { Period, PeriodUnit, TimeUnit } from '@gosling-lang/gosling-schema';
 import { warnOnce } from './temporal-warnings';
-import { UNIT_SECONDS, floorTime, isoWeekDate, isoWeekStart, offsetTime, parseTimeValue, utcParts } from './time-units';
+import {
+    DAY,
+    UNIT_SECONDS,
+    WEEK,
+    floorTime,
+    isoWeekDate,
+    isoWeekStart,
+    offsetTime,
+    parseTimeValue,
+    utc,
+    utcParts
+} from './time-units';
 
 export type TimeCoordinateSystem = AbsoluteTime | PeriodTime | RelativeTime;
 
@@ -71,12 +82,10 @@ export function describeTimeCoordinates(cs: TimeCoordinateSystem): string {
 
 /* ----------------------------- Period ----------------------------- */
 
-const DAY = 86400;
-const WEEK = 7 * DAY;
 /** Monday 2001-01-01, the start of the reference week and of the reference week-based year. */
 const REF_MONDAY = Date.UTC(2001, 0, 1) / 1000;
-/** The reference week-based year always has room for 53 weeks. */
-const WEEKS_IN_REF_YEAR = 53;
+/** The reference week-based year always has room for 53 weeks (the time axis labels the same slots). */
+export const WEEKS_IN_REF_YEAR = 53;
 
 export const PERIOD_UNITS: readonly PeriodUnit[] = ['year', 'month', 'week', 'day'];
 
@@ -111,12 +120,6 @@ export function periodKeyField(field: string, period: PeriodUnit | Period): stri
         (typeof period === 'object' && period.newField) ||
         `${field}_${typeof period === 'string' ? period : period.unit}`
     );
-}
-
-function utc(year: number, month: number, day = 1) {
-    const date = new Date(Date.UTC(2000, 0, 1));
-    date.setUTCFullYear(year, month - 1, day);
-    return date.getTime() / 1000;
 }
 
 /**

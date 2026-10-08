@@ -5,12 +5,13 @@ import { format } from 'd3-format';
 import type { TimeUnit } from '@gosling-lang/gosling-schema';
 import {
     ABSOLUTE_TIME,
+    WEEKS_IN_REF_YEAR,
     periodReference,
     type PeriodTime,
     type RelativeTime,
     type TimeCoordinateSystem
 } from '../../core/utils/time-coordinate-system';
-import { UNIT_SECONDS } from '../../core/utils/time-units';
+import { DAY, UNIT_SECONDS, WEEK } from '../../core/utils/time-units';
 
 /** Ticks of a time axis: positions (in axis coordinates, i.e. seconds) and labels, plus a context label. */
 export interface TimeAxisTicks {
@@ -22,12 +23,8 @@ export interface TimeAxisTicks {
     contextTick?: boolean;
 }
 
-const SECOND = 1000;
-const MINUTE = 60 * SECOND;
-const HOUR = 60 * MINUTE;
-const DAY = 24 * HOUR;
-const WEEK = 7 * DAY;
-const YEAR = 365 * DAY;
+/** The shortest calendar year, in seconds (yearly ticks are 365 or 366 days apart). */
+const SHORTEST_YEAR = 365 * DAY;
 
 const formatContextSecond = utcFormat('%Y %b %d (%I:%M:%S %p)');
 const formatContextMinute = utcFormat('%Y %b %d (%I:%M %p)');
@@ -36,14 +33,17 @@ const formatContextDay = utcFormat('%Y %b %d');
 const formatContextWeek = utcFormat('%Y %b');
 const formatContextMonth = utcFormat('%Y');
 
-/** Context of absolute ticks: the coarser calendar unit around the tick unit (e.g. the year for month ticks). */
+/**
+ * Context of absolute ticks: the coarser calendar unit around the tick unit (e.g. the year for month ticks).
+ * `tickDelta` is in seconds.
+ */
 function absoluteContext(date: Date, tickDelta: number) {
-    if (tickDelta < SECOND) return formatContextSecond(date);
-    if (tickDelta < MINUTE) return formatContextMinute(date);
-    if (tickDelta < HOUR) return formatContextHour(date);
+    if (tickDelta < UNIT_SECONDS.second) return formatContextSecond(date);
+    if (tickDelta < UNIT_SECONDS.minute) return formatContextMinute(date);
+    if (tickDelta < UNIT_SECONDS.hour) return formatContextHour(date);
     if (tickDelta < DAY) return formatContextDay(date);
     if (tickDelta < WEEK) return formatContextWeek(date);
-    if (tickDelta < YEAR) return formatContextMonth(date);
+    if (tickDelta < SHORTEST_YEAR) return formatContextMonth(date);
     return '';
 }
 
@@ -124,7 +124,7 @@ function absoluteTicks(domain: [number, number], count: number): TimeAxisTicks {
     const dates = scale.ticks(count);
     const format = scale.tickFormat(count);
     const center = new Date(((domain[0] + domain[1]) / 2) * 1000);
-    const delta = dates.length > 1 ? +dates[1] - +dates[0] : Infinity;
+    const delta = dates.length > 1 ? (+dates[1] - +dates[0]) / 1000 : Infinity;
     return {
         ticks: dates.map(d => +d / 1000),
         labels: dates.map(d => format(d)),
@@ -142,7 +142,7 @@ const formatWeekday = utcFormat('%a');
 const formatWeekdayTime = utcFormat('%a %H:%M');
 const formatTime = utcFormat('%H:%M');
 
-const isDayStart = (d: Date) => +d % DAY === 0;
+const isDayStart = (d: Date) => +d % (DAY * 1000) === 0;
 const isMonthStart = (d: Date) => isDayStart(d) && d.getUTCDate() === 1;
 
 /** Label of a position within a period: never a year, since every period shares the axis. */
@@ -160,7 +160,6 @@ function periodLabel(d: Date, cs: PeriodTime): string {
 }
 
 const WEEK_STEPS = [1, 2, 4, 8, 13, 26];
-const WEEKS_IN_REF_YEAR = 53;
 
 function periodTicks(domain: [number, number], cs: PeriodTime, count: number): TimeAxisTicks {
     const ticks =
@@ -182,7 +181,7 @@ function calendarPeriodTicks(domain: [number, number], cs: PeriodTime, count: nu
 /** Week-based years are labeled by ISO week (W1, W5, ...), and by weekday when zoomed in to a few weeks. */
 function weekBasedTicks(domain: [number, number], cs: PeriodTime, count: number): TimeAxisTicks {
     const [refStart] = periodReference(cs);
-    const weekOf = (t: number) => Math.floor((t - refStart) / (WEEK / 1000));
+    const weekOf = (t: number) => Math.floor((t - refStart) / WEEK);
     // slots count weeks since the season start; labels follow seasons of 52 weeks, and the last slot holds
     // week 53 (calendar years) or the last week of a season that has a week 53
     const weekNumber = (offset: number) =>
@@ -192,7 +191,7 @@ function weekBasedTicks(domain: [number, number], cs: PeriodTime, count: number)
             ? 53
             : cs.start - 1;
     const weekLabel = (t: number) => `W${weekNumber(weekOf(t))}`;
-    const spanWeeks = ((domain[1] - domain[0]) * 1000) / WEEK;
+    const spanWeeks = (domain[1] - domain[0]) / WEEK;
 
     if (spanWeeks < 6) {
         const dates = scaleUtc()
@@ -211,7 +210,7 @@ function weekBasedTicks(domain: [number, number], cs: PeriodTime, count: number)
     const step = WEEK_STEPS.find(s => spanWeeks / s <= count) ?? WEEK_STEPS[WEEK_STEPS.length - 1];
     const ticks: number[] = [];
     for (let offset = 0; offset < WEEKS_IN_REF_YEAR; offset++) {
-        const t = refStart + (offset * WEEK) / 1000;
+        const t = refStart + offset * WEEK;
         const week = weekNumber(offset);
         if (t >= domain[0] && t <= domain[1] && (week - 1) % step === 0 && offset !== WEEKS_IN_REF_YEAR - 1)
             ticks.push(t);

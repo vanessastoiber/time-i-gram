@@ -1,15 +1,10 @@
 import { sampleSize } from 'lodash-es';
 import type { JsonTimeData } from '@gosling-lang/gosling-schema';
-import { type CommonDataConfig, filterUsingGenoPos } from '../utils';
-import { parseDateTime, timestampToSeconds, utcSeconds, TIME_MAX_POS, TIME_MIN_POS } from '../time-utils';
-import {
-    applyTimeCoordinates,
-    filterByTimeUnits,
-    type TimeCoordinatesConfig,
-    type TimeUnitTiling
-} from '../../core/utils/time-coordinate-system';
+import type { CommonDataConfig } from '../utils';
+import { parseDateTime, timestampToSeconds, utcSeconds, TIME_MAX_POS, TIME_MIN_POS, rowsOfTile, type TimeDataConfig } from '../time-utils';
+import { applyTimeCoordinates } from '../../core/utils/time-coordinate-system';
 
-type CsvTimeDataConfig = JsonTimeData & CommonDataConfig & { timeCoordinates?: TimeCoordinatesConfig; timeUnitTiling?: TimeUnitTiling };
+type CsvTimeDataConfig = JsonTimeData & CommonDataConfig & TimeDataConfig;
 
 /**
  * HiGlass data fetcher specific for Gosling which ultimately will accept any types of data other than JSON values.
@@ -213,9 +208,7 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
             const maxX = tsInfo.min_pos[0] + (x + 1) * tileWidth;
 
             // filter the data so that visible data is sent to tracks
-            let tabularData = this.dataConfig.timeUnitTiling
-                ? filterByTimeUnits(this.values, [minX, maxX], this.dataConfig)
-                : filterUsingGenoPos(this.values, [minX, maxX], this.dataConfig);
+            let tabularData = rowsOfTile(this.values, [minX, maxX], this.dataConfig);
 
             // sample the data to make it managable for visualization components
             // sampling is opt-in: randomly dropping rows of a time series is misleading by default

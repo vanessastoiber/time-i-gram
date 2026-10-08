@@ -21,8 +21,9 @@ export const TIME_UNITS: readonly TimeUnit[] = [
     'decade'
 ];
 
-const DAY = 86400;
-const WEEK = 7 * DAY;
+/** Lengths in seconds, shared by the temporal modules. */
+export const DAY = 86400;
+export const WEEK = 7 * DAY;
 /** A mean Gregorian year (365.2425 days), the nominal length of `year` in durations. */
 const MEAN_YEAR = 365.2425 * DAY;
 
@@ -54,7 +55,7 @@ export function isFinerUnit(a: TimeUnit, b: TimeUnit): boolean {
 }
 
 /** Unix seconds of a UTC calendar date; month and day may overflow (month 13 is January of the next year). */
-function utc(year: number, month: number, day = 1, secondsOfDay = 0): number {
+export function utc(year: number, month: number, day = 1, secondsOfDay = 0): number {
     const date = new Date(Date.UTC(2000, 0, 1));
     // `Date.UTC` maps years 0-99 to 1900-1999, so set the full year explicitly.
     date.setUTCFullYear(year, month - 1, day);

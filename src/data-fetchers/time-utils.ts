@@ -3,6 +3,33 @@
  * All positions on a temporal axis are Unix epoch seconds.
  */
 
+import type { Datum } from '@gosling-lang/gosling-schema';
+import { type CommonDataConfig, filterUsingGenoPos } from './utils';
+import {
+    filterByTimeUnits,
+    type TimeCoordinatesConfig,
+    type TimeUnitTiling
+} from '../core/utils/time-coordinate-system';
+
+/** What the compiler adds to the data config of a time fetcher (see `goslingToHiGlass`). */
+export interface TimeDataConfig {
+    /** How rows are mapped into the axis' time coordinate system (period, relative). */
+    timeCoordinates?: TimeCoordinatesConfig;
+    /** With `x.timeUnit`: tiles get whole units (see `filterByTimeUnits`). */
+    timeUnitTiling?: TimeUnitTiling;
+}
+
+/** The rows of a tile `(minX, maxX]`: whole time units with `x.timeUnit`, otherwise rows by their x fields. */
+export function rowsOfTile<T extends Datum>(
+    values: T[],
+    tile: [number, number],
+    config: Omit<CommonDataConfig, 'assembly'> & TimeDataConfig
+): T[] {
+    return config.timeUnitTiling
+        ? filterByTimeUnits(values, tile, config)
+        : (filterUsingGenoPos(values, tile, config) as T[]);
+}
+
 export interface DateOrderOptions {
     /** Read ambiguous dates as day-month-year (e.g. `31.01.2012`). */
     dayFirstDate?: boolean;
