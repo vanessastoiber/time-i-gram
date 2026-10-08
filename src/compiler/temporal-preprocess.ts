@@ -12,8 +12,7 @@ import type {
     Track,
     VisibilityCondition
 } from '@gosling-lang/gosling-schema';
-import { IsChannelDeep, IsOverlaidTrack } from '@gosling-lang/gosling-schema';
-import { getTemporalChannelFromTrack } from '../gosling-schema/validate';
+import { IsChannelDeep, IsOverlaidTrack, getTemporalChannelFromTrack } from '@gosling-lang/gosling-schema';
 import { TIME_UNITS, UNIT_SECONDS, parseDuration, parseTimeValue } from '../core/utils/time-units';
 import {
     ABSOLUTE_TIME,

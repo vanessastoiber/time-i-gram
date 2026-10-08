@@ -1,8 +1,7 @@
-import { IsChannelDeep } from '@gosling-lang/gosling-schema';
+import { IsChannelDeep, getTemporalChannelFromTrack } from '@gosling-lang/gosling-schema';
 import type { HiGlassModel } from '../../compiler/higlass-model';
 import { SUPPORTED_CHANNELS } from '../mark';
 import { resolveSuperposedTracks } from './overlay';
-import { getTemporalChannelFromTrack } from '../../gosling-schema/validate';
 import {
     ABSOLUTE_TIME,
     describeTimeCoordinates,
@@ -12,9 +11,12 @@ import {
 
 /** Coordinate system of a view's x axis: `genomic`, or the signature of its time coordinate system. */
 function xCoordinates(spec: any): { signature: string; description: string } | undefined {
-    const time = getTrackTimeCoordinates(spec)?.system ?? (getTemporalChannelFromTrack(spec) ? ABSOLUTE_TIME : undefined);
+    const time =
+        getTrackTimeCoordinates(spec)?.system ?? (getTemporalChannelFromTrack(spec) ? ABSOLUTE_TIME : undefined);
     if (time) return { signature: timeCoordinateSignature(time), description: describeTimeCoordinates(time) };
-    return IsChannelDeep(spec.x) && spec.x.type === 'genomic' ? { signature: 'genomic', description: 'genomic' } : undefined;
+    return IsChannelDeep(spec.x) && spec.x.type === 'genomic'
+        ? { signature: 'genomic', description: 'genomic' }
+        : undefined;
 }
 
 /**
@@ -90,10 +92,9 @@ export function getLinkingInfo(hgModel: HiGlassModel) {
  * stays linked whatever the order of the views; a member left alone in its system is not linked. One warning
  * is given per `linkingId`. Links within one system are returned unchanged.
  */
-export function filterLinksByCoordinates<T extends { linkId: string; coordinates?: { signature: string; description: string } }>(
-    linkingInfo: T[],
-    warn: (message: string) => void = message => console.warn(`[time-i-gram] ${message}`)
-): T[] {
+export function filterLinksByCoordinates<
+    T extends { linkId: string; coordinates?: { signature: string; description: string } }
+>(linkingInfo: T[], warn: (message: string) => void = message => console.warn(`[time-i-gram] ${message}`)): T[] {
     const systems = new Map<string, Map<string, { description: string; count: number }>>();
     linkingInfo.forEach(({ linkId, coordinates }) => {
         if (!coordinates) return;
