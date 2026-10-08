@@ -68,6 +68,8 @@ describe('relative time axis ticks', () => {
 
     it('choose a unit from the visible span when none is given', () => {
         expect(timeAxisTicks([-3 * 86400, 3 * 86400], { kind: 'relative' }).labels).toContain('+1 d');
-        expect(timeAxisTicks([-3 * 365.2425 * 86400, 2 * 365.2425 * 86400], { kind: 'relative' }).labels).toContain('+1 y');
+        expect(timeAxisTicks([-3 * 365.2425 * 86400, 2 * 365.2425 * 86400], { kind: 'relative' }).labels).toContain(
+            '+1 y'
+        );
     });
 });

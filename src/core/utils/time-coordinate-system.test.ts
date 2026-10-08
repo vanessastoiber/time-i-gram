@@ -71,7 +71,9 @@ describe('calendar years', () => {
         const [refStart, refEnd] = periodReference(season);
         expect([iso(refStart), iso(refEnd)]).toEqual(['1999-08-01T00:00:00.000Z', '2000-08-01T00:00:00.000Z']);
         expect(iso(toPeriodCoordinate(s('2010-08-01'), season))).toEqual('1999-08-01T00:00:00.000Z');
-        expect(iso(toPeriodCoordinate(s('2011-02-29'.replace('29', '28')), season))).toEqual('2000-02-28T00:00:00.000Z');
+        expect(iso(toPeriodCoordinate(s('2011-02-29'.replace('29', '28')), season))).toEqual(
+            '2000-02-28T00:00:00.000Z'
+        );
         expect(iso(toPeriodCoordinate(s('2012-02-29'), season))).toEqual('2000-02-29T00:00:00.000Z');
         expect(periodKey(s('2011-07-31'), season)).toEqual('2010/11');
         expect(periodKey(s('2099-09-01'), season)).toEqual('2099/00');
@@ -177,14 +179,32 @@ describe('relative time', () => {
         { t: s('2011-01-08'), g: 'b', v: 2 },
         { t: NaN, g: 'b', v: 9 }
     ];
-    const anchorsOf = (anchor: any, groupby: string[] = ['g']) => relativeAnchors(rows, 't', { anchor, groupby }).map(a => (isNaN(a) ? 'NaN' : iso(a).slice(0, 10)));
+    const anchorsOf = (anchor: any, groupby: string[] = ['g']) =>
+        relativeAnchors(rows, 't', { anchor, groupby }).map(a => (isNaN(a) ? 'NaN' : iso(a).slice(0, 10)));
 
     it('finds a fixed anchor, the first and last records, and the peak per group', () => {
         expect(anchorsOf({ kind: 'fixed', time: s('2008-09-15') })[0]).toEqual('2008-09-15');
-        expect(anchorsOf({ kind: 'first' })).toEqual(['2010-01-10', '2010-01-10', '2010-01-10', '2011-01-01', '2011-01-01', '2011-01-01']);
-        expect(anchorsOf({ kind: 'last' }).slice(0, 4)).toEqual(['2010-03-10', '2010-03-10', '2010-03-10', '2011-01-08']);
+        expect(anchorsOf({ kind: 'first' })).toEqual([
+            '2010-01-10',
+            '2010-01-10',
+            '2010-01-10',
+            '2011-01-01',
+            '2011-01-01',
+            '2011-01-01'
+        ]);
+        expect(anchorsOf({ kind: 'last' }).slice(0, 4)).toEqual([
+            '2010-03-10',
+            '2010-03-10',
+            '2010-03-10',
+            '2011-01-08'
+        ]);
         // ties go to the earliest time; the NaN time is not a candidate
-        expect(anchorsOf({ kind: 'argmax', field: 'v' }).slice(0, 4)).toEqual(['2010-02-10', '2010-02-10', '2010-02-10', '2011-01-01']);
+        expect(anchorsOf({ kind: 'argmax', field: 'v' }).slice(0, 4)).toEqual([
+            '2010-02-10',
+            '2010-02-10',
+            '2010-02-10',
+            '2011-01-01'
+        ]);
         expect(anchorsOf({ kind: 'argmin', field: 'v' }).slice(3, 4)).toEqual(['2011-01-08']);
         // one group without groupby
         expect(new Set(anchorsOf({ kind: 'first' }, []))).toEqual(new Set(['2010-01-10']));
@@ -200,14 +220,11 @@ describe('relative time', () => {
     });
 
     it('maps rows to signed offsets and drops rows without an anchor', () => {
-        const mapped = applyTimeCoordinates(
-            [{ t: s('2008-09-01') }, { t: s('2008-10-15') }, { t: s('1960-01-01') }],
-            {
-                system: { kind: 'relative' },
-                fields: [{ source: 't', coord: '__relative_t' }],
-                relative: { anchor: { kind: 'fixed', time: s('2008-09-15') }, groupby: [] }
-            }
-        );
+        const mapped = applyTimeCoordinates([{ t: s('2008-09-01') }, { t: s('2008-10-15') }, { t: s('1960-01-01') }], {
+            system: { kind: 'relative' },
+            fields: [{ source: 't', coord: '__relative_t' }],
+            relative: { anchor: { kind: 'fixed', time: s('2008-09-15') }, groupby: [] }
+        });
         expect(mapped.map(r => (r.__relative_t as number) / 86400)).toEqual([-14, 30, -17790]);
         const dropped = applyTimeCoordinates([{ t: s('2008-09-01'), a: '' }], {
             system: { kind: 'relative' },
@@ -218,7 +235,9 @@ describe('relative time', () => {
     });
 
     it('is one coordinate system for linking, whatever the anchor', () => {
-        expect(timeCoordinateSignature({ kind: 'relative', unit: 'week' })).toEqual(timeCoordinateSignature({ kind: 'relative' }));
+        expect(timeCoordinateSignature({ kind: 'relative', unit: 'week' })).toEqual(
+            timeCoordinateSignature({ kind: 'relative' })
+        );
         expect(describeAnchor({ kind: 'argmax', field: 'INF_A' })).toEqual('the maximum of INF_A');
         expect(describeAnchor({ kind: 'fixed', time: s('2008-09-15') })).toEqual('2008-09-15');
     });
@@ -244,7 +263,11 @@ describe('relative time grouped by period', () => {
         const mapped = applyTimeCoordinates(rows, {
             system: { kind: 'relative', unit: 'week' },
             fields: [{ source: 't', coord: '__relative_t' }],
-            relative: { anchor: { kind: 'argmax', field: 'v' }, groupby: [], groupPeriod: { system: flu, keyField: 'season' } }
+            relative: {
+                anchor: { kind: 'argmax', field: 'v' },
+                groupby: [],
+                groupPeriod: { system: flu, keyField: 'season' }
+            }
         });
         expect(mapped.map(r => r.season)).toEqual(['2012/13', '2012/13', '2012/13', '2013/14', '2013/14']);
         expect(mapped.map(r => (r.__relative_t as number) / (7 * 86400))).toEqual([-9, 0, 8, 0, 5]);

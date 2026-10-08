@@ -12,7 +12,13 @@ const TAXI = {
     dateFields: ['pickup_datetime']
 } as const;
 
-const VENDOR_COLOR = { field: 'vendor_id', type: 'nominal', domain: ['1', '2'], range: ['#1f77b4', '#ff7f0e'], legend: true } as const;
+const VENDOR_COLOR = {
+    field: 'vendor_id',
+    type: 'nominal',
+    domain: ['1', '2'],
+    range: ['#1f77b4', '#ff7f0e'],
+    legend: true
+} as const;
 
 const spec = {
     title: 'NYC Taxi Trips: Spans and the Daily Cycle',
@@ -25,7 +31,13 @@ const spec = {
                     title: 'Trips as intervals: pickup to pickup + trip_duration',
                     data: TAXI,
                     dataTransform: [
-                        { type: 'span', field: 'pickup_datetime', duration: 'trip_duration', unit: 'second', newField: 'dropoff' }
+                        {
+                            type: 'span',
+                            field: 'pickup_datetime',
+                            duration: 'trip_duration',
+                            unit: 'second',
+                            newField: 'dropoff'
+                        }
                     ],
                     mark: 'withinLink',
                     x: {

@@ -32,7 +32,8 @@ const YEAR_COLOR = {
 
 const spec = {
     title: 'WHO Flu (USA): Influenza A by Week of the Year',
-    subtitle: 'One ring for all years (period: year, ISO weeks), brushed into a linear comparison; absolute timeline below',
+    subtitle:
+        'One ring for all years (period: year, ISO weeks), brushed into a linear comparison; absolute timeline below',
     arrangement: 'vertical',
     views: [
         {
@@ -51,7 +52,12 @@ const spec = {
                             tracks: [
                                 { mark: 'line', color: { ...YEAR_COLOR, legend: true }, size: { value: 2 } },
                                 // a brush in the period coordinate system: it selects weeks of every year at once
-                                { mark: 'brush', x: { linkingId: 'weeks' }, color: { value: 'gray' }, opacity: { value: 0.12 } }
+                                {
+                                    mark: 'brush',
+                                    x: { linkingId: 'weeks' },
+                                    color: { value: 'gray' },
+                                    opacity: { value: 0.12 }
+                                }
                             ],
                             width: 380,
                             height: 120
@@ -64,7 +70,13 @@ const spec = {
                         {
                             data: FLU,
                             mark: 'line',
-                            x: { field: 'ISO_YEAR', type: 'temporal', period: PERIOD, axis: 'bottom', linkingId: 'weeks' },
+                            x: {
+                                field: 'ISO_YEAR',
+                                type: 'temporal',
+                                period: PERIOD,
+                                axis: 'bottom',
+                                linkingId: 'weeks'
+                            },
                             y: { field: 'INF_A', type: 'quantitative', domain: [0, 14000], axis: 'left' },
                             color: YEAR_COLOR,
                             size: { value: 2 },

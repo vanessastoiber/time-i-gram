@@ -51,7 +51,11 @@ function absoluteContext(date: Date, tickDelta: number) {
  * Ticks and labels of a time axis with the visible `domain` (seconds) in the time coordinate system `cs`:
  * absolute dates, positions within a period (Jan...Dec, W1...W53, Mon...Sun, 00:00...23:00), or offsets.
  */
-export function timeAxisTicks(domain: [number, number], cs: TimeCoordinateSystem = ABSOLUTE_TIME, count = 10): TimeAxisTicks {
+export function timeAxisTicks(
+    domain: [number, number],
+    cs: TimeCoordinateSystem = ABSOLUTE_TIME,
+    count = 10
+): TimeAxisTicks {
     switch (cs.kind) {
         case 'absolute':
             return absoluteTicks(domain, count);
@@ -106,7 +110,8 @@ function relativeTicks(domain: [number, number], cs: RelativeTime, count: number
     const steps = scaleLinear()
         .domain([domain[0] / length, domain[1] / length])
         .ticks(count);
-    const label = (k: number) => (k === 0 ? '0' : `${k > 0 ? '+' : '\u2212'}${formatOffset(Math.abs(k))} ${SHORT_UNIT_NAMES[unit]}`);
+    const label = (k: number) =>
+        k === 0 ? '0' : `${k > 0 ? '+' : '\u2212'}${formatOffset(Math.abs(k))} ${SHORT_UNIT_NAMES[unit]}`;
     return {
         ticks: steps.map(k => k * length),
         labels: steps.map(label),
@@ -158,7 +163,8 @@ const WEEK_STEPS = [1, 2, 4, 8, 13, 26];
 const WEEKS_IN_REF_YEAR = 53;
 
 function periodTicks(domain: [number, number], cs: PeriodTime, count: number): TimeAxisTicks {
-    const ticks = cs.unit === 'year' && cs.weekBased ? weekBasedTicks(domain, cs, count) : calendarPeriodTicks(domain, cs, count);
+    const ticks =
+        cs.unit === 'year' && cs.weekBased ? weekBasedTicks(domain, cs, count) : calendarPeriodTicks(domain, cs, count);
     // the end of the period is the start of the next one (on a ring, the same angle as the start)
     const [, refEnd] = periodReference(cs);
     const keep = ticks.ticks.map(t => t < refEnd);
@@ -186,7 +192,9 @@ function weekBasedTicks(domain: [number, number], cs: PeriodTime, count: number)
             .ticks(count);
         return {
             ticks: dates.map(d => +d / 1000),
-            labels: dates.map(d => (isDayStart(d) ? `${weekLabel(+d / 1000)} ${formatWeekday(d)}` : formatWeekdayTime(d))),
+            labels: dates.map(d =>
+                isDayStart(d) ? `${weekLabel(+d / 1000)} ${formatWeekday(d)}` : formatWeekdayTime(d)
+            ),
             context: ''
         };
     }

@@ -16,7 +16,8 @@ const ONE_PARTICIPANT = [{ type: 'filter', field: 'Id', oneOf: ['2022484408'] }]
 
 const spec = {
     title: 'FitBit Heart Rate: Weekly and Daily Cycles',
-    subtitle: 'Left: period "week", one ring per week (Monday at the top). Right: period "day", all days on one 24-hour axis.',
+    subtitle:
+        'Left: period "week", one ring per week (Monday at the top). Right: period "day", all days on one 24-hour axis.',
     arrangement: 'horizontal',
     views: [
         {

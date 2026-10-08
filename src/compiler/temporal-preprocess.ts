@@ -99,14 +99,20 @@ function resolveTrack(track: Track, warn: Warn) {
     // tracks also carry the inherited view-level `xDomain`
     const def = track as CommonTrackDef;
     const { xDomain } = def;
-    if (xDomain && 'interval' in xDomain && (xDomain.interval as (number | string)[]).some(d => typeof d === 'string')) {
+    if (
+        xDomain &&
+        'interval' in xDomain &&
+        (xDomain.interval as (number | string)[]).some(d => typeof d === 'string')
+    ) {
         if (isTemporal) resolveViewDef(def, warn);
         else def.xDomain = undefined;
     }
 
     if (track.zoomLimits) {
         if (track.zoomLimits.some(d => typeof d === 'string') && !isTemporal) {
-            warn(`zoomLimits ${JSON.stringify(track.zoomLimits)}: durations need a temporal x axis, so they are ignored.`);
+            warn(
+                `zoomLimits ${JSON.stringify(track.zoomLimits)}: durations need a temporal x axis, so they are ignored.`
+            );
             track.zoomLimits = [1, null];
         } else {
             track.zoomLimits = track.zoomLimits.map(d => {
@@ -125,7 +131,11 @@ function resolveTrack(track: Track, warn: Warn) {
             const domain = channel.domain as { interval: (number | string)[] };
             if (!domain.interval.some(d => typeof d === 'string')) return;
             if (channel.type !== 'temporal') {
-                warn(`${key}.domain ${JSON.stringify(domain.interval)}: date strings need a temporal channel, so the domain is ignored.`);
+                warn(
+                    `${key}.domain ${JSON.stringify(
+                        domain.interval
+                    )}: date strings need a temporal channel, so the domain is ignored.`
+                );
                 channel.domain = undefined;
                 return;
             }
@@ -155,7 +165,8 @@ function expandGranularityRules(track: Track, warn: Warn) {
     const base = track as Partial<SingleTrack>;
     const isOverlay = IsOverlaidTrack(track);
     const members: Partial<SingleTrack>[] = isOverlay ? track.overlay : [{}];
-    const hasRules = (x: unknown) => IsChannelDeep(x as ChannelDeep) && Array.isArray((x as { timeUnit?: unknown }).timeUnit);
+    const hasRules = (x: unknown) =>
+        IsChannelDeep(x as ChannelDeep) && Array.isArray((x as { timeUnit?: unknown }).timeUnit);
     if (!hasRules(base.x) && !members.some(m => hasRules(m.x))) return;
 
     const expanded = members.flatMap(member => {
@@ -166,8 +177,15 @@ function expandGranularityRules(track: Track, warn: Warn) {
         const userVisibility = merged.visibility ?? [];
         return rules.map((rule, i) => {
             const bounds: VisibilityCondition[] = [];
-            if (i > 0) bounds.push({ measure: 'zoomLevel', operation: 'gtet', threshold: rules[i - 1].maxSpan!, target: 'track' });
-            if (rule.maxSpan !== undefined) bounds.push({ measure: 'zoomLevel', operation: 'lt', threshold: rule.maxSpan, target: 'track' });
+            if (i > 0)
+                bounds.push({
+                    measure: 'zoomLevel',
+                    operation: 'gtet',
+                    threshold: rules[i - 1].maxSpan!,
+                    target: 'track'
+                });
+            if (rule.maxSpan !== undefined)
+                bounds.push({ measure: 'zoomLevel', operation: 'lt', threshold: rule.maxSpan, target: 'track' });
             const copy: Partial<SingleTrack> = {
                 ...member,
                 x: { ...x, timeUnit: rule.unit === 'none' ? undefined : rule.unit },
@@ -207,7 +225,9 @@ function validRules(rules: TimeUnitRule[], warn: Warn): { unit: TimeUnit | 'none
         }
         const maxSpan = rule.maxSpan === undefined ? undefined : parseDuration(rule.maxSpan);
         if (maxSpan !== undefined && (isNaN(maxSpan) || (last && maxSpan <= last.maxSpan!))) {
-            warn(`timeUnit rules: maxSpan "${rule.maxSpan}" must be a duration larger than the previous one, so the rule is ignored.`);
+            warn(
+                `timeUnit rules: maxSpan "${rule.maxSpan}" must be a duration larger than the previous one, so the rule is ignored.`
+            );
             continue;
         }
         valid.push({ unit: rule.unit, maxSpan });
@@ -262,7 +282,9 @@ function resolveTimeUnits(track: Track, warn: Warn) {
         const unit = x.timeUnit as TimeUnit;
         // units count raw times, except on a relative axis, where they count offsets from the anchor
         const xSource =
-            system.kind === 'relative' ? x.field : timeCoordinates?.fields.find(f => f.coord === x.field)?.source ?? x.field;
+            system.kind === 'relative'
+                ? x.field
+                : timeCoordinates?.fields.find(f => f.coord === x.field)?.source ?? x.field;
         if (!TIME_UNITS.includes(unit)) {
             warn(`timeUnit "${unit}" is not one of ${TIME_UNITS.join(', ')}, so it is ignored.`);
             target.x = { ...x, timeUnit: undefined };
@@ -299,7 +321,12 @@ function resolveTimeUnits(track: Track, warn: Warn) {
         };
         NOMINAL_CHANNELS.forEach(key => {
             const channel = merged[key];
-            if (IsChannelDeep(channel) && channel.type === 'nominal' && channel.field && !binning.groupby.includes(channel.field)) {
+            if (
+                IsChannelDeep(channel) &&
+                channel.type === 'nominal' &&
+                channel.field &&
+                !binning.groupby.includes(channel.field)
+            ) {
                 binning.groupby.push(channel.field);
             }
         });
@@ -307,7 +334,11 @@ function resolveTimeUnits(track: Track, warn: Warn) {
             const channel = merged[key];
             if (!IsChannelDeep(channel) || !('aggregate' in channel) || !channel.aggregate || !channel.field) return;
             if (!(TIME_AGGREGATE_OPS as string[]).includes(channel.aggregate)) {
-                warn(`aggregate "${channel.aggregate}" is not supported with timeUnit; use ${TIME_AGGREGATE_OPS.join(', ')}.`);
+                warn(
+                    `aggregate "${channel.aggregate}" is not supported with timeUnit; use ${TIME_AGGREGATE_OPS.join(
+                        ', '
+                    )}.`
+                );
                 return;
             }
             binning.aggregates.push({ field: channel.field, op: channel.aggregate as TimeAggregateOp });
@@ -361,7 +392,9 @@ function resolveTimeCoordinates(track: Track, warn: Warn) {
         if (system && timeCoordinateSignature(system) !== timeCoordinateSignature(memberSystem)) {
             warn(
                 `Overlaid tracks use different time coordinate systems (${describeTimeCoordinates(system)} and ` +
-                    `${describeTimeCoordinates(memberSystem)}); the second one is drawn in ${describeTimeCoordinates(system)}.`
+                    `${describeTimeCoordinates(memberSystem)}); the second one is drawn in ${describeTimeCoordinates(
+                        system
+                    )}.`
             );
         }
         system = system ?? memberSystem;
@@ -385,7 +418,8 @@ function resolveTimeCoordinates(track: Track, warn: Warn) {
             const span = spans.find(t => t.newField === channel.field);
             if (span) {
                 config.derived = config.derived ?? [];
-                if (!config.derived.find(f => f.coord === coord)) config.derived.push({ source: channel.field, coord, start: span.field });
+                if (!config.derived.find(f => f.coord === coord))
+                    config.derived.push({ source: channel.field, coord, start: span.field });
             } else {
                 sourceOf[key] = channel.field;
                 if (!config.fields.find(f => f.coord === coord)) config.fields.push({ source: channel.field, coord });
@@ -401,7 +435,9 @@ function resolveTimeCoordinates(track: Track, warn: Warn) {
                 config.relative = relativeConfig;
             }
             if (!x.domain) {
-                warn('A `relative` axis has no domain, so it shows one year before and after the anchor; set `domain`.');
+                warn(
+                    'A `relative` axis has no domain, so it shows one year before and after the anchor; set `domain`.'
+                );
                 x.domain = { interval: DEFAULT_RELATIVE_DOMAIN };
             }
         }
@@ -445,10 +481,8 @@ function resolveRelative(x: X, warn: Warn): ({ system: RelativeTime } & Relative
         else if ('field' in anchor) resolved = { kind: 'field', field: anchor.field };
     }
     if (!resolved) {
-        warn(
-            `relative.anchor ${JSON.stringify(anchor)} is not a date, "first", "last", { argmax }, { argmin } or { field }, ` +
-                'so the axis stays absolute.'
-        );
+        const options = '"first", "last", { argmax }, { argmin } or { field }';
+        warn(`relative.anchor ${JSON.stringify(anchor)} is not a date, ${options}, so the axis stays absolute.`);
         return undefined;
     }
     if (relative.unit !== undefined && !TIME_UNITS.includes(relative.unit)) {
@@ -461,7 +495,11 @@ function resolveRelative(x: X, warn: Warn): ({ system: RelativeTime } & Relative
         const period = groupby.period;
         const unitName = typeof period === 'string' ? period : period?.unit;
         if (!PERIOD_UNITS.includes(unitName as PeriodUnit)) {
-            warn(`relative.groupby.period "${unitName}" is not one of ${PERIOD_UNITS.join(', ')}, so all rows form one group.`);
+            warn(
+                `relative.groupby.period "${unitName}" is not one of ${PERIOD_UNITS.join(
+                    ', '
+                )}, so all rows form one group.`
+            );
             return { system, anchor: resolved, groupby: [] };
         }
         const keyField = typeof period === 'object' ? period.newField : undefined;
@@ -520,7 +558,11 @@ function resolveInterval(interval: (number | string)[], warn: Warn): [number, nu
     const end = bound(interval[1], 'end');
     if (isNaN(start) || isNaN(end)) {
         const bad = isNaN(start) ? interval[0] : interval[1];
-        warn(`interval ${JSON.stringify(interval)}: "${bad}" is not a date (e.g. "2010", "2010-12", "2010-12-31", "2010-12-31T12:00:00Z"), so the domain is ignored.`);
+        warn(
+            `interval ${JSON.stringify(
+                interval
+            )}: "${bad}" is not a date (e.g. "2010", "2010-12", "2010-12-31", "2010-12-31T12:00:00Z"), so the domain is ignored.`
+        );
         return undefined;
     }
     return [start, end];
@@ -530,12 +572,16 @@ function resolveInterval(interval: (number | string)[], warn: Warn): [number, nu
 function resolveThreshold(condition: VisibilityCondition, isTemporal: boolean, warn: Warn): boolean {
     if (condition.measure !== 'zoomLevel' || typeof condition.threshold !== 'string') return true;
     if (!isTemporal) {
-        warn(`visibility threshold "${condition.threshold}": durations need a temporal x axis, so the condition is ignored.`);
+        warn(
+            `visibility threshold "${condition.threshold}": durations need a temporal x axis, so the condition is ignored.`
+        );
         return false;
     }
     const seconds = parseDuration(condition.threshold);
     if (isNaN(seconds)) {
-        warn(`visibility threshold "${condition.threshold}" is not a duration (e.g. "3 months"), so the condition is ignored.`);
+        warn(
+            `visibility threshold "${condition.threshold}" is not a duration (e.g. "3 months"), so the condition is ignored.`
+        );
         return false;
     }
     condition.threshold = seconds;

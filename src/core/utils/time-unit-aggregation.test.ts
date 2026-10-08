@@ -29,7 +29,10 @@ describe('timeUnit transform', () => {
             '2010-08-01',
             '1969-12-01'
         ]);
-        const weeks = truncateTime({ type: 'timeUnit', field: 'date', unit: 'week', newField: 'w', endField: 'we' }, rows);
+        const weeks = truncateTime(
+            { type: 'timeUnit', field: 'date', unit: 'week', newField: 'w', endField: 'we' },
+            rows
+        );
         expect(weeks.map(r => [iso(+r.w), iso(+r.we)])).toEqual([
             ['2010-08-16', '2010-08-23'],
             ['1969-12-29', '1970-01-05']
@@ -76,7 +79,11 @@ describe('binByTimeUnit', () => {
     it('uses ISO weeks across year boundaries', () => {
         const out = binByTimeUnit(
             { ...MONTHLY, unit: 'week', groupby: [] },
-            [{ date: utc(2015, 12, 31), v: 1 }, { date: utc(2016, 1, 3), v: 2 }, { date: utc(2016, 1, 4), v: 4 }],
+            [
+                { date: utc(2015, 12, 31), v: 1 },
+                { date: utc(2016, 1, 3), v: 2 },
+                { date: utc(2016, 1, 4), v: 4 }
+            ],
             ABSOLUTE_TIME
         );
         expect(out.map(r => [iso(+r.__month_date), r.v])).toEqual([
@@ -110,7 +117,8 @@ describe('binByTimeUnit', () => {
 });
 
 /** Daily rows from `start` for `days` days, each with value 1. */
-const daily = (start: number, days: number) => Array.from({ length: days }, (_, i) => ({ date: start + i * 86400, v: 1 }));
+const daily = (start: number, days: number) =>
+    Array.from({ length: days }, (_, i) => ({ date: start + i * 86400, v: 1 }));
 
 describe('tile-exact aggregation', () => {
     const tiling = { source: 'date', units: ['month' as const], raw: false };
@@ -152,7 +160,9 @@ describe('tile-exact aggregation', () => {
         const width = (TIME_MAX_POS - TIME_MIN_POS) / 2 ** z;
         const k = Math.floor((utc(2010, 6, 1) - TIME_MIN_POS) / width);
         const edge = TIME_MIN_POS + (k + 1) * width;
-        const csv = 'date,v\n' + daily(edge - 60 * 86400, 120).map(r => `${new Date(r.date * 1000).toISOString()},1`).join('\n');
+        const csv = `date,v\n${daily(edge - 60 * 86400, 120)
+            .map(r => `${new Date(r.date * 1000).toISOString()},1`)
+            .join('\n')}`;
 
         const originalFetch = globalThis.fetch;
         globalThis.fetch = (async () => ({ ok: true, text: async () => csv })) as any;
@@ -167,7 +177,9 @@ describe('tile-exact aggregation', () => {
         const tiles = await new Promise<any>(resolve => fetcher.fetchTilesDebounced(resolve, ids));
         const perTile = ids.flatMap((id, i) => {
             const bounds: [number, number] = [TIME_MIN_POS + (k + i) * width, TIME_MIN_POS + (k + i + 1) * width];
-            const rows = tiles[id].tabularData.filter((r: any) => isRowInTile(r, bounds, 'month', 'date', 'date', ABSOLUTE_TIME));
+            const rows = tiles[id].tabularData.filter((r: any) =>
+                isRowInTile(r, bounds, 'month', 'date', 'date', ABSOLUTE_TIME)
+            );
             return binByTimeUnit({ ...MONTHLY, groupby: [] }, rows, ABSOLUTE_TIME);
         });
         const all = binByTimeUnit({ ...MONTHLY, groupby: [] }, fetcher.values, ABSOLUTE_TIME);
@@ -185,10 +197,12 @@ describe('tile-exact aggregation', () => {
 describe('span transform', () => {
     it('adds a numeric duration field in a unit, or a duration literal', () => {
         const rows = [{ start: utc(2016, 2, 29, 16), dur: 400 }];
-        expect(addSpan({ type: 'span', field: 'start', duration: 'dur', newField: 'end' }, rows)[0].end).toEqual(utc(2016, 2, 29, 16) + 400);
-        expect(addSpan({ type: 'span', field: 'start', duration: 'dur', unit: 'minute', newField: 'end' }, rows)[0].end).toEqual(
-            utc(2016, 2, 29, 16) + 400 * 60
+        expect(addSpan({ type: 'span', field: 'start', duration: 'dur', newField: 'end' }, rows)[0].end).toEqual(
+            utc(2016, 2, 29, 16) + 400
         );
+        expect(
+            addSpan({ type: 'span', field: 'start', duration: 'dur', unit: 'minute', newField: 'end' }, rows)[0].end
+        ).toEqual(utc(2016, 2, 29, 16) + 400 * 60);
         expect(addSpan({ type: 'span', field: 'start', duration: '2 weeks', newField: 'end' }, rows)[0].end).toEqual(
             utc(2016, 3, 14, 16)
         );
@@ -196,10 +210,12 @@ describe('span transform', () => {
 
     it('adds months and years on the calendar, fractions at the nominal length', () => {
         const rows = [{ start: utc(2000, 1, 31), n: 1 }];
-        expect(iso(+addSpan({ type: 'span', field: 'start', duration: '1 month', newField: 'end' }, rows)[0].end)).toEqual('2000-02-29');
-        expect(iso(+addSpan({ type: 'span', field: 'start', duration: 'n', unit: 'year', newField: 'end' }, rows)[0].end)).toEqual(
-            '2001-01-31'
-        );
+        expect(
+            iso(+addSpan({ type: 'span', field: 'start', duration: '1 month', newField: 'end' }, rows)[0].end)
+        ).toEqual('2000-02-29');
+        expect(
+            iso(+addSpan({ type: 'span', field: 'start', duration: 'n', unit: 'year', newField: 'end' }, rows)[0].end)
+        ).toEqual('2001-01-31');
         const half = addSpan({ type: 'span', field: 'start', duration: '1.5 months', newField: 'end' }, rows)[0].end;
         expect(+half - utc(2000, 2, 29)).toBeCloseTo(0.5 * 30.436875 * 86400, 3);
     });
@@ -234,7 +250,11 @@ describe('span ends in period and relative coordinate systems', () => {
                 { s: utc(2016, 2, 3, 10), e: utc(2016, 2, 3, 11) },
                 { s: utc(2016, 2, 3, 23), e: utc(2016, 2, 4, 1) }
             ],
-            { system: day, fields: [{ source: 's', coord: '__period_s' }], derived: [{ source: 'e', coord: '__period_e', start: 's' }] }
+            {
+                system: day,
+                fields: [{ source: 's', coord: '__period_s' }],
+                derived: [{ source: 'e', coord: '__period_e', start: 's' }]
+            }
         );
         expect(rows.map(r => new Date(+(r.__period_e as number) * 1000).toISOString())).toEqual([
             '2000-01-01T11:00:00.000Z',

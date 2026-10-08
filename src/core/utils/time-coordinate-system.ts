@@ -60,7 +60,7 @@ export function describeTimeCoordinates(cs: TimeCoordinateSystem): string {
             return 'absolute time';
         case 'period': {
             const details = [cs.unit, ...(cs.weekBased ? ['ISO weeks'] : [])];
-            if (cs.start !== defaultPeriodStart(cs.unit, cs.weekBased)) details.push(`start ${cs.start}`);
+            if (cs.start !== defaultPeriodStart(cs.unit)) details.push(`start ${cs.start}`);
             return `period (${details.join(', ')})`;
         }
         case 'relative':
@@ -79,7 +79,7 @@ const WEEKS_IN_REF_YEAR = 53;
 
 export const PERIOD_UNITS: readonly PeriodUnit[] = ['year', 'month', 'week', 'day'];
 
-function defaultPeriodStart(unit: PeriodUnit, weekBased: boolean): number {
+function defaultPeriodStart(unit: PeriodUnit): number {
     return unit === 'day' ? 0 : 1;
 }
 
@@ -101,12 +101,15 @@ export function periodStartRange(unit: PeriodUnit, weekBased: boolean): [number,
 export function periodCoordinates(period: PeriodUnit | Period): PeriodTime {
     const p = typeof period === 'string' ? { unit: period } : period;
     const weekBased = p.unit === 'year' && !!p.weekBased;
-    return { kind: 'period', unit: p.unit, weekBased, start: p.start ?? defaultPeriodStart(p.unit, weekBased) };
+    return { kind: 'period', unit: p.unit, weekBased, start: p.start ?? defaultPeriodStart(p.unit) };
 }
 
 /** Name of the field that receives each row's period. */
 export function periodKeyField(field: string, period: PeriodUnit | Period): string {
-    return (typeof period === 'object' && period.newField) || `${field}_${typeof period === 'string' ? period : period.unit}`;
+    return (
+        (typeof period === 'object' && period.newField) ||
+        `${field}_${typeof period === 'string' ? period : period.unit}`
+    );
 }
 
 function utc(year: number, month: number, day = 1) {
@@ -210,7 +213,7 @@ export function toPeriodCoordinate(t: number, cs: PeriodTime): number {
     }
 }
 
-const pad = (n: number, width = 2) => (n < 0 ? '-' + String(-n).padStart(width, '0') : String(n).padStart(width, '0'));
+const pad = (n: number, width = 2) => (n < 0 ? `-${String(-n).padStart(width, '0')}` : String(n).padStart(width, '0'));
 
 /** The period that contains `t`, as a string that sorts chronologically. */
 export function periodKey(t: number, cs: PeriodTime): string {
@@ -394,7 +397,8 @@ export function applyTimeCoordinates<T extends Record<string, unknown>>(
                 const t = source in overrides ? overrides[source] : +(row[source] as number);
                 copy[coord] = toPeriodCoordinate(t, system);
             });
-            const keyTime = config.interval && config.interval[0] in overrides ? overrides[config.interval[0]] : undefined;
+            const keyTime =
+                config.interval && config.interval[0] in overrides ? overrides[config.interval[0]] : undefined;
             const first = config.fields[0] ? +(row[config.fields[0].source] as number) : NaN;
             config.keyFields?.forEach(key => (copy[key] = periodKey(keyTime ?? first, system)));
             return copy;
@@ -586,7 +590,9 @@ export function applyDerivedTimeCoordinates<T extends Record<string, unknown>>(
             const periodEnd = periodEndOf(startTime, system);
             if (endTime > periodEnd && !hasWarnedClippedSpan) {
                 hasWarnedClippedSpan = true;
-                console.warn('[time-i-gram] span: intervals that cross the end of their period are clipped at the period end.');
+                console.warn(
+                    '[time-i-gram] span: intervals that cross the end of their period are clipped at the period end.'
+                );
             }
             copy[coord] = toPeriodEndCoordinate(Math.min(endTime, periodEnd), system);
         });

@@ -152,7 +152,9 @@ export function isoWeekStart(year: number, week: number): number {
 /* ----------------------------- Date strings ----------------------------- */
 
 const YEAR = '(\\d{4,})';
-const DATE_TIME = new RegExp(`^${YEAR}-(\\d{2})-(\\d{2})[T ](\\d{2}):(\\d{2})(?::(\\d{2})(\\.\\d+)?)?(Z|[+-]\\d{2}:?\\d{2})?$`);
+const DATE_TIME = new RegExp(
+    `^${YEAR}-(\\d{2})-(\\d{2})[T ](\\d{2}):(\\d{2})(?::(\\d{2})(\\.\\d+)?)?(Z|[+-]\\d{2}:?\\d{2})?$`
+);
 
 /**
  * The unit a partial date string names, and its first instant; `undefined` if the string is not a

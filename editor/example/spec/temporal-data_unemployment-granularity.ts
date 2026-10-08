@@ -61,7 +61,10 @@ const spec = {
                     x: { field: 'date', type: 'temporal', timeUnit: BY_MONTH_THEN_YEAR, axis: 'bottom' },
                     y: RATE,
                     color: SERIES_COLOR,
-                    tracks: [{ mark: 'line', size: { value: 2 } }, { mark: 'point', size: { value: 4 } }],
+                    tracks: [
+                        { mark: 'line', size: { value: 2 } },
+                        { mark: 'point', size: { value: 4 } }
+                    ],
                     width: 800,
                     height: 220
                 }

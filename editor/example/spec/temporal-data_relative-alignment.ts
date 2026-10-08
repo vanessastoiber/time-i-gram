@@ -55,7 +55,10 @@ const spec = {
                         domain: ['2009/10', '2010/11', '2011/12', '2012/13', '2013/14', '2014/15'],
                         legend: true
                     },
-                    tracks: [{ mark: 'line', size: { value: 2 } }, { mark: 'point', size: { value: 3 } }],
+                    tracks: [
+                        { mark: 'line', size: { value: 2 } },
+                        { mark: 'point', size: { value: 3 } }
+                    ],
                     width: 800,
                     height: 220
                 }
