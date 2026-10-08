@@ -12,18 +12,11 @@ const COLORS = ['#4C72B0', '#DD8452', '#55A868', '#C44E52', '#8172B2'];
 const data = {
     url: 'https://raw.githubusercontent.com/vega/vega/main/docs/data/unemployment-across-industries.json',
     type: 'json-time' as const,
-    // `json-time`'s processRow() only recognizes 'year'/'month'/'day' as keys it can
-    // assemble into a date -- a single ISO field like `dateFields: ['date']` silently
-    // collapses every row to 1970-01-01 instead of parsing it. Use the two fields this
-    // dataset already has, which the fetcher writes the computed epoch back into
-    // `row[dateFields[0]]` (i.e. `row.year`), so the x channel must read `field: 'year'`.
-    dateFields: ['year', 'month']
+    dateFields: ['date']
 };
 
-// `tilesetInfo()` in json-time-data-fetcher.ts returns a hardcoded multi-century
-// min/max position instead of one derived from the data, so the default zoom shows
-// almost nothing. Force the initial view to the dataset's actual 2000-2010 range
-// (epoch seconds, matching what processRow() computes).
+// The initial view: January 2000 to March 2010, the extent of the dataset (Unix seconds).
+// Without a domain, a view starts at the default extent of a genomic axis.
 const xDomain = { interval: [946684800, 1267401600] as [number, number] };
 
 const dataTransform = [{ type: 'filter' as const, field: 'series', oneOf: SECTORS }];
@@ -56,7 +49,7 @@ export const EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR: GoslingSpec = {
                     data,
                     dataTransform,
                     mark: 'line',
-                    x: { field: 'year', type: 'temporal', domain: xDomain },
+                    x: { field: 'date', type: 'temporal', domain: xDomain },
                     y,
                     color,
                     tracks: [
@@ -79,7 +72,7 @@ export const EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR: GoslingSpec = {
                     data,
                     dataTransform,
                     mark: 'line',
-                    x: { field: 'year', type: 'temporal', axis: 'bottom', linkingId: 'unemployment-brush', domain: xDomain },
+                    x: { field: 'date', type: 'temporal', axis: 'bottom', linkingId: 'unemployment-brush', domain: xDomain },
                     y,
                     color,
                     width: 700,
