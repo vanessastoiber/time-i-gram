@@ -1,14 +1,30 @@
+import fs from 'fs';
+import path from 'path';
 import { compile } from '../../src/compiler/compile';
 import { getTheme } from '../../src/core/utils/theme';
 import { validateGoslingSpec, type GoslingSpec } from '@gosling-lang/gosling-schema';
 import { EX_SPEC_TEMPORAL_OVERVIEW_DETAIL } from './json-spec/temporal-data_overview-detail';
 import { EX_SPEC_TEMPORAL_SEATTLE_WEATHER } from './spec/temporal-data_seattle-weather';
 import { EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR } from './spec/temporal-data_unemployment-circular-linear';
+import { EX_SPEC_TEMPORAL_SUPP_UNEMPLOYMENT } from './spec/temporal-data_supp-unemployment';
+
+/** The JS code blocks of README.md that build a spec, evaluated to the spec object. */
+function readmeSpecs(): Record<string, GoslingSpec> {
+    const md = fs.readFileSync(path.resolve(__dirname, '../../README.md'), 'utf8');
+    const running = md.slice(md.indexOf('const CSV_URL'), md.indexOf('embed(document.getElementById("container"), spec);'));
+    const quickStart = md.slice(md.indexOf("const spec = {\n  title: 'Seattle Weather'"), md.indexOf('function App()'));
+    return {
+        'README running example': new Function(`${running}; return spec;`)(),
+        'README quick start': new Function(`${quickStart}; return spec;`)()
+    };
+}
 
 const examples: Record<string, GoslingSpec> = {
     'overview-detail': EX_SPEC_TEMPORAL_OVERVIEW_DETAIL,
     'seattle-weather': EX_SPEC_TEMPORAL_SEATTLE_WEATHER,
-    'unemployment-circular-linear': EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR
+    'unemployment-circular-linear': EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR,
+    'supp S3 unemployment': EX_SPEC_TEMPORAL_SUPP_UNEMPLOYMENT,
+    ...readmeSpecs()
 };
 
 /** Initial x domains of the compiled views that contain a temporal track. */

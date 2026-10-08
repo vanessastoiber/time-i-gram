@@ -1,8 +1,8 @@
 import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 
 // Supplementary material, Fig. S3 (U.S. Unemployment Across Industries; paper Fig. 4).
-// Copied verbatim from the supplementary PDF; only wrapped in a TS export.
-// Not yet fixed: see docs/grammar-audit.md §7.
+// Copied from the supplementary PDF and wrapped in a TS export. Fixed since: removed `genomicFields`,
+// which is not a csv-time property and made the spec schema-invalid (docs/grammar-audit.md §7).
 
 const CSV_URL =
     'https://raw.githubusercontent.com/denisseram/time-i-gram/14a22f2e66006df8a8498e2c0d6f992c5b49a810/unemployment-across-industries.csv';
@@ -12,8 +12,7 @@ const baseData = {
     url: CSV_URL,
     separator: ',',
     dateFields: ['date'],
-    sampleLength: 2000,
-    genomicFields: ['date']
+    sampleLength: 2000
 };
 
 const timeDomain = { interval: [946713600, 1293782400] };
