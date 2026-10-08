@@ -18,7 +18,7 @@ export const EX_SPEC_TEMPORAL_SEATTLE_WEATHER: GoslingSpec = {
                 mark: "bar",
                 size: { value: 5 },
                 color: { value: "#002a33" },
-                x: { field: "date", type: "temporal", axis: "bottom", linkingId: "linked-views" },
+                x: { field: "date", type: "temporal", axis: "bottom", linkingId: "linked-views", domain: { interval: [1325376000, 1451606400] } },
                 y: {
                     field: "precipitation",
                     type: "quantitative",
@@ -41,7 +41,7 @@ export const EX_SPEC_TEMPORAL_SEATTLE_WEATHER: GoslingSpec = {
                 },
                 mark: "line",
                 color: { value: "#fd2c3b" },
-                x: { field: "date", type: "temporal", axis: "bottom", linkingId: "linked-views" },
+                x: { field: "date", type: "temporal", axis: "bottom", linkingId: "linked-views", domain: { interval: [1325376000, 1451606400] } },
                 y: {
                     field: "temp_max",
                     type: "quantitative",
@@ -58,7 +58,7 @@ export const EX_SPEC_TEMPORAL_SEATTLE_WEATHER: GoslingSpec = {
                 },
                 mark: "line",
                 color: { value: "#0f767a" },
-                x: { field: "date", type: "temporal", axis: "bottom", linkingId: "linked-views" },
+                x: { field: "date", type: "temporal", axis: "bottom", linkingId: "linked-views", domain: { interval: [1325376000, 1451606400] } },
                 y: {
                     field: "temp_min",
                     type: "quantitative",
@@ -86,7 +86,7 @@ export const EX_SPEC_TEMPORAL_SEATTLE_WEATHER: GoslingSpec = {
                     range: ["#377750", "#002a33", "#74171f", "#cb4c47", "#35618f"],
                     legend: true
                 },
-                x: { field: "date", type: "temporal", axis: "bottom", linkingId: "linked-views" },
+                x: { field: "date", type: "temporal", axis: "bottom", linkingId: "linked-views", domain: { interval: [1325376000, 1451606400] } },
                 visibility: [{
                     operation: "greater-than",
                     measure: "zoomLevel",
@@ -110,7 +110,7 @@ export const EX_SPEC_TEMPORAL_SEATTLE_WEATHER: GoslingSpec = {
                     domain: ["drizzle", "rain", "snow", "sun", "fog"],
                     range: ["#377750", "#002a33", "#74171f", "#cb4c47", "#35618f"],
                 },
-                x: { field: "date", type: "temporal", axis: "bottom", linkingId: "linked-views" },
+                x: { field: "date", type: "temporal", axis: "bottom", linkingId: "linked-views", domain: { interval: [1325376000, 1451606400] } },
                 visibility: [{
                     operation: "less-than",
                     measure: "zoomLevel",
