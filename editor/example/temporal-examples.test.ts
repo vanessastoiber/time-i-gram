@@ -10,6 +10,7 @@ import { EX_SPEC_TEMPORAL_SUPP_UNEMPLOYMENT } from './spec/temporal-data_supp-un
 import { EX_SPEC_TEMPORAL_SUPP_SEATTLE_WEATHER } from './spec/temporal-data_supp-seattle-weather';
 import { EX_SPEC_TEMPORAL_SUPP_SOLAR_WEATHER } from './spec/temporal-data_supp-solar-weather';
 import { EX_SPEC_TEMPORAL_SUPP_NYC_TAXI } from './spec/temporal-data_supp-nyc-taxi';
+import { EX_SPEC_TEMPORAL_SUPP_WHO_FLU } from './spec/temporal-data_supp-who-flu';
 
 /** The JS code blocks of README.md that build a spec, evaluated to the spec object. */
 function readmeSpecs(): Record<string, GoslingSpec> {
@@ -30,24 +31,41 @@ const examples: Record<string, GoslingSpec> = {
     'supp S4 seattle weather': EX_SPEC_TEMPORAL_SUPP_SEATTLE_WEATHER,
     'supp S5 solar and weather': EX_SPEC_TEMPORAL_SUPP_SOLAR_WEATHER,
     'supp S6 NYC taxi': EX_SPEC_TEMPORAL_SUPP_NYC_TAXI,
+    'supp S7 WHO flu': EX_SPEC_TEMPORAL_SUPP_WHO_FLU,
     ...readmeSpecs()
 };
 
+/** Compile a spec and return the HiGlass view config. */
+function compileToHiGlass(spec: GoslingSpec) {
+    let hiGlassSpec: any;
+    compile(JSON.parse(JSON.stringify(spec)), hs => (hiGlassSpec = hs), [], getTheme(), {});
+    return hiGlassSpec;
+}
+
 /** Initial x domains of the compiled views that contain a temporal track. */
 function temporalViewDomains(spec: GoslingSpec): number[][] {
-    let domains: number[][] = [];
-    compile(
-        JSON.parse(JSON.stringify(spec)),
-        hs => {
-            domains = hs.views
-                .filter(view => JSON.stringify(view.tracks).includes('"type":"temporal"'))
-                .map(view => view.initialXDomain as number[]);
-        },
-        [],
-        getTheme(),
-        {}
-    );
-    return domains;
+    return compileToHiGlass(spec)
+        .views.filter((view: any) => JSON.stringify(view.tracks).includes('"type":"temporal"'))
+        .map((view: any) => view.initialXDomain as number[]);
+}
+
+/**
+ * Titles (or marks) of tracks that draw marks but have no data, neither their own nor inherited from an
+ * enclosing view or track group. The compiler silently drops such tracks, so they would not appear at all.
+ */
+function tracksWithoutData(spec: any): string[] {
+    const missing: string[] = [];
+    const visit = (node: any, inherited: { data?: unknown; mark?: string }) => {
+        const scope = { data: node.data ?? inherited.data, mark: node.mark ?? inherited.mark };
+        const children = [...(node.views ?? []), ...(node.tracks ?? [])];
+        if (children.length > 0) {
+            children.forEach(child => visit(child, scope));
+        } else if (scope.mark !== 'brush' && !scope.data) {
+            missing.push(node.title ?? scope.mark ?? 'untitled track');
+        }
+    };
+    visit(spec, {});
+    return missing;
 }
 
 describe.each(Object.entries(examples))('temporal example "%s"', (_, spec) => {
@@ -61,5 +79,9 @@ describe.each(Object.entries(examples))('temporal example "%s"', (_, spec) => {
         expect(domains.length).toBeGreaterThan(0);
         // without a domain, the view falls back to the length of hg38 (0 to 3,088,269,832), i.e. 1970-2067
         domains.forEach(domain => expect(domain).not.toEqual([0, 3088269832]));
+    });
+
+    it('gives every track that draws marks a data source', () => {
+        expect(tracksWithoutData(spec)).toEqual([]);
     });
 });
