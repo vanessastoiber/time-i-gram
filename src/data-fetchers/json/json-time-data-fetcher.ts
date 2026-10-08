@@ -2,8 +2,9 @@ import { sampleSize } from 'lodash-es';
 import type { JsonTimeData } from '@gosling-lang/gosling-schema';
 import { type CommonDataConfig, filterUsingGenoPos } from '../utils';
 import { parseDateTime, timestampToSeconds, utcSeconds, TIME_MAX_POS, TIME_MIN_POS } from '../time-utils';
+import { applyTimeCoordinates, type TimeCoordinatesConfig } from '../../core/utils/time-coordinate-system';
 
-type CsvTimeDataConfig = JsonTimeData & CommonDataConfig;
+type CsvTimeDataConfig = JsonTimeData & CommonDataConfig & { timeCoordinates?: TimeCoordinatesConfig };
 
 /**
  * HiGlass data fetcher specific for Gosling which ultimately will accept any types of data other than JSON values.
@@ -38,6 +39,7 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
                 this.values = [];
                 this.dataPromise = this.fetchData(dataConfig.url).then(data => {
                     data.forEach((row: any) => this.values.push(this.convertRow(row)));
+                    this.mapToTimeCoordinates();
                 })
                     .catch(error => {
                         console.error(error);
@@ -51,8 +53,15 @@ function JsonTimeDataFetcher(HGC: any, ...args: any): any {
                         return undefined;
                     }
                 });
+                this.mapToTimeCoordinates();
                 this.dataPromise = Promise.resolve();
             }
+        }
+
+        /** Map the converted rows into the time coordinate system of the axis (period or relative). */
+        mapToTimeCoordinates() {
+            const config = this.dataConfig.timeCoordinates;
+            if (config) this.values = applyTimeCoordinates(this.values.filter(Boolean), config);
         }
 
         async fetchData(url: string): Promise<any> {

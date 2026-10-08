@@ -3,6 +3,7 @@ import { getTheme } from '../core/utils/theme';
 import type { GoslingSpec } from '../index';
 import type { HiGlassSpec } from '@gosling-lang/higlass-schema';
 import { validateGoslingSpec } from '@gosling-lang/gosling-schema';
+import { resolveTemporalSugar } from './temporal-preprocess';
 
 function compiled(spec: GoslingSpec) {
     let result: { hg?: HiGlassSpec; gs?: GoslingSpec } = {};
@@ -133,5 +134,145 @@ describe('durations', () => {
             ]
         } as unknown as GoslingSpec);
         expect((gs as any).tracks[0].overlay[0].visibility[0].threshold).toEqual(14 * 86400);
+    });
+});
+
+/** The gosling-track (data track) of a compiled HiGlass view. */
+const dataTrack = (hg: HiGlassSpec, view = 0) => (hg.views[view].tracks.center as any)[0].contents[0];
+/** The time axis track of a compiled HiGlass view. */
+const timeAxis = (hg: HiGlassSpec, view = 0) =>
+    [...((hg.views[view].tracks as any).top ?? []), ...(hg.views[view].tracks.center as any)[0].contents].find(
+        (t: any) => t.type === 'unix-time-track'
+    );
+
+describe('period (time coordinate system)', () => {
+    const periodTrack = (period: unknown, extra: object = {}) =>
+        timeTrack({ x: { field: 'date', type: 'temporal', period, axis: 'top' }, ...extra });
+
+    it('is schema-valid as a unit or an object', () => {
+        expect(validateGoslingSpec({ tracks: [periodTrack('year')] }).state).toEqual('success');
+        expect(
+            validateGoslingSpec({ tracks: [periodTrack({ unit: 'year', weekBased: true, start: 40, newField: 'season' })] }).state
+        ).toEqual('success');
+        expect(validateGoslingSpec({ tracks: [periodTrack('fortnight')] }).state).toEqual('warn');
+    });
+
+    it('maps the x field to coordinates in the fetcher and labels the axis by period', () => {
+        const { hg } = compiled({ tracks: [periodTrack({ unit: 'year', newField: 'season' })] } as GoslingSpec);
+        const track = dataTrack(hg);
+        expect(track.data.x).toEqual('__period_date');
+        expect(track.data.timeCoordinates).toEqual({
+            system: { kind: 'period', unit: 'year', weekBased: false, start: 1 },
+            fields: [{ source: 'date', coord: '__period_date' }],
+            keyFields: ['season']
+        });
+        expect(track.options.spec.x.field).toEqual('__period_date');
+        expect(hg.views[0].initialXDomain).toEqual([Date.UTC(2000, 0, 1) / 1000, Date.UTC(2001, 0, 1) / 1000]);
+        expect(timeAxis(hg).options.timeCoordinates).toEqual({ kind: 'period', unit: 'year', weekBased: false, start: 1 });
+    });
+
+    it('names the period field <field>_<unit> by default', () => {
+        const { hg } = compiled({ tracks: [periodTrack('week')] } as GoslingSpec);
+        expect(dataTrack(hg).data.timeCoordinates.keyFields).toEqual(['date_week']);
+    });
+
+    it('splits x/xe intervals and maps both fields', () => {
+        const { hg } = compiled({
+            tracks: [periodTrack('day', { mark: 'rect', xe: { field: 'end', type: 'temporal' } })]
+        } as GoslingSpec);
+        const { timeCoordinates, x, xe } = dataTrack(hg).data;
+        expect([x, xe]).toEqual(['__period_date', '__period_end']);
+        expect(timeCoordinates.interval).toEqual(['date', 'end']);
+    });
+
+    it('works in overlaid tracks', () => {
+        const { hg } = compiled({
+            tracks: [
+                {
+                    ...periodTrack('year'),
+                    alignment: 'overlay',
+                    tracks: [{ mark: 'line' }, { mark: 'point' }]
+                }
+            ]
+        } as unknown as GoslingSpec);
+        expect(dataTrack(hg).data.timeCoordinates.system.unit).toEqual('year');
+        expect(dataTrack(hg).options.spec.x.field).toEqual('__period_date');
+    });
+
+    it('ignores an inherited domain silently and warns about its own domain', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const inherited = compiled({ xDomain: { interval: ['2009', '2012'] }, tracks: [periodTrack('year')] } as GoslingSpec);
+        expect(inherited.hg.views[0].initialXDomain).toEqual([Date.UTC(2000, 0, 1) / 1000, Date.UTC(2001, 0, 1) / 1000]);
+        expect(warn).not.toHaveBeenCalled();
+        compiled({
+            tracks: [timeTrack({ x: { field: 'date', type: 'temporal', period: 'year', domain: { interval: ['2009', '2012'] } } })]
+        } as GoslingSpec);
+        expect(warn.mock.calls.flat().join(' ')).toMatch(/domain.*on a `period` channel is not supported/);
+        warn.mockRestore();
+    });
+
+    it('rejects options that do not apply to the unit', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const { hg } = compiled({ tracks: [periodTrack({ unit: 'month', start: 5, weekBased: true })] } as GoslingSpec);
+        expect(dataTrack(hg).data.timeCoordinates.system).toEqual({ kind: 'period', unit: 'month', weekBased: false, start: 1 });
+        const messages = warn.mock.calls.flat().join(' ');
+        expect(messages).toMatch(/weekBased only applies to years/);
+        expect(messages).toMatch(/period.start is not supported for "month"/);
+        warn.mockRestore();
+    });
+
+    it('is idempotent (compile runs the pass again for responsive specs)', () => {
+        const spec = { tracks: [periodTrack('year')] } as GoslingSpec;
+        const { gs } = compiled(spec);
+        const copy = JSON.parse(JSON.stringify(gs));
+        resolveTemporalSugar(copy);
+        expect(copy).toEqual(JSON.parse(JSON.stringify(gs)));
+    });
+
+    it('leaves absolute temporal and genomic tracks unchanged', () => {
+        const { hg } = compiled({ tracks: [timeTrack()] } as GoslingSpec);
+        expect(dataTrack(hg).data.timeCoordinates).toBeUndefined();
+        expect(dataTrack(hg).data.x).toEqual('date');
+        const genomic = compiled({ tracks: [genomicTrack()] } as GoslingSpec);
+        expect(dataTrack(genomic.hg).data.timeCoordinates).toBeUndefined();
+    });
+});
+
+describe('linking across time coordinate systems', () => {
+    const view = (x: object, extra: object = {}) => ({
+        tracks: [timeTrack({ x: { field: 'date', type: 'temporal', linkingId: 'link', ...x }, ...extra })]
+    });
+    const lockedViews = (hg: HiGlassSpec) => Object.keys(hg.zoomLocks.locksByViewUid).length;
+
+    it('links views that share a coordinate system', () => {
+        const { hg } = compiled({ views: [view({ period: 'year' }), view({ period: 'year' })] } as unknown as GoslingSpec);
+        expect(lockedViews(hg)).toEqual(2);
+        const absolute = compiled({ views: [view({}), view({})] } as unknown as GoslingSpec);
+        expect(lockedViews(absolute.hg)).toEqual(2);
+    });
+
+    it('leaves views in another coordinate system out of the link, with a warning', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const { hg } = compiled({ views: [view({ period: 'year' }), view({})] } as unknown as GoslingSpec);
+        expect(lockedViews(hg)).toEqual(1);
+        expect(warn.mock.calls.flat().join(' ')).toMatch(
+            /linkingId "link" joins views in different coordinate systems \(period \(year\) and absolute time\)/
+        );
+        warn.mockRestore();
+    });
+
+    it('distinguishes period options (week-based vs calendar years)', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const { hg } = compiled({
+            views: [view({ period: 'year' }), view({ period: { unit: 'year', weekBased: true } })]
+        } as unknown as GoslingSpec);
+        expect(lockedViews(hg)).toEqual(1);
+        warn.mockRestore();
+    });
+
+    it('keeps genomic links unchanged', () => {
+        const gview = { tracks: [genomicTrack({ x: { field: 'p', type: 'genomic', linkingId: 'g' } })] };
+        const { hg } = compiled({ views: [gview, gview] } as unknown as GoslingSpec);
+        expect(lockedViews(hg)).toEqual(2);
     });
 });

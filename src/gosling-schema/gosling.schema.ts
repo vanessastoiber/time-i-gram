@@ -778,6 +778,48 @@ export interface AxisCommon {
 export interface X extends Omit<AxisCommon, 'domain'> {
     type?: 'genomic' | 'temporal';
     domain?: GenomicDomain | TemporalDomain;
+    /**
+     * Wrap a temporal axis by a calendar period, which sets the axis' time coordinate system to `period`:
+     * each time is placed at its position within its period (its month, day and time for a year; its weekday and
+     * time for a week; its time of day for a day), so all periods share one axis, or one revolution in a circular
+     * layout. The axis labels positions within the period (Jan...Dec, W1...W53, Mon...Sun, 00:00...23:00).
+     * Each row also gets the period it belongs to as a field (`newField`, e.g. `"2010"`), to be encoded with
+     * `color` (overlaid periods) or `row` (one ring per period).
+     *
+     * Only for `type: "temporal"` on `x`. The domain is always the whole period: a `domain` is ignored.
+     */
+    period?: PeriodUnit | Period;
+}
+
+/** Calendar periods by which a temporal axis can be wrapped. */
+export type PeriodUnit = 'year' | 'month' | 'week' | 'day';
+
+export interface Period {
+    /** The calendar period. */
+    unit: PeriodUnit;
+    /**
+     * Field that receives each row's period, as a string that sorts chronologically: `"2010"` (year),
+     * `"2010/11"` (year with `start`), `"2010-03"` (month), `"2010-W05"` (week), `"2010-03-01"` (day).
+     *
+     * __Default:__ `"<field>_<unit>"`, e.g. `"date_year"`
+     */
+    newField?: string;
+    /**
+     * Use years made of ISO weeks (only for `unit: "year"`): a time is placed by its ISO week and weekday,
+     * so ISO week 1 is always at the start of the period, even when it begins in late December, and the
+     * period of a row is its ISO week-year. Years without a week 53 leave the last week empty.
+     *
+     * __Default:__ `false`
+     */
+    weekBased?: boolean;
+    /**
+     * Where each period begins: a month (1-12) for calendar years (e.g. `8` for August-July seasons), an ISO
+     * week (1-52) for week-based years (e.g. `40` for flu seasons), a weekday (1 = Monday ... 7 = Sunday) for
+     * weeks, an hour (0-23) for days. Not supported for months.
+     *
+     * __Default:__ the first month, week, weekday (Monday) or hour (0)
+     */
+    start?: number;
 }
 
 export interface Y extends AxisCommon {

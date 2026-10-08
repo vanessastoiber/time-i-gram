@@ -20,6 +20,7 @@ import { DEWFAULT_TITLE_PADDING_ON_TOP_AND_BOTTOM } from './defaults';
 import type { CompleteThemeDeep } from '../core/utils/theme';
 import { DEFAULT_TEXT_STYLE } from '../core/utils/text-style';
 import type { GoslingToHiGlassIdMapper } from '../api/track-and-view-ids';
+import { ABSOLUTE_TIME, getTrackTimeCoordinates } from '../core/utils/time-coordinate-system';
 
 /**
  * Convert a gosling track into a HiGlass view and add it into a higlass model.
@@ -162,7 +163,9 @@ export function goslingToHiGlass(
                 ...firstResolvedSpec.data,
                 ...xFields,
                 // Additionally, add assembly, otherwise, a default genome build is used
-                assembly
+                assembly,
+                // How a time data fetcher maps rows into the axis' time coordinate system (period, relative)
+                ...(getTrackTimeCoordinates(firstResolvedSpec) ? { timeCoordinates: getTrackTimeCoordinates(firstResolvedSpec) } : {})
                 // TODO: should look all sub tracks' `dataTransform` and apply OR operation.
                 // Add a data transformation spec so that the fetcher can properly sample datasets
                 // filter: (firstResolvedSpec as any).dataTransform?.filter((f: DataTransform) => f.type === 'filter')
@@ -272,6 +275,7 @@ export function goslingToHiGlass(
                         height: firstResolvedSpec.height,
                         startAngle: firstResolvedSpec.startAngle,
                         endAngle: firstResolvedSpec.endAngle,
+                        timeCoordinates: getTrackTimeCoordinates(firstResolvedSpec)?.system ?? ABSOLUTE_TIME,
                         theme
                     });
                 } else {

@@ -62,6 +62,8 @@ import { EX_SPEC_TEMPORAL_SUPP_SOLAR_WEATHER } from './spec/temporal-data_supp-s
 import { EX_SPEC_TEMPORAL_SUPP_NYC_TAXI } from './spec/temporal-data_supp-nyc-taxi';
 import { EX_SPEC_TEMPORAL_SUPP_WHO_FLU } from './spec/temporal-data_supp-who-flu';
 import { EX_SPEC_TEMPORAL_SUPP_FITBIT } from './spec/temporal-data_supp-fitbit';
+import { EX_SPEC_TEMPORAL_WHO_FLU_PERIOD } from './spec/temporal-data_who-flu-period';
+import { EX_SPEC_TEMPORAL_FITBIT_CYCLES } from './spec/temporal-data_fitbit-cycles';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -566,6 +568,18 @@ const editorExampleObj: {
         group: 'Temporal Data',
         name: 'Supp. S8: FitBit Activity and Heart Rate',
         spec: EX_SPEC_TEMPORAL_SUPP_FITBIT,
+        underDevelopment: true
+    },
+    TEMPORAL_DATA_WHO_FLU_PERIOD: {
+        group: 'Temporal Data',
+        name: 'Period: WHO Flu by Week of the Year',
+        spec: EX_SPEC_TEMPORAL_WHO_FLU_PERIOD,
+        underDevelopment: true
+    },
+    TEMPORAL_DATA_FITBIT_CYCLES: {
+        group: 'Temporal Data',
+        name: 'Period: FitBit Weekly and Daily Cycles',
+        spec: EX_SPEC_TEMPORAL_FITBIT_CYCLES,
         underDevelopment: true
     }
 };

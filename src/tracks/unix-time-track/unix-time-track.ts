@@ -1,39 +1,13 @@
 import type { PIXI } from '@higlass/libraries';
 import { scaleUtc } from 'd3-scale';
-import { utcFormat } from 'd3-time-format';
+import { timeAxisTicks, type TimeAxisTicks } from './time-axis-ticks';
 import { cartesianToPolar } from '../../core/utils/polar';
 import colorToHex from '../../core/utils/color-to-hex';
 import * as uuid from 'uuid';
 
-const durationSecond = 1000;
-const durationMinute = durationSecond * 60;
-const durationHour = durationMinute * 60;
-const durationDay = durationHour * 24;
-const durationWeek = durationDay * 7;
-const durationYear = durationDay * 365;
-
-const formatSecond = utcFormat('%Y %b %d (%I:%M:%S %p)');
-const formatMinute = utcFormat('%Y %b %d (%I:%M %p)');
-const formatHour = utcFormat('%Y %b %d (%I %p)');
-const formatDay = utcFormat('%Y %b %d');
-const formatWeek = utcFormat('%Y %b');
-const formatMonth = utcFormat('%Y');
-const formatYear = utcFormat('');
-
 const ZOOM_LEVEL_YEAR = 0;
 const ZOOM_LEVEL_WEEK = 1;
 const ZOOM_LEVEL_DAY = 2;
-
-function timeFormat(date: number | Date, timeDelta: number) {
-  const d = typeof date === 'number' ? new Date(date) : date;
-  return (timeDelta < durationSecond ? formatSecond
-    : timeDelta < durationMinute ? formatMinute
-      : timeDelta < durationHour ? formatHour
-        : timeDelta < durationDay ? formatDay
-          : timeDelta < durationWeek ? formatWeek
-            : timeDelta < durationYear ? formatMonth
-              : formatYear)(d);
-}
 
 const tickHeight = 10;
 const textHeight = 10;
@@ -107,22 +81,26 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       return timeScale;
     }
 
+    /** Ticks and labels in the axis' time coordinate system (absolute dates, positions in a period, offsets). */
+    updateAxisTicks(): TimeAxisTicks {
+      const domain = this._xScale.domain() as [number, number];
+      this.axisTicks = timeAxisTicks(domain, this.options.timeCoordinates);
+      return this.axisTicks;
+    }
+
     createAxisTexts() {
-      const ticks = this.timeScale.ticks();
-      const tickFormat = this.timeScale.tickFormat();
+      const { ticks, labels } = this.axisTicks as TimeAxisTicks;
 
       let i = 0;
 
       while (i < ticks.length) {
-        const tick = ticks[i];
-
         while (this.axisTexts.length <= i) {
-          const newText = new PIXI.Text(tick, this.axisTextStyle);
+          const newText = new PIXI.Text('', this.axisTextStyle);
           this.axisTexts.push(newText);
           this.pMain.addChild(newText);
         }
 
-        this.axisTexts[i].text = tickFormat(tick);
+        this.axisTexts[i].text = labels[i];
         this.axisTexts[i].anchor.y = this.options.layout === 'circular' ? 0.5 : this.options.reverseOrientation ? 0 : 0.5;
         this.axisTexts[i].anchor.x = 0.4;
         i++;
@@ -186,8 +164,8 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
   }
 
     drawTicks(tickStartY: number, tickEndY: number) {
-      this.timeScale.ticks().forEach((tick: any, i: string | number) => {
-        const xPos = this.position[0] + this.timeScale(tick);
+      (this.axisTicks as TimeAxisTicks).ticks.forEach((tick: number, i: number) => {
+        const xPos = this.position[0] + this.timeScale(tick * 1000);
 
         if (this.options.layout === 'circular') {
           const rope = this.addCurvedText(this.axisTexts[i], xPos);
@@ -198,17 +176,14 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
           this.pMain.moveTo(xPos, this.position[1] + tickStartY - 10);
           this.pMain.lineTo(xPos, this.position[1] + tickEndY - 5);
         }
-        if (this.options.layout === 'circular') return;
       });
     }
 
     drawContext(tickStartY: number, tickEndY: number) {
-      const ticks = this.timeScale.ticks();
       const center = (+this.timeScale.domain()[1] + +this.timeScale.domain()[0]) / 2;
-      const tickDiff = +ticks[1] - +ticks[0];
 
       const xPos = this.position[0] + this.timeScale(center);
-      this.context.text = timeFormat(center, tickDiff);
+      this.context.text = (this.axisTicks as TimeAxisTicks).context;
       this.context.x = xPos;
       this.context.y = this.position[1] + tickEndY + betweenCenterTickAndText;
       if (this.context.text !== '') {
@@ -229,6 +204,7 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       }
 
       this.updateTimeScale();
+      this.updateAxisTicks();
       this.createAxisTexts();
       this.drawTicks(tickStartY, tickEndY);
       this.drawContext(tickStartY, tickEndY);

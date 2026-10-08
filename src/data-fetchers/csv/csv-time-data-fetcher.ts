@@ -3,8 +3,10 @@ import { dsvFormat as d3dsvFormat, type DSVRowString } from 'd3-dsv';
 import type { CSVTimeData } from '@gosling-lang/gosling-schema';
 import { type CommonDataConfig, filterUsingGenoPos } from '../utils';
 import { formatIsoDate, parseDateTime, timestampToSeconds, utcSeconds, TIME_MAX_POS, TIME_MIN_POS } from '../time-utils';
+import { isoWeekStart } from '../../core/utils/time-units';
+import { applyTimeCoordinates, type TimeCoordinatesConfig } from '../../core/utils/time-coordinate-system';
 
-type CsvTimeDataConfig = CSVTimeData & CommonDataConfig;
+type CsvTimeDataConfig = CSVTimeData & CommonDataConfig & { timeCoordinates?: TimeCoordinatesConfig };
 
 /**
  * HiGlass data fetcher specific for Gosling which ultimately will accept any types of data other than JSON values.
@@ -60,6 +62,9 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
                     const convertedRow = this.processRow(row, convertToDate?.length ? convertToDate : undefined);
                     this.values.push(convertedRow);
                 });
+                // Map the converted rows into the time coordinate system of the axis (period or relative)
+                const timeCoordinates = this.dataConfig.timeCoordinates;
+                if (timeCoordinates) this.values = applyTimeCoordinates(this.values.filter(Boolean), timeCoordinates);
             })
                 .catch(error => {
                     console.error(error);
@@ -169,30 +174,14 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
         }
 
         containsCalendarWeek(date: string): boolean {
-            const regex = /\b([1-9]|[1-4][0-9]|5[0-2])\b/g;
-            return regex.test(date);
+            return /\b([1-9]|[1-4][0-9]|5[0-3])\b/.test(date);
         }
 
-        parseCalendarWeek(date: string): boolean {
-            const regex = /\b([1-9]|[1-4][0-9]|5[0-2])\b/g;
-            return regex.test(date);
-        }
-        
+        /** Monday (`YYYY-MM-DD`, UTC) of an ISO calendar week, including week 53 of long ISO years. */
         weekToDate(year: string, week: string) {
-            const regex = /\b([1-9]|[1-4][0-9]|5[0-2])\b/g;
-            const match = week.match(regex);
-            const weekNumber = match ? Number(match[0]) : undefined;
-            if (weekNumber === undefined) {
-                return undefined;
-            }
-            const date = new Date(Date.UTC(2000, 0, 1 + (weekNumber - 1) * 7));
-            date.setUTCFullYear(Number(year));
-            if (date.getUTCDay() <= 4)
-                date.setUTCDate(date.getUTCDate() - date.getUTCDay() + 1);
-            else
-                date.setUTCDate(date.getUTCDate() + 8 - date.getUTCDay());
-
-            return formatIsoDate(date.getTime() / 1000);
+            const match = week.match(/\b([1-9]|[1-4][0-9]|5[0-3])\b/);
+            const monday = match ? isoWeekStart(Number(year), Number(match[0])) : NaN;
+            return isNaN(monday) ? undefined : formatIsoDate(monday);
         }
 
         tilesetInfo(callback?: any) {

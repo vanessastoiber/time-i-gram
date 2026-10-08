@@ -10,6 +10,20 @@ import type {
 import { IsChannelDeep, IsOverlaidTrack } from '@gosling-lang/gosling-schema';
 import { getTemporalChannelFromTrack } from '../gosling-schema/validate';
 import { parseDuration, parseTimeValue } from '../core/utils/time-units';
+import {
+    ABSOLUTE_TIME,
+    PERIOD_UNITS,
+    describeTimeCoordinates,
+    getTrackTimeCoordinates,
+    periodCoordinates,
+    periodKeyField,
+    periodReference,
+    periodStartRange,
+    setTrackTimeCoordinates,
+    timeCoordinateSignature,
+    type TimeCoordinateSystem,
+    type TrackTimeCoordinates
+} from '../core/utils/time-coordinate-system';
 import { traverseTracksAndViews } from './spec-preprocess';
 
 const X_CHANNELS = ['x', 'xe', 'x1', 'x1e'] as const;
@@ -106,6 +120,103 @@ function resolveTrack(track: Track, warn: Warn) {
             member.visibility = member.visibility.filter(condition => resolveThreshold(condition, isTemporal, warn));
         }
     });
+
+    if (isTemporal) resolveTimeCoordinates(track, warn);
+}
+
+/**
+ * Determine the time coordinate system of a track from its temporal x channels (`period`, later `relative`),
+ * rewrite those channels to the coordinate fields that the data fetcher adds, and store the mapping on the
+ * track (`_timeCoordinates`) for the compiler, the fetcher and the time axis.
+ * Absolute time needs no mapping, so such tracks are left exactly as they are.
+ */
+function resolveTimeCoordinates(track: Track, warn: Warn) {
+    // already resolved (the compiler runs this again after a responsive re-fix)
+    if (getTrackTimeCoordinates(track)) return;
+    const members: Partial<SingleTrack>[] = IsOverlaidTrack(track) ? [track, ...track.overlay] : [track as SingleTrack];
+    const inheritedDomain = (track as CommonTrackDef).xDomain;
+
+    let system: TimeCoordinateSystem | undefined;
+    const config: TrackTimeCoordinates = { system: ABSOLUTE_TIME, fields: [], keyFields: [] };
+
+    members.forEach(member => {
+        const x = member.x;
+        if (!IsChannelDeep(x) || x.type !== 'temporal') return;
+        const memberSystem = resolveMemberSystem(member, warn);
+        if (system && timeCoordinateSignature(system) !== timeCoordinateSignature(memberSystem)) {
+            warn(
+                `Overlaid tracks use different time coordinate systems (${describeTimeCoordinates(system)} and ` +
+                    `${describeTimeCoordinates(memberSystem)}); the second one is drawn in ${describeTimeCoordinates(system)}.`
+            );
+        }
+        system = system ?? memberSystem;
+        if (system.kind === 'absolute') return;
+
+        if (system.kind === 'period' && x.field && x.period) {
+            const keyField = periodKeyField(x.field, x.period);
+            if (!config.keyFields!.includes(keyField)) config.keyFields!.push(keyField);
+        }
+
+        // rewrite every temporal x channel of this member to its coordinate field
+        const sourceOf: Partial<Record<(typeof X_CHANNELS)[number], string>> = {};
+        X_CHANNELS.forEach(key => {
+            const channel = member[key];
+            if (!IsChannelDeep(channel) || channel.type !== 'temporal' || !channel.field) return;
+            sourceOf[key] = channel.field;
+            const coord = coordinateField(channel.field, system!);
+            if (!config.fields.find(f => f.coord === coord)) config.fields.push({ source: channel.field, coord });
+            channel.field = coord;
+        });
+        if (sourceOf.x && sourceOf.xe) config.interval = [sourceOf.x, sourceOf.xe];
+
+        // the x domain of a period axis is the reference period
+        if (system.kind === 'period') {
+            // `traverseToFixSpecDownstream()` copies the view's `xDomain` into `x.domain`: only warn about own domains
+            if (x.domain && JSON.stringify(x.domain) !== JSON.stringify(inheritedDomain)) {
+                warn('A `domain` on a `period` channel is not supported; the whole period is shown.');
+            }
+            x.domain = { interval: periodReference(system) };
+        }
+    });
+
+    if (system && system.kind !== 'absolute') {
+        config.system = system;
+        setTrackTimeCoordinates(track, config);
+    }
+}
+
+/** Name of the field that holds the coordinates of a time field. */
+function coordinateField(field: string, system: TimeCoordinateSystem) {
+    return `__${system.kind}_${field}`;
+}
+
+/** Validate and normalize `x.period` of one track definition and return its coordinate system. */
+function resolveMemberSystem(member: Partial<SingleTrack>, warn: Warn): TimeCoordinateSystem {
+    const x = member.x;
+    if (!IsChannelDeep(x) || !('period' in x) || x.period === undefined) return ABSOLUTE_TIME;
+    const period = typeof x.period === 'string' ? { unit: x.period } : { ...x.period };
+    if (!PERIOD_UNITS.includes(period.unit)) {
+        warn(`period "${period.unit}" is not one of ${PERIOD_UNITS.join(', ')}, so the axis is not wrapped.`);
+        x.period = undefined;
+        return ABSOLUTE_TIME;
+    }
+    if (period.weekBased && period.unit !== 'year') {
+        warn(`period.weekBased only applies to years, so it is ignored for "${period.unit}".`);
+        period.weekBased = undefined;
+    }
+    if (period.start !== undefined) {
+        const range = periodStartRange(period.unit, !!period.weekBased);
+        if (!range || !Number.isInteger(period.start) || period.start < range[0] || period.start > range[1]) {
+            warn(
+                range
+                    ? `period.start ${period.start} is outside ${range[0]}-${range[1]} for "${period.unit}", so it is ignored.`
+                    : `period.start is not supported for "${period.unit}", so it is ignored.`
+            );
+            period.start = undefined;
+        }
+    }
+    x.period = period;
+    return periodCoordinates(period);
 }
 
 /** Convert both bounds of an interval to seconds; `undefined` (after a warning) if a bound is invalid. */

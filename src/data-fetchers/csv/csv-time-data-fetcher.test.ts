@@ -124,3 +124,37 @@ describe('csv-time data fetcher: date parsing', () => {
         warn.mockRestore();
     });
 });
+
+describe('csv-time data fetcher: ISO calendar weeks', () => {
+    it('converts ISO weeks to their Monday, including week 53 and week 1 starting in December', async () => {
+        const { rows } = await loadCsv('year,week\n2015,53\n2014,1\n2010,1\n2010,53', {
+            dateFields: ['year', 'week'],
+            includesCalendarWeek: true
+        });
+        expect(rows.slice(0, 3).map(r => r.year)).toEqual([utc(2015, 12, 28), utc(2013, 12, 30), utc(2010, 1, 4)]);
+        expect(rows[3].year).toBeNaN(); // 2010 has no week 53
+    });
+});
+
+describe('csv-time data fetcher: time coordinate systems', () => {
+    const PERIOD_YEAR = {
+        system: { kind: 'period', unit: 'year', weekBased: true, start: 1 },
+        fields: [{ source: 'year', coord: '__period_year' }],
+        keyFields: ['season']
+    };
+
+    it('adds period coordinates and keys, and filters tiles by coordinates', async () => {
+        const { fetcher, rows } = await loadCsv('year,week,v\n2013,52,a\n2014,1,b\n2014,2,c', {
+            dateFields: ['year', 'week'],
+            includesCalendarWeek: true,
+            x: '__period_year',
+            timeCoordinates: PERIOD_YEAR
+        });
+        expect(rows.map(r => r.season)).toEqual(['2013', '2014', '2014']);
+        // 2014-W01 (starting 2013-12-30) is at the start of the reference year, 2013-W52 at its end
+        const refStart = utc(2001, 1, 1);
+        expect(rows.map(r => (r.__period_year - refStart) / (7 * 86400))).toEqual([51, 0, 1]);
+        const tile = await new Promise<any>(resolve => fetcher.fetchTilesDebounced(resolve, ['0.0']));
+        expect(tile['0.0'].tabularData.map((r: any) => r.v)).toEqual(['a', 'b', 'c']);
+    });
+});
