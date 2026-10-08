@@ -14,7 +14,8 @@ import type {
     CoverageTransform,
     DisplaceTransform,
     JsonParseTransform,
-    TimeUnitTransform
+    TimeUnitTransform,
+    SpanTransform
 } from '@gosling-lang/gosling-schema';
 import {
     getChannelKeysByAggregateFnc,
@@ -26,7 +27,7 @@ import {
 } from '@gosling-lang/gosling-schema';
 import { computeChromSizes } from './assembly';
 import { median as d3median } from 'd3-array';
-import { floorTime, offsetTime } from './time-units';
+import { addDuration, floorTime, offsetTime, parseDurationParts } from './time-units';
 import {
     unitEndCoordinate,
     unitStartCoordinate,
@@ -100,6 +101,26 @@ export function truncateTime(t: TimeUnitTransform, data: Datum[]): Datum[] {
         const row: Datum = { ...d, [newField ?? field]: start };
         if (endField) row[endField] = offsetTime(start, unit, 1);
         return row;
+    });
+}
+
+let hasWarnedNegativeSpan = false;
+
+/**
+ * Turn spans into intervals: `newField` = `field` + a duration (a numeric field in `unit`, or a duration literal).
+ */
+export function addSpan(t: SpanTransform, data: Datum[]): Datum[] {
+    const literal = parseDurationParts(t.duration);
+    return data.map(d => {
+        const start = +d[t.field];
+        const [n, unit] = literal ? [literal.value, literal.unit] : [+d[t.duration], t.unit ?? 'second'];
+        let end = isFinite(start) && isFinite(n) && n >= 0 ? addDuration(start, unit, n) : NaN;
+        if (n < 0) {
+            if (!hasWarnedNegativeSpan) console.warn(`[time-i-gram] span: negative durations in "${t.duration}" are not drawn.`);
+            hasWarnedNegativeSpan = true;
+            end = NaN;
+        }
+        return { ...d, [t.newField]: end };
     });
 }
 

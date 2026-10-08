@@ -795,6 +795,9 @@
           "$ref": "#/definitions/TimeUnitTransform"
         },
         {
+          "$ref": "#/definitions/SpanTransform"
+        },
+        {
           "$ref": "#/definitions/StrConcatTransform"
         },
         {
@@ -8879,6 +8882,39 @@
         "operation",
         "target",
         "threshold"
+      ],
+      "type": "object"
+    },
+    "SpanTransform": {
+      "additionalProperties": false,
+      "description": "Turn a span (a duration without a position in time) into an interval: the end of each row is its start (`field`) plus a duration, either a numeric field in `unit` or a fixed duration such as `\"2 weeks\"`. Units up to a week are added exactly; months, quarters, years and decades are added on the calendar (31 January + 1 month = the last day of February), with any fraction at the nominal length. Encode the start with `x` and the end with `xe`. Negative durations are not drawn.",
+      "properties": {
+        "duration": {
+          "description": "A numeric field with each row's duration in `unit`, or a fixed duration such as `\"15 minutes\"`.",
+          "type": "string"
+        },
+        "field": {
+          "description": "Field with the start times (Unix seconds).",
+          "type": "string"
+        },
+        "newField": {
+          "description": "Field that receives the end times (Unix seconds).",
+          "type": "string"
+        },
+        "type": {
+          "const": "span",
+          "type": "string"
+        },
+        "unit": {
+          "$ref": "#/definitions/TimeUnit",
+          "description": "Unit of a numeric duration field. __Default:__ `\"second\"`"
+        }
+      },
+      "required": [
+        "type",
+        "field",
+        "duration",
+        "newField"
       ],
       "type": "object"
     },

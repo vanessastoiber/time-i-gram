@@ -250,6 +250,22 @@ export function parseUnitName(name: string): TimeUnit | undefined {
     return undefined;
 }
 
+/** The number and unit of a duration string (`"-36 months"` is `{ value: -36, unit: "month" }`), if valid. */
+export function parseDurationParts(value: string): { value: number; unit: TimeUnit } | undefined {
+    const m = value.trim().match(/^([+-]?\d+(?:\.\d+)?|[+-]?\.\d+)\s*([a-zA-Z]+)$/);
+    const unit = m ? parseUnitName(m[2]) : undefined;
+    return m && unit ? { value: +m[1], unit } : undefined;
+}
+
+/**
+ * Add `n` units to `t` on the calendar: whole units with `offsetTime` (months keep the day of the month),
+ * the fraction at the unit's nominal length.
+ */
+export function addDuration(t: number, unit: TimeUnit, n: number): number {
+    const whole = Math.trunc(n);
+    return offsetTime(t, unit, whole) + (n - whole) * UNIT_SECONDS[unit];
+}
+
 /**
  * Convert a duration to seconds, or `NaN` if it is not valid. A number is seconds. A string is
  * `<number> <unit>`, e.g. `"90 minutes"`, `"1.5 days"`, `"-2 wk"`. Units up to a week have their exact length;
@@ -259,8 +275,6 @@ export function parseUnitName(name: string): TimeUnit | undefined {
 export function parseDuration(value: DurationValue): number {
     if (typeof value === 'number') return value;
     if (typeof value !== 'string') return NaN;
-    const m = value.trim().match(/^([+-]?\d+(?:\.\d+)?|[+-]?\.\d+)\s*([a-zA-Z]+)$/);
-    if (!m) return NaN;
-    const unit = parseUnitName(m[2]);
-    return unit ? +m[1] * UNIT_SECONDS[unit] : NaN;
+    const parts = parseDurationParts(value);
+    return parts ? parts.value * UNIT_SECONDS[parts.unit] : NaN;
 }

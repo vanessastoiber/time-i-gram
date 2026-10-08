@@ -66,6 +66,7 @@ import { EX_SPEC_TEMPORAL_WHO_FLU_PERIOD } from './spec/temporal-data_who-flu-pe
 import { EX_SPEC_TEMPORAL_FITBIT_CYCLES } from './spec/temporal-data_fitbit-cycles';
 import { EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY } from './spec/temporal-data_unemployment-granularity';
 import { EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT } from './spec/temporal-data_relative-alignment';
+import { EX_SPEC_TEMPORAL_TAXI_SPANS } from './spec/temporal-data_taxi-spans';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -594,6 +595,12 @@ const editorExampleObj: {
         group: 'Temporal Data',
         name: 'Relative: Flu Seasons and Unemployment Aligned to Events',
         spec: EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT,
+        underDevelopment: true
+    },
+    TEMPORAL_DATA_TAXI_SPANS: {
+        group: 'Temporal Data',
+        name: 'Spans: NYC Taxi Trips and the Daily Cycle',
+        spec: EX_SPEC_TEMPORAL_TAXI_SPANS,
         underDevelopment: true
     }
 };

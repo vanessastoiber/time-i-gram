@@ -596,6 +596,10 @@
           ],
           "type": "object"
         },
+        "duration": {
+          "description": "A numeric field with each row's duration in `unit`, or a fixed duration such as `\"15 minutes\"`.",
+          "type": "string"
+        },
         "endField": {
           "description": "If specified, a field that receives the end of the unit (the start of the next one), e.g. for `xe`.",
           "type": "string"
@@ -786,6 +790,7 @@
             "filter",
             "interval",
             "timeUnit",
+            "span",
             "concat",
             "replace",
             "log",
@@ -799,7 +804,16 @@
           "type": "string"
         },
         "unit": {
-          "$ref": "#/definitions/TimeUnit",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TimeUnit",
+              "description": "The calendar unit. `week` is the ISO week (Monday to Sunday)."
+            },
+            {
+              "$ref": "#/definitions/TimeUnit",
+              "description": "Unit of a numeric duration field. __Default:__ `\"second\"`"
+            }
+          ],
           "description": "The calendar unit. `week` is the ISO week (Monday to Sunday)."
         },
         "weekField": {

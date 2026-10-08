@@ -259,6 +259,11 @@ export interface TimeCoordinatesConfig {
     interval?: [string, string];
     /** Reference events of a relative system. */
     relative?: RelativeConfig;
+    /**
+     * Time fields computed by the track's data transforms (the ends of `span`s), which the fetcher cannot map:
+     * the track maps them after the transforms, from the interval's start (`applyDerivedTimeCoordinates`).
+     */
+    derived?: { source: string; coord: string; start: string }[];
 }
 
 /** Anchors of a relative system: per group of fields, or per calendar period (`groupPeriod`). */
@@ -549,4 +554,42 @@ export function filterByTimeUnits<T extends Record<string, unknown>>(
             (tiling.raw && isRowInTile(row, tile, undefined, tiling.source, coordField, cs)) ||
             tiling.units.some(unit => isRowInTile(row, tile, unit, tiling.source, coordField, cs))
     );
+}
+
+let hasWarnedClippedSpan = false;
+
+/**
+ * Map the time fields that the track's data transforms compute (span ends, `TimeCoordinatesConfig.derived`) into
+ * the coordinate system: in a relative system the end is the start's offset plus the duration; in a period
+ * system the end is clipped at the end of the start's period.
+ */
+export function applyDerivedTimeCoordinates<T extends Record<string, unknown>>(
+    rows: T[],
+    config: TimeCoordinatesConfig
+): (T & Record<string, unknown>)[] {
+    const { system, derived } = config;
+    if (!derived || derived.length === 0 || system.kind === 'absolute') return rows;
+    return rows.map(row => {
+        const copy: Record<string, unknown> = { ...row };
+        derived.forEach(({ source, coord, start }) => {
+            const startTime = +(row[start] as number);
+            const endTime = +(row[source] as number);
+            if (system.kind === 'relative') {
+                const startCoord = config.fields.find(f => f.source === start)?.coord;
+                copy[coord] = startCoord ? +(row[startCoord] as number) + (endTime - startTime) : NaN;
+                return;
+            }
+            if (!isFinite(startTime) || !isFinite(endTime)) {
+                copy[coord] = NaN;
+                return;
+            }
+            const periodEnd = periodEndOf(startTime, system);
+            if (endTime > periodEnd && !hasWarnedClippedSpan) {
+                hasWarnedClippedSpan = true;
+                console.warn('[time-i-gram] span: intervals that cross the end of their period are clipped at the period end.');
+            }
+            copy[coord] = toPeriodEndCoordinate(Math.min(endTime, periodEnd), system);
+        });
+        return copy as T & Record<string, unknown>;
+    });
 }

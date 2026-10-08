@@ -1,4 +1,5 @@
 import type {
+    SpanTransform,
     PeriodUnit,
     TimeUnit,
     TimeUnitRule,
@@ -373,12 +374,22 @@ function resolveTimeCoordinates(track: Track, warn: Warn) {
 
         // rewrite every temporal x channel of this member to its coordinate field
         const sourceOf: Partial<Record<(typeof X_CHANNELS)[number], string>> = {};
+        // span ends are computed per tile by the track, so the track maps them, not the fetcher
+        const spans = [...(member.dataTransform ?? (track as Partial<SingleTrack>).dataTransform ?? [])].filter(
+            (t): t is SpanTransform => t.type === 'span'
+        );
         X_CHANNELS.forEach(key => {
             const channel = member[key];
             if (!IsChannelDeep(channel) || channel.type !== 'temporal' || !channel.field) return;
-            sourceOf[key] = channel.field;
             const coord = coordinateField(channel.field, system!);
-            if (!config.fields.find(f => f.coord === coord)) config.fields.push({ source: channel.field, coord });
+            const span = spans.find(t => t.newField === channel.field);
+            if (span) {
+                config.derived = config.derived ?? [];
+                if (!config.derived.find(f => f.coord === coord)) config.derived.push({ source: channel.field, coord, start: span.field });
+            } else {
+                sourceOf[key] = channel.field;
+                if (!config.fields.find(f => f.coord === coord)) config.fields.push({ source: channel.field, coord });
+            }
             channel.field = coord;
         });
         if (sourceOf.x && sourceOf.xe) config.interval = [sourceOf.x, sourceOf.xe];

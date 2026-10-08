@@ -1,6 +1,7 @@
-import { binByTimeUnit, truncateTime } from './data-transform';
+import { addSpan, binByTimeUnit, truncateTime } from './data-transform';
 import {
     ABSOLUTE_TIME,
+    applyDerivedTimeCoordinates,
     filterByTimeUnits,
     isRowInTile,
     periodCoordinates,
@@ -178,5 +179,67 @@ describe('tile-exact aggregation', () => {
             return binByTimeUnit({ ...MONTHLY, groupby: [] }, rows, ABSOLUTE_TIME);
         });
         expect(naive.length).toBeGreaterThan(all.length);
+    });
+});
+
+describe('span transform', () => {
+    it('adds a numeric duration field in a unit, or a duration literal', () => {
+        const rows = [{ start: utc(2016, 2, 29, 16), dur: 400 }];
+        expect(addSpan({ type: 'span', field: 'start', duration: 'dur', newField: 'end' }, rows)[0].end).toEqual(utc(2016, 2, 29, 16) + 400);
+        expect(addSpan({ type: 'span', field: 'start', duration: 'dur', unit: 'minute', newField: 'end' }, rows)[0].end).toEqual(
+            utc(2016, 2, 29, 16) + 400 * 60
+        );
+        expect(addSpan({ type: 'span', field: 'start', duration: '2 weeks', newField: 'end' }, rows)[0].end).toEqual(
+            utc(2016, 3, 14, 16)
+        );
+    });
+
+    it('adds months and years on the calendar, fractions at the nominal length', () => {
+        const rows = [{ start: utc(2000, 1, 31), n: 1 }];
+        expect(iso(+addSpan({ type: 'span', field: 'start', duration: '1 month', newField: 'end' }, rows)[0].end)).toEqual('2000-02-29');
+        expect(iso(+addSpan({ type: 'span', field: 'start', duration: 'n', unit: 'year', newField: 'end' }, rows)[0].end)).toEqual(
+            '2001-01-31'
+        );
+        const half = addSpan({ type: 'span', field: 'start', duration: '1.5 months', newField: 'end' }, rows)[0].end;
+        expect(+half - utc(2000, 2, 29)).toBeCloseTo(0.5 * 30.436875 * 86400, 3);
+    });
+
+    it('does not draw negative or missing durations', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const out = addSpan({ type: 'span', field: 'start', duration: 'd', newField: 'end' }, [
+            { start: 0, d: -5 },
+            { start: 0, d: '' as unknown as number },
+            { start: NaN, d: 5 }
+        ]);
+        expect(out.map(r => r.end)).toEqual([NaN, 0, NaN]);
+        warn.mockRestore();
+    });
+});
+
+describe('span ends in period and relative coordinate systems', () => {
+    it('are the start offset plus the duration on a relative axis', () => {
+        const [row] = applyDerivedTimeCoordinates([{ s: 1000, e: 1600, __relative_s: -200 }], {
+            system: { kind: 'relative' },
+            fields: [{ source: 's', coord: '__relative_s' }],
+            derived: [{ source: 'e', coord: '__relative_e', start: 's' }]
+        });
+        expect(row.__relative_e).toEqual(400);
+    });
+
+    it('are clipped at the end of the period', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const day = periodCoordinates('day');
+        const rows = applyDerivedTimeCoordinates(
+            [
+                { s: utc(2016, 2, 3, 10), e: utc(2016, 2, 3, 11) },
+                { s: utc(2016, 2, 3, 23), e: utc(2016, 2, 4, 1) }
+            ],
+            { system: day, fields: [{ source: 's', coord: '__period_s' }], derived: [{ source: 'e', coord: '__period_e', start: 's' }] }
+        );
+        expect(rows.map(r => new Date(+(r.__period_e as number) * 1000).toISOString())).toEqual([
+            '2000-01-01T11:00:00.000Z',
+            '2000-01-02T00:00:00.000Z'
+        ]);
+        warn.mockRestore();
     });
 });

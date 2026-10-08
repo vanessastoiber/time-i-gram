@@ -627,3 +627,28 @@ describe('relative groupby period', () => {
         });
     });
 });
+
+describe('span transform', () => {
+    const span = { type: 'span', field: 'start', duration: 'trip_duration', unit: 'second', newField: 'end' };
+    const spanTrack = (x: object) =>
+        timeTrack({ mark: 'rect', dataTransform: [span], x: { field: 'start', type: 'temporal', ...x }, xe: { field: 'end', type: 'temporal' } });
+
+    it('is schema-valid', () => {
+        expect(validateGoslingSpec({ tracks: [spanTrack({})] }).state).toEqual('success');
+        expect(validateGoslingSpec({ tracks: [timeTrack({ dataTransform: [{ ...span, duration: '2 weeks' }] })] }).state).toEqual('success');
+    });
+
+    it('leaves absolute axes as they are', () => {
+        const { hg } = compiled({ tracks: [spanTrack({})] } as GoslingSpec);
+        expect(dataTrack(hg).data.timeCoordinates).toBeUndefined();
+        expect(dataTrack(hg).data.xe).toEqual('end');
+    });
+
+    it('lets the track map span ends on period axes (the fetcher cannot)', () => {
+        const { hg } = compiled({ tracks: [spanTrack({ period: 'day' })] } as GoslingSpec);
+        const { timeCoordinates } = dataTrack(hg).data;
+        expect(timeCoordinates.fields).toEqual([{ source: 'start', coord: '__period_start' }]);
+        expect(timeCoordinates.derived).toEqual([{ source: 'end', coord: '__period_end', start: 'start' }]);
+        expect(timeCoordinates.interval).toBeUndefined();
+    });
+});

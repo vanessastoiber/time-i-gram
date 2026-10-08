@@ -39,10 +39,12 @@ import {
     splitExon,
     inferSvType,
     truncateTime,
+    addSpan,
     binByTimeUnit
 } from '../../core/utils/data-transform';
 import {
     ABSOLUTE_TIME,
+    applyDerivedTimeCoordinates,
     getTrackTimeCoordinates,
     getTrackTimeUnit,
     getTrackTimeUnitTiling,
@@ -927,6 +929,9 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                         case 'timeUnit':
                             tabularDataTransformed = truncateTime(t, tabularDataTransformed);
                             break;
+                        case 'span':
+                            tabularDataTransformed = addSpan(t, tabularDataTransformed);
+                            break;
                         case 'interval':
                             tabularDataTransformed = enableInterval(t, tabularDataTransformed);
                             break;
@@ -959,6 +964,12 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                             break;
                     }
                 });
+
+                // time fields computed by the transforms (span ends) in a period or relative coordinate system
+                const timeCoordinates = getTrackTimeCoordinates(resolvedSpec);
+                if (timeCoordinates?.derived) {
+                    tabularDataTransformed = applyDerivedTimeCoordinates(tabularDataTransformed, timeCoordinates);
+                }
 
                 // `x.timeUnit`: place rows at their unit and aggregate (after the data transforms, e.g. filters)
                 const timeUnit = getTrackTimeUnit(resolvedSpec);

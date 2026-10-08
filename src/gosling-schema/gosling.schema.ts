@@ -1517,6 +1517,7 @@ export type DataTransform =
     | FilterTransform
     | IntervalTransform
     | TimeUnitTransform
+    | SpanTransform
     | StrConcatTransform
     | StrReplaceTransform
     | LogTransform
@@ -1560,6 +1561,25 @@ export interface TimeUnitTransform {
     newField?: string;
     /** If specified, a field that receives the end of the unit (the start of the next one), e.g. for `xe`. */
     endField?: string;
+}
+
+/**
+ * Turn a span (a duration without a position in time) into an interval: the end of each row is its start
+ * (`field`) plus a duration, either a numeric field in `unit` or a fixed duration such as `"2 weeks"`.
+ * Units up to a week are added exactly; months, quarters, years and decades are added on the calendar
+ * (31 January + 1 month = the last day of February), with any fraction at the nominal length.
+ * Encode the start with `x` and the end with `xe`. Negative durations are not drawn.
+ */
+export interface SpanTransform {
+    type: 'span';
+    /** Field with the start times (Unix seconds). */
+    field: string;
+    /** A numeric field with each row's duration in `unit`, or a fixed duration such as `"15 minutes"`. */
+    duration: string;
+    /** Unit of a numeric duration field. __Default:__ `"second"` */
+    unit?: TimeUnit;
+    /** Field that receives the end times (Unix seconds). */
+    newField: string;
 }
 
 interface CommonFilterTransform {
