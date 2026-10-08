@@ -165,9 +165,10 @@ const WEEKS_IN_REF_YEAR = 53;
 function periodTicks(domain: [number, number], cs: PeriodTime, count: number): TimeAxisTicks {
     const ticks =
         cs.unit === 'year' && cs.weekBased ? weekBasedTicks(domain, cs, count) : calendarPeriodTicks(domain, cs, count);
-    // the end of the period is the start of the next one (on a ring, the same angle as the start)
-    const [, refEnd] = periodReference(cs);
-    const keep = ticks.ticks.map(t => t < refEnd);
+    // only positions inside the reference period mean something (zoomed out, the axis extends past it); the end
+    // of the period is the start of the next one (on a ring, the same angle as the start)
+    const [refStart, refEnd] = periodReference(cs);
+    const keep = ticks.ticks.map(t => refStart <= t && t < refEnd);
     return { ...ticks, ticks: ticks.ticks.filter((_, i) => keep[i]), labels: ticks.labels.filter((_, i) => keep[i]) };
 }
 

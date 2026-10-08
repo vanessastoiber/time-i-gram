@@ -479,6 +479,12 @@ function resolveTimeCoordinates(track: Track, warn: Warn) {
         config.system = system;
         setTrackTimeCoordinates(track, config);
     }
+    if (system?.kind === 'period') {
+        // without an upper zoom limit, the whole period could shrink to a few pixels
+        const [refStart, refEnd] = periodReference(system);
+        const [min, max] = (track.zoomLimits ?? [1, null]) as [number | null, number | null];
+        if (max === null) track.zoomLimits = [min, refEnd - refStart];
+    }
 }
 
 /** Name of the field that holds the coordinates of a time field. */

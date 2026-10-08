@@ -266,6 +266,24 @@ describe('period (time coordinate system)', () => {
         warn.mockRestore();
     });
 
+    it('cannot zoom out past one period by default', () => {
+        const year = compiled({
+            tracks: [timeTrack({ x: { field: 'date', type: 'temporal', period: 'year' } })]
+        } as GoslingSpec);
+        expect(year.hg.views[0].zoomLimits).toEqual([1, 366 * 86400]);
+        const day = compiled({
+            zoomLimits: ['1 hour', null],
+            tracks: [timeTrack({ x: { field: 'date', type: 'temporal', period: 'day' } })]
+        } as GoslingSpec);
+        expect(day.hg.views[0].zoomLimits).toEqual([3600, 86400]);
+        // an explicit upper limit is kept
+        const own = compiled({
+            zoomLimits: [1, '2 days'],
+            tracks: [timeTrack({ x: { field: 'date', type: 'temporal', period: 'day' } })]
+        } as GoslingSpec);
+        expect(own.hg.views[0].zoomLimits).toEqual([1, 2 * 86400]);
+    });
+
     it('is idempotent (compile runs the pass again for responsive specs)', () => {
         const spec = { tracks: [periodTrack('year')] } as GoslingSpec;
         const { gs } = compiled(spec);

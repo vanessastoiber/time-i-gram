@@ -73,3 +73,21 @@ describe('relative time axis ticks', () => {
         );
     });
 });
+
+describe('period axes zoomed out past the period', () => {
+    it('label only positions inside the reference period, before and after it alike', () => {
+        const DAY = 86400;
+        [
+            periodCoordinates('day'),
+            periodCoordinates('year'),
+            periodCoordinates({ unit: 'year', weekBased: true })
+        ].forEach(cs => {
+            const [refStart, refEnd] = periodReference(cs);
+            const length = refEnd - refStart;
+            const { ticks, labels } = timeAxisTicks([refStart - 2 * length - DAY, refEnd + 2 * length], cs);
+            expect(ticks.length).toBeGreaterThan(0);
+            expect(ticks.every(t => refStart <= t && t < refEnd)).toBe(true);
+            expect(labels.length).toEqual(ticks.length);
+        });
+    });
+});
