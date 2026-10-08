@@ -7,7 +7,7 @@ import {
     IsYAxis,
     IsChannelDeep
 } from '@gosling-lang/gosling-schema';
-import { HIGLASS_AXIS_SIZE } from './higlass-model';
+import { HIGLASS_AXIS_SIZE, getXAxisSize } from './higlass-model';
 import {
     DEFAULT_CIRCULAR_VIEW_PADDING,
     DEFAULT_INNER_RADIUS_PROP,
@@ -193,7 +193,7 @@ function traverseAndCollectTrackInfo(
             cumHeight = Math.max(...tracks.map(d => d.height));
             tracks.forEach((track, i, array) => {
                 if (getNumOfXAxes([track]) === 1) {
-                    track.width += HIGLASS_AXIS_SIZE;
+                    track.width += getXAxisSize(track);
                 }
 
                 track.height = cumHeight;
@@ -225,7 +225,7 @@ function traverseAndCollectTrackInfo(
                 // let scaledHeight = track.height;
 
                 if (getNumOfXAxes([track]) === 1) {
-                    track.height += HIGLASS_AXIS_SIZE;
+                    track.height += getXAxisSize(track);
                 }
                 const singleTrack = resolveSuperposedTracks(track);
                 if (singleTrack.length > 0 && Is2DTrack(singleTrack[0]) && getNumOfYAxes([track]) === 1) {

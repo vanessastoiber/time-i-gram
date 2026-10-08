@@ -1,6 +1,6 @@
 import * as uuid from 'uuid';
 import type { Track as HiGlassTrack } from '@gosling-lang/higlass-schema';
-import { HiGlassModel, HIGLASS_AXIS_SIZE } from './higlass-model';
+import { HiGlassModel, HIGLASS_AXIS_SIZE, TIME_AXIS_SIZE, getXAxisSize } from './higlass-model';
 import { parseServerAndTilesetUidFromUrl } from '../core/utils';
 import type { Track, Domain } from '@gosling-lang/gosling-schema';
 import type { BoundingBox, RelativePosition } from './bounding-box';
@@ -86,14 +86,14 @@ export function goslingToHiGlass(
             (firstResolvedSpec.layout !== 'circular' &&
             firstResolvedSpec.orientation === 'vertical' &&
             IsXAxis(firstResolvedSpec)
-                ? HIGLASS_AXIS_SIZE
+                ? getXAxisSize(firstResolvedSpec)
                 : 0);
         const height =
             bb.height -
             (firstResolvedSpec.layout !== 'circular' &&
             firstResolvedSpec.orientation === 'horizontal' &&
             IsXAxis(firstResolvedSpec)
-                ? HIGLASS_AXIS_SIZE
+                ? getXAxisSize(firstResolvedSpec)
                 : 0);
         const hgTrack: HiGlassTrack = {
             uid: `${trackId}-track`, // This is being used to cache the visualization
@@ -262,12 +262,12 @@ export function goslingToHiGlass(
                         layout: firstResolvedSpec.layout,
                         innerRadius:
                             channel.axis === 'top'
-                                ? (firstResolvedSpec.outerRadius as number) - HIGLASS_AXIS_SIZE
+                                ? (firstResolvedSpec.outerRadius as number) - TIME_AXIS_SIZE
                                 : firstResolvedSpec.innerRadius,
                         outerRadius:
                             channel.axis === 'top'
                                 ? firstResolvedSpec.outerRadius
-                                : (firstResolvedSpec.innerRadius as number) + HIGLASS_AXIS_SIZE,
+                                : (firstResolvedSpec.innerRadius as number) + TIME_AXIS_SIZE,
                         width: firstResolvedSpec.width,
                         height: firstResolvedSpec.height,
                         startAngle: firstResolvedSpec.startAngle,
