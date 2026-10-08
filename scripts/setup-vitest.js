@@ -25,12 +25,18 @@ apis.forEach(api => {
 });
 
 beforeAll(() => {
-    // jsdom doesn't come with a WebCrypto implementation (required for uuid)
-    global.crypto = {
-        getRandomValues: function (buffer) {
-            return randomFillSync(buffer);
-        }
-    };
+    // jsdom doesn't come with a WebCrypto implementation (required for uuid).
+    // Node >= 19 provides a read-only global `crypto`, so only shim it when missing.
+    if (!global.crypto?.getRandomValues) {
+        Object.defineProperty(global, 'crypto', {
+            configurable: true,
+            value: {
+                getRandomValues: function (buffer) {
+                    return randomFillSync(buffer);
+                }
+            }
+        });
+    }
     // jsdom doesn't come with a `URL.createObjectURL` implementation
     global.URL.createObjectURL = () => { return ''; };
 });

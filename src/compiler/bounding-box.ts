@@ -1,6 +1,13 @@
 import type { MultipleViews, CommonViewDef, GoslingSpec, Track, SingleView } from '@gosling-lang/gosling-schema';
-import { Is2DTrack, IsDummyTrack, IsOverlaidTrack, IsXAxis, IsYAxis } from '@gosling-lang/gosling-schema';
-import { HIGLASS_AXIS_SIZE } from './higlass-model';
+import {
+    Is2DTrack,
+    IsDummyTrack,
+    IsOverlaidTrack,
+    IsXAxis,
+    IsYAxis,
+    IsChannelDeep
+} from '@gosling-lang/gosling-schema';
+import { HIGLASS_AXIS_SIZE, getXAxisSize } from './higlass-model';
 import {
     DEFAULT_CIRCULAR_VIEW_PADDING,
     DEFAULT_INNER_RADIUS_PROP,
@@ -186,7 +193,7 @@ function traverseAndCollectTrackInfo(
             cumHeight = Math.max(...tracks.map(d => d.height));
             tracks.forEach((track, i, array) => {
                 if (getNumOfXAxes([track]) === 1) {
-                    track.width += HIGLASS_AXIS_SIZE;
+                    track.width += getXAxisSize(track);
                 }
 
                 track.height = cumHeight;
@@ -218,7 +225,7 @@ function traverseAndCollectTrackInfo(
                 // let scaledHeight = track.height;
 
                 if (getNumOfXAxes([track]) === 1) {
-                    track.height += HIGLASS_AXIS_SIZE;
+                    track.height += getXAxisSize(track);
                 }
                 const singleTrack = resolveSuperposedTracks(track);
                 if (singleTrack.length > 0 && Is2DTrack(singleTrack[0]) && getNumOfYAxes([track]) === 1) {
@@ -334,6 +341,12 @@ function traverseAndCollectTrackInfo(
                 spacingAngle + ((((t.boundingBox.x - dx) / cumWidth) * (cumWidth - SPACING)) / cumWidth) * 360;
             t.track.endAngle =
                 ((((t.boundingBox.x + t.boundingBox.width - dx) / cumWidth) * (cumWidth - SPACING)) / cumWidth) * 360;
+
+            // Clockwise tracks traverse the same sector in the opposite direction, which polar
+            // utilities express as swapped start and end angles (see `valueToRadian`).
+            if (isClockwiseTrack(t.track)) {
+                [t.track.startAngle, t.track.endAngle] = [t.track.endAngle, t.track.startAngle];
+            }
             // t.track.startAngle = ((t.boundingBox.x - dx) / cumWidth) * 360;
             // t.track.endAngle = ((t.boundingBox.x + t.boundingBox.width - dx) / cumWidth) * 360;
 
@@ -393,3 +406,13 @@ const getTextTrack = (size: Size, title?: string, subtitle?: string) => {
         })
     ) as Track;
 };
+
+/**
+ * Whether a circular track runs clockwise: the `clockwise` property if set, otherwise `true` for
+ * tracks with a temporal `x` channel (in any overlaid layer) and `false` otherwise, as upstream Gosling.
+ */
+export function isClockwiseTrack(track: Track): boolean {
+    if (IsDummyTrack(track)) return false;
+    if (track.clockwise !== undefined) return track.clockwise;
+    return resolveSuperposedTracks(track).some(t => IsChannelDeep(t.x) && t.x.type === 'temporal');
+}

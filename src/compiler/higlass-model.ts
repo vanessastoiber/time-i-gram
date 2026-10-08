@@ -10,7 +10,17 @@ import type { CompleteThemeDeep } from '../core/utils/theme';
 import exampleHg from '../core/example/hg-view-config-1';
 import { insertItemToArray } from '../core/utils/array';
 
-export const HIGLASS_AXIS_SIZE = 45;
+/** Size (in pixels) of a genomic axis track, as in upstream Gosling. */
+export const HIGLASS_AXIS_SIZE = 30;
+/** Size (in pixels) of a time axis track, which shows a context label (e.g. the year) below its tick labels. */
+export const TIME_AXIS_SIZE = 45;
+
+/** Size of the x-axis track of a (possibly overlaid) track: `TIME_AXIS_SIZE` for a temporal x axis. */
+export function getXAxisSize(track: unknown): number {
+    const t = track as { x?: { type?: string }; overlay?: { x?: { type?: string } }[] } | undefined;
+    const isTemporal = t?.x?.type === 'temporal' || (t?.overlay ?? []).some(o => o?.x?.type === 'temporal');
+    return isTemporal ? TIME_AXIS_SIZE : HIGLASS_AXIS_SIZE;
+}
 
 const getViewTemplate = (assembly?: Assembly) => {
     return {
@@ -419,7 +429,7 @@ export class HiGlassModel {
             });
         } else {
             // linear axis: place an axis track on the top, left, bottom, or right
-            const unixTimeAxisTrack = { ...unixTimeAxisTrackTemplate, [widthOrHeight]: HIGLASS_AXIS_SIZE };
+            const unixTimeAxisTrack = { ...unixTimeAxisTrackTemplate, [widthOrHeight]: TIME_AXIS_SIZE };
 
             if (position === 'left') {
                 // In vertical tracks, the main track has been already inserted into `left`, so put axis on the first index to show it on the left.

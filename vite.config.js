@@ -53,7 +53,7 @@ export default function() {
     }
 };
 
-const alias = {
+const aliasMap = {
     'gosling.js': path.resolve(__dirname, './src/index.ts'),
     '@gosling-lang/gosling-schema': path.resolve(__dirname, './src/gosling-schema/index.ts'),
     '@gosling-lang/higlass-schema': path.resolve(__dirname, './src/higlass-schema/index.ts'),
@@ -64,9 +64,15 @@ const alias = {
     "@gosling-lang/dummy-track": path.resolve(__dirname, "./src/tracks/dummy-track/index.ts"),
     "@data-fetchers": path.resolve(__dirname, "./src/data-fetchers/index.ts"),
     zlib: path.resolve(__dirname, './src/alias/zlib.ts'),
-    uuid: path.resolve(__dirname, './node_modules/uuid/dist/esm-browser/index.js'),
     stream: path.resolve(__dirname, './node_modules/stream-browserify')
 };
+
+// A string key also matches sub-paths (`uuid` would capture `uuid/v4`, which `higlass-text`
+// requires), so `uuid` is anchored with a regular expression.
+export const alias = [
+    ...Object.entries(aliasMap).map(([find, replacement]) => ({ find, replacement })),
+    { find: /^uuid$/, replacement: path.resolve(__dirname, './node_modules/uuid/dist/esm-browser/index.js') }
+];
 
 const skipExt = new Set(['@gmod/bbi', 'uuid']);
 const external = [...Object.keys(pkg.dependencies), ...Object.keys(pkg.peerDependencies)].filter(

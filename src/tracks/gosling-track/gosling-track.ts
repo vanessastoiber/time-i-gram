@@ -50,11 +50,29 @@ import {
     isTabularDataFetcher,
     hasDataTransform
 } from '@gosling-lang/gosling-schema';
-import { HIGLASS_AXIS_SIZE } from '../../compiler/higlass-model';
+import { getXAxisSize } from '../../compiler/higlass-model';
 import { flatArrayToPairArray } from '../../core/utils/array';
 import { createPluginTrack, type PluginTrackFactory, type TrackConfig } from '../../core/utils/define-plugin-track';
 
 // Set `true` to print in what order each function is called
+/**
+ * Publish the visible range of a track as a genomic range (JS API `location` event).
+ * Tracks with a temporal x axis have no genomic coordinates, so nothing is published for them.
+ */
+export function publishGenomicLocation(
+    viewUid: string,
+    xDomain: number[],
+    assembly: Assembly | undefined,
+    spec: SingleTrack | OverlaidTrack
+) {
+    if (resolveSuperposedTracks(spec).some(t => IsChannelDeep(t.x) && t.x.type === 'temporal')) return;
+    const genomicRange = xDomain.map(absPos => getRelativeGenomicPosition(absPos, assembly, true)) as [
+        GenomicPosition,
+        GenomicPosition
+    ];
+    publish('location', { id: viewUid, genomicRange });
+}
+
 export const PRINT_RENDERING_CYCLE = false;
 
 // For using libraries, refer to https://github.com/higlass/higlass/blob/f82c0a4f7b2ab1c145091166b0457638934b15f3/app/scripts/configs/available-for-plugins.js
@@ -470,17 +488,7 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
             this.forceDraw();
 
             // Publish the new genomic axis domain
-            // TODO: Add condition
-            // const genomicRange = newXScale
-            //     .domain()
-            //     .map(absPos => getRelativeGenomicPosition(absPos, this.#assembly, true)) as [
-            //     GenomicPosition,
-            //     GenomicPosition
-            // ];
-            // publish('location', {
-            //     id: context.viewUid,
-            //     genomicRange: genomicRange
-            // });
+            publishGenomicLocation(context.viewUid, newXScale.domain(), this.#assembly, this.options.spec);
         }
 
         /* *
@@ -945,7 +953,7 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
 
                 // Replace width and height information with the actual values for responsive encoding
                 const [trackWidth, trackHeight] = this.dimensions; // actual size of a track
-                const axisSize = IsXAxis(resolvedSpec) ? HIGLASS_AXIS_SIZE : 0; // Why the axis size must be added here?
+                const axisSize = IsXAxis(resolvedSpec) ? getXAxisSize(resolvedSpec) : 0; // Why the axis size must be added here?
                 const [w, h] = [trackWidth, trackHeight + axisSize];
                 const circularFactor = Math.min(w, h) / Math.min(resolvedSpec.width!, resolvedSpec.height!);
                 if (resolvedSpec.innerRadius) {
@@ -1104,7 +1112,8 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                         [mouseX, mouseY],
                         [width / 2.0, height / 2.0],
                         [innerRadius, outerRadius],
-                        [startAngle, endAngle]
+                        // clockwise tracks have swapped angles but cover the same sector
+                        [Math.min(startAngle, endAngle), Math.max(startAngle, endAngle)]
                     )
                 ) {
                     publish(eventType, {

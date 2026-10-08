@@ -2,7 +2,7 @@ import type { ScaleLinear } from 'd3-scale';
 import type { GoslingTrackModel } from '../../tracks/gosling-track/gosling-track-model';
 import { IsChannelDeep } from '@gosling-lang/gosling-schema';
 import colorToHex from '../utils/color-to-hex';
-import { cartesianToPolar, valueToRadian } from '../utils/polar';
+import { cartesianToPolar, isAnticlockwise, valueToRadian } from '../utils/polar';
 import { isNumberArray, isStringArray } from '../utils/array';
 import type { CompleteThemeDeep } from '../utils/theme';
 
@@ -29,6 +29,7 @@ export function drawRowGrid(trackInfo: any, tm: GoslingTrackModel, theme: Requir
     const trackOuterRadius = spec.outerRadius ?? 300; // TODO: should be smaller than Math.min(width, height)
     const startAngle = spec.startAngle ?? 0;
     const endAngle = spec.endAngle ?? 360;
+    const ccw = isAnticlockwise(startAngle, endAngle); // `false` for clockwise tracks
     const trackRingSize = trackOuterRadius - trackInnerRadius;
     const cx = trackWidth / 2.0;
     const cy = trackHeight / 2.0;
@@ -86,8 +87,8 @@ export function drawRowGrid(trackInfo: any, tm: GoslingTrackModel, theme: Requir
 
             graphics.beginFill(colorToHex(theme.axis.gridColor), 1);
             graphics.moveTo(trackX + sPos.x, trackY + sPos.y);
-            graphics.arc(trackX + cx, trackY + cy, nearR, startRad, endRad, true);
-            graphics.arc(trackX + cx, trackY + cy, farR, endRad, startRad, false);
+            graphics.arc(trackX + cx, trackY + cy, nearR, startRad, endRad, ccw);
+            graphics.arc(trackX + cx, trackY + cy, farR, endRad, startRad, !ccw);
             graphics.closePath();
         }
     });
@@ -113,6 +114,7 @@ export function drawYGridQuantitative(trackInfo: any, tm: GoslingTrackModel, the
     const trackOuterRadius = spec.outerRadius ?? 300; // TODO: should be smaller than Math.min(width, height)
     const startAngle = spec.startAngle ?? 0;
     const endAngle = spec.endAngle ?? 360;
+    const ccw = isAnticlockwise(startAngle, endAngle); // `false` for clockwise tracks
     const trackRingSize = trackOuterRadius - trackInnerRadius;
     const cx = trackWidth / 2.0;
     const cy = trackHeight / 2.0;
@@ -199,8 +201,8 @@ export function drawYGridQuantitative(trackInfo: any, tm: GoslingTrackModel, the
 
                 graphics.beginFill(colorToHex(theme.axis.gridColor), 1);
                 graphics.moveTo(trackX + sPos.x, trackY + sPos.y);
-                graphics.arc(trackX + cx, trackY + cy, nearR, startRad, endRad, true);
-                graphics.arc(trackX + cx, trackY + cy, farR, endRad, startRad, false);
+                graphics.arc(trackX + cx, trackY + cy, nearR, startRad, endRad, ccw);
+                graphics.arc(trackX + cx, trackY + cy, farR, endRad, startRad, !ccw);
                 graphics.closePath();
             });
         }

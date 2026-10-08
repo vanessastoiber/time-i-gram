@@ -176,12 +176,11 @@
               "description": "Values of the visual channel."
             },
             "type": {
-              "description": "Specify the data type.",
+              "description": "Specify the data type. A `temporal` axis is only supported on `x`.",
               "enum": [
                 "quantitative",
                 "nominal",
-                "genomic",
-                "temporal"
+                "genomic"
               ],
               "type": "string"
             },
@@ -682,6 +681,7 @@
           "description": "A string that specifies the type of displacement."
         },
         "newField": {
+          "description": "Field that receives the start date of the following year.",
           "type": "string"
         },
         "not": {
@@ -746,6 +746,7 @@
           "type": "string"
         },
         "transformedDateField": {
+          "description": "Field with the converted date (Unix seconds) of a row.",
           "type": "string"
         },
         "type": {
@@ -765,9 +766,11 @@
           "type": "string"
         },
         "weekField": {
+          "description": "Field with the calendar week of a row.",
           "type": "string"
         },
         "yearField": {
+          "description": "Field with the year of a row.",
           "type": "string"
         }
       },
@@ -1271,6 +1274,10 @@
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
         },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
+        },
         "color": {
           "$ref": "#/definitions/ChannelWithBase"
         },
@@ -1398,7 +1405,7 @@
               "$ref": "#/definitions/DomainChr"
             }
           ],
-          "description": "Specify the visible region of genomic x-axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -1453,7 +1460,7 @@
       "additionalProperties": false,
       "properties": {
         "interval": {
-          "description": "Show a certain interval within entire chromosome",
+          "description": "Show a certain time interval, as `[start, end]` in Unix epoch seconds (e.g., `[946684800, 1262304000]` for 2000-2010)",
           "items": {
             "type": "number"
           },
@@ -1544,7 +1551,7 @@
           "type": "string"
         },
         "threshold": {
-          "description": "Set a threshold in the unit of base pairs (bp)",
+          "description": "Set a threshold in the unit of the x-axis: base pairs (bp) on a genomic axis, seconds on a temporal axis (e.g., `86400` is one day of visible time)",
           "type": "number"
         },
         "transitionPadding": {

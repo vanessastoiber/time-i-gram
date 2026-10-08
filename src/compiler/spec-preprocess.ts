@@ -152,6 +152,7 @@ export function traverseToFixSpecDownstream(spec: GoslingSpec | SingleView, pare
         if (spec.yDomain === undefined) spec.yDomain = parentDef.yDomain;
         if (spec.linkingId === undefined) spec.linkingId = parentDef.linkingId;
         if (spec.centerRadius === undefined) spec.centerRadius = parentDef.centerRadius;
+        if (spec.clockwise === undefined) spec.clockwise = parentDef.clockwise;
         if (spec.spacing === undefined && !('tracks' in spec)) spec.spacing = parentDef.spacing;
         if (spec.xOffset === undefined) spec.xOffset = parentDef.xOffset;
         if (spec.yOffset === undefined) spec.yOffset = parentDef.yOffset;
@@ -247,6 +248,7 @@ export function traverseToFixSpecDownstream(spec: GoslingSpec | SingleView, pare
              */
             if (!track.assembly) track.assembly = spec.assembly;
             if (!track.layout) track.layout = spec.layout;
+            if (!IsDummyTrack(track) && track.clockwise === undefined) track.clockwise = spec.clockwise;
             if (!track.orientation) track.orientation = spec.orientation;
             if (track.static === undefined) track.static = spec.static !== undefined ? spec.static : false;
             if (!track.zoomLimits) track.zoomLimits = spec.zoomLimits;

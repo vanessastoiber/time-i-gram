@@ -123,7 +123,7 @@ export interface CommonViewDef {
      */
     assembly?: Assembly;
 
-    /** Specify the visible region of genomic x-axis */
+    /** Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis */
     xDomain?: DomainInterval | DomainChrInterval | DomainChr;
 
     /** Specify the visible region of genomic y-axis */
@@ -141,6 +141,13 @@ export interface CommonViewDef {
      * @Range [0, 1]
      */
     centerRadius?: number;
+
+    /**
+     * Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).
+     *
+     * __Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`
+     */
+    clockwise?: boolean;
 
     /**
      * Define the [style](http://gosling-lang.org/docs/visual-channel#style-related-properties) of multive views.
@@ -189,6 +196,12 @@ export interface CommonTrackDef extends CommonViewDef {
      * Specify the end angle (in the range of [0, 360]) of circular tracks (`{"layout": "circular"}`).
      */
     endAngle?: number; // [0, 360]
+    /**
+     * Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).
+     *
+     * __Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`
+     */
+    clockwise?: boolean;
 
     // Internally used properties
     /** internal */
@@ -689,7 +702,8 @@ export interface ZoomLevelVisibilityCondition extends CommonVisibilityCondition 
      */
     measure: 'zoomLevel';
     /**
-     * Set a threshold in the unit of base pairs (bp)
+     * Set a threshold in the unit of the x-axis: base pairs (bp) on a genomic axis, seconds on a temporal axis
+     * (e.g., `86400` is one day of visible time)
      */
     threshold: number;
 }
@@ -761,6 +775,8 @@ export interface X extends AxisCommon {
 }
 
 export interface Y extends AxisCommon {
+    /** Specify the data type. A `temporal` axis is only supported on `x`. */
+    type?: 'quantitative' | 'nominal' | 'genomic';
     /** Custom baseline of the y-axis. __Default__: `0` */
     baseline?: string | number;
     /** Specify whether to use zero baseline. __Default__: `true`  */
@@ -879,7 +895,7 @@ export interface DomainInterval {
 }
 
 export interface TimeInterval {
-    /** Show a certain interval within entire chromosome */
+    /** Show a certain time interval, as `[start, end]` in Unix epoch seconds (e.g., `[946684800, 1262304000]` for 2000-2010) */
     interval: [number, number]; // This is consistent to HiGlass's initXDomain and initYDomain.
 }
 
@@ -939,7 +955,8 @@ export interface JsonData {
 }
 
 /**
- * The JSON data format allows users to include data directly in the Gosling's JSON specification.
+ * Temporal data in JSON, loaded from `url` or given inline in `values`.
+ * Time fields are converted to Unix epoch seconds, the coordinates of a temporal axis.
  */
 export interface JsonTimeData {
     /**
@@ -947,40 +964,80 @@ export interface JsonTimeData {
      */
     type: 'json-time';
 
+    /** URL of a JSON file with an array of rows (alternative to `values`). */
     url?: string;
 
     /** Values in the form of JSON. */
     values?: Datum[];
 
-    /** Specify the number of rows loaded from the URL.
+    /** Opt-in random sampling: the maximum number of rows per tile. When a tile has more rows,
+     * a random sample of this size is drawn, so some rows are not shown.
      *
-     * __Default:__ `1000`
+     * __Default:__ no sampling (all rows are shown)
      */
     sampleLength?: number;
+    /** Fields with dates, converted to Unix seconds and stored in the first field. One field holds a date or
+     * date-time string (e.g., `2012-01-31`, `2012-01-31T08:00:00Z`, or a year); several fields are date components
+     * named `year`, `month`, `day`, `hour`, `minute`, `second`. Date-times without a time zone are read as UTC. */
     dateFields?: string[];
+    /** Field with Unix timestamps (see `timestampUnit`). */
     timestampField?: string;
+    /** Unit of the Unix timestamps in `timestampField`: seconds (`"s"`) or milliseconds (`"ms"`).
+     *
+     * __Default:__ `"s"`
+     */
+    timestampUnit?: TimestampUnit;
 }
 
+/** Unit of Unix timestamps: seconds or milliseconds. */
+export type TimestampUnit = 's' | 'ms';
+
+/**
+ * Temporal data in a CSV (or other delimiter-separated) file.
+ * Time fields are converted to Unix epoch seconds, the coordinates of a temporal axis.
+ */
 export interface CSVTimeData {
     /**
      * Define data type.
      */
     type: 'csv-time';
 
+    /** URL of the CSV file. */
     url: string;
+    /** Field separator. __Default:__ `","` */
     separator?: string;
 
-    /** Specify the number of rows loaded from the URL.
+    /** Opt-in random sampling: the maximum number of rows per tile. When a tile has more rows,
+     * a random sample of this size is drawn, so some rows are not shown.
      *
-     * __Default:__ `1000`
+     * __Default:__ no sampling (all rows are shown)
      */
     sampleLength?: number;
+    /** Fields with dates, converted to Unix seconds and stored in the first field:
+     * - one field: a date or date-time string (e.g., `2012-01-31`, `01/31/2012`, `31.01.2012`, `2012-01-31 16:40:21`);
+     * - two fields: a date and a time of day (`HH:MM:SS`), or a year and a calendar week (with `includesCalendarWeek`);
+     * - three or more fields: date components named `year`, `month`, `day`, `hour`, `minute`, `second`.
+     *
+     * Date-times without a time zone are read as UTC. Unparseable dates are not drawn and log a warning. */
     dateFields?: string[];
+    /** Read ambiguous dates as day-month-year (e.g., `01.02.2012` is 1 February). The order is otherwise detected:
+     * a four-digit first part is year-month-day, a first part above 12 is day-first, anything else is month-day-year. */
     dayFirstDate?: boolean;
+    /** Read dates as year-month-day. */
     yearFirstDate?: boolean;
+    /** With two `dateFields`, read the second one as a calendar week of the year in the first one. */
     includesCalendarWeek?: boolean;
+    /** Start and end fields of an interval (e.g., `["pickup", "dropoff"]`), each converted to Unix seconds:
+     * numbers as Unix timestamps (see `timestampUnit`), anything else as a date. Encode them with `x` and `xe`. */
     interval?: string[];
+    /** Field with Unix timestamps (see `timestampUnit`). */
     timestampField?: string;
+    /** Unit of the Unix timestamps in `timestampField` and in numeric `interval` columns:
+     * seconds (`"s"`) or milliseconds (`"ms"`).
+     *
+     * __Default:__ `"s"`
+     */
+    timestampUnit?: TimestampUnit;
 }
 
 
@@ -1318,12 +1375,21 @@ export type DataTransform =
     | JsonParseTransform;
 
 export type FilterTransform = OneOfFilter | RangeFilter | IncludeFilter;
+/**
+ * Add the start of the following year to the last row of each year, so that yearly intervals can be drawn with
+ * `x` (`transformedDateField`) and `xe` (`newField`). Rows are sorted by `yearField` and `weekField`.
+ */
 export interface IntervalTransform {
     type: 'interval';
+    /** Required but currently unused. */
     field: string;
+    /** Field with the year of a row. */
     yearField: string;
+    /** Field with the calendar week of a row. */
     weekField: string;
+    /** Field with the converted date (Unix seconds) of a row. */
     transformedDateField: string;
+    /** Field that receives the start date of the following year. */
     newField: string;
 } ;
 

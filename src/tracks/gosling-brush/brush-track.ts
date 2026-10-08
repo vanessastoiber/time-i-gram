@@ -1,7 +1,7 @@
 import { arc as d3arc } from 'd3-shape';
 import type { SubjectPosition, D3DragEvent } from 'd3-drag';
 import * as uuid from 'uuid';
-import { RADIAN_GAP, valueToRadian } from '../../core/utils/polar';
+import { RADIAN_GAP, isAnticlockwise, radianToValue, valueToRadian } from '../../core/utils/polar';
 
 type CircularBrushData = {
     type: 'brush' | 'start' | 'end';
@@ -9,6 +9,28 @@ type CircularBrushData = {
     endAngle: number;
     cursor: string;
 };
+
+/**
+ * Convert the angular extent `[s, e]` of a circular brush (d3 angles: radians clockwise from
+ * 12 o'clock, as produced in `draw()`) back to pixel positions on the track's x axis.
+ */
+export function brushExtentToPixels(
+    [s, e]: [number, number],
+    width: number,
+    startAngle: number,
+    endAngle: number
+): [number, number] {
+    if (isAnticlockwise(startAngle, endAngle)) {
+        // upstream Gosling formula for anticlockwise tracks
+        const scale = (endAngle - startAngle) / 360;
+        const offsetedS = s - (startAngle / 360) * Math.PI * 2;
+        const offsetedE = e - (startAngle / 360) * Math.PI * 2;
+        return [width - (width * offsetedE) / (Math.PI * 2 * scale), width - (width * offsetedS) / (Math.PI * 2 * scale)];
+    }
+    // clockwise tracks: invert `valueToRadian` (d3 angles are `valueToRadian` + π/2)
+    const toPixel = (a: number) => radianToValue(a - Math.PI / 2.0, width, startAngle, endAngle);
+    return [toPixel(s), toPixel(e)].sort((a, b) => a - b) as [number, number];
+}
 
 function BrushTrack(HGC: any, ...args: any[]): any {
     if (!new.target) {
@@ -218,13 +240,8 @@ function BrushTrack(HGC: any, ...args: any[]): any {
                     return;
                 }
 
-                const scale = (this.options.endAngle - this.options.startAngle) / 360;
-                const offsetedS = s - (this.options.startAngle / 360) * Math.PI * 2;
-                const offsetedE = e - (this.options.startAngle / 360) * Math.PI * 2;
-                const xDomain = [
-                    this._xScale.invert(w - (w * offsetedE) / (Math.PI * 2 * scale)),
-                    this._xScale.invert(w - (w * offsetedS) / (Math.PI * 2 * scale))
-                ];
+                const [x0, x1] = brushExtentToPixels([s, e], w, this.options.startAngle, this.options.endAngle);
+                const xDomain = [this._xScale.invert(x0), this._xScale.invert(x1)];
 
                 const yDomain = this.viewportYDomain;
 

@@ -55,9 +55,10 @@ export function drawText(HGC: import('@higlass/types').HGC, trackInfo: any, tile
 
         const rowGraphics = tile.graphics; // new HGC.libraries.PIXI.Graphics(); // only one row for stacked marks
 
-        const genomicChannel = model.getGenomicChannel();
+        // stack values that share a position on the genomic, or otherwise temporal, axis
+        const genomicChannel = model.getGenomicChannel()?.field ? model.getGenomicChannel() : model.getTemporalChannel();
         if (!genomicChannel || !genomicChannel.field) {
-            console.warn('Genomic field is not provided in the specification');
+            console.warn('Neither a genomic nor a temporal field is provided in the specification');
             return;
         }
         const pivotedData = group(data, d => d[genomicChannel.field as string]);

@@ -295,34 +295,45 @@
     },
     "CSVTimeData": {
       "additionalProperties": false,
+      "description": "Temporal data in a CSV (or other delimiter-separated) file. Time fields are converted to Unix epoch seconds, the coordinates of a temporal axis.",
       "properties": {
         "dateFields": {
+          "description": "Fields with dates, converted to Unix seconds and stored in the first field:\n- one field: a date or date-time string (e.g., `2012-01-31`, `01/31/2012`, `31.01.2012`, `2012-01-31 16:40:21`);\n- two fields: a date and a time of day (`HH:MM:SS`), or a year and a calendar week (with `includesCalendarWeek`);\n- three or more fields: date components named `year`, `month`, `day`, `hour`, `minute`, `second`.\n\nDate-times without a time zone are read as UTC. Unparseable dates are not drawn and log a warning.",
           "items": {
             "type": "string"
           },
           "type": "array"
         },
         "dayFirstDate": {
+          "description": "Read ambiguous dates as day-month-year (e.g., `01.02.2012` is 1 February). The order is otherwise detected: a four-digit first part is year-month-day, a first part above 12 is day-first, anything else is month-day-year.",
           "type": "boolean"
         },
         "includesCalendarWeek": {
+          "description": "With two `dateFields`, read the second one as a calendar week of the year in the first one.",
           "type": "boolean"
         },
         "interval": {
+          "description": "Start and end fields of an interval (e.g., `[\"pickup\", \"dropoff\"]`), each converted to Unix seconds: numbers as Unix timestamps (see `timestampUnit`), anything else as a date. Encode them with `x` and `xe`.",
           "items": {
             "type": "string"
           },
           "type": "array"
         },
         "sampleLength": {
-          "description": "Specify the number of rows loaded from the URL.\n\n__Default:__ `1000`",
+          "description": "Opt-in random sampling: the maximum number of rows per tile. When a tile has more rows, a random sample of this size is drawn, so some rows are not shown.\n\n__Default:__ no sampling (all rows are shown)",
           "type": "number"
         },
         "separator": {
+          "description": "Field separator. __Default:__ `\",\"`",
           "type": "string"
         },
         "timestampField": {
+          "description": "Field with Unix timestamps (see `timestampUnit`).",
           "type": "string"
+        },
+        "timestampUnit": {
+          "$ref": "#/definitions/TimestampUnit",
+          "description": "Unit of the Unix timestamps in `timestampField` and in numeric `interval` columns: seconds (`\"s\"`) or milliseconds (`\"ms\"`).\n\n__Default:__ `\"s\"`"
         },
         "type": {
           "const": "csv-time",
@@ -330,9 +341,11 @@
           "type": "string"
         },
         "url": {
+          "description": "URL of the CSV file.",
           "type": "string"
         },
         "yearFirstDate": {
+          "description": "Read dates as year-month-day.",
           "type": "boolean"
         }
       },
@@ -641,6 +654,10 @@
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
         },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
+        },
         "data": {
           "$ref": "#/definitions/DataDeep"
         },
@@ -727,7 +744,7 @@
               "$ref": "#/definitions/DomainChr"
             }
           ],
-          "description": "Specify the visible region of genomic x-axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -1285,6 +1302,10 @@
               "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
               "type": "number"
             },
+            "clockwise": {
+              "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+              "type": "boolean"
+            },
             "color": {
               "anyOf": [
                 {
@@ -1439,6 +1460,10 @@
                       "centerRadius": {
                         "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                         "type": "number"
+                      },
+                      "clockwise": {
+                        "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                        "type": "boolean"
                       },
                       "color": {
                         "anyOf": [
@@ -1703,7 +1728,7 @@
                             "$ref": "#/definitions/DomainChr"
                           }
                         ],
-                        "description": "Specify the visible region of genomic x-axis"
+                        "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
                       },
                       "xOffset": {
                         "description": "Specify the x offset of views in the unit of pixels",
@@ -1936,7 +1961,7 @@
                   "$ref": "#/definitions/DomainChr"
                 }
               ],
-              "description": "Specify the visible region of genomic x-axis"
+              "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
             },
             "xOffset": {
               "description": "Specify the x offset of views in the unit of pixels",
@@ -2052,6 +2077,10 @@
             "centerRadius": {
               "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
               "type": "number"
+            },
+            "clockwise": {
+              "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+              "type": "boolean"
             },
             "color": {
               "anyOf": [
@@ -2207,6 +2236,10 @@
                       "centerRadius": {
                         "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                         "type": "number"
+                      },
+                      "clockwise": {
+                        "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                        "type": "boolean"
                       },
                       "color": {
                         "anyOf": [
@@ -2471,7 +2504,7 @@
                             "$ref": "#/definitions/DomainChr"
                           }
                         ],
-                        "description": "Specify the visible region of genomic x-axis"
+                        "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
                       },
                       "xOffset": {
                         "description": "Specify the x offset of views in the unit of pixels",
@@ -2711,7 +2744,7 @@
                   "$ref": "#/definitions/DomainChr"
                 }
               ],
-              "description": "Specify the visible region of genomic x-axis"
+              "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
             },
             "xOffset": {
               "description": "Specify the x offset of views in the unit of pixels",
@@ -2812,6 +2845,10 @@
               "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
               "type": "number"
             },
+            "clockwise": {
+              "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+              "type": "boolean"
+            },
             "description": {
               "type": "string"
             },
@@ -2880,6 +2917,10 @@
                       "centerRadius": {
                         "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                         "type": "number"
+                      },
+                      "clockwise": {
+                        "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                        "type": "boolean"
                       },
                       "color": {
                         "anyOf": [
@@ -3144,7 +3185,7 @@
                             "$ref": "#/definitions/DomainChr"
                           }
                         ],
-                        "description": "Specify the visible region of genomic x-axis"
+                        "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
                       },
                       "xOffset": {
                         "description": "Specify the x offset of views in the unit of pixels",
@@ -3273,7 +3314,7 @@
                   "$ref": "#/definitions/DomainChr"
                 }
               ],
-              "description": "Specify the visible region of genomic x-axis"
+              "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
             },
             "xOffset": {
               "description": "Specify the x offset of views in the unit of pixels",
@@ -3333,6 +3374,10 @@
             "centerRadius": {
               "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
               "type": "number"
+            },
+            "clockwise": {
+              "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+              "type": "boolean"
             },
             "description": {
               "type": "string"
@@ -3395,6 +3440,10 @@
                         "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                         "type": "number"
                       },
+                      "clockwise": {
+                        "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                        "type": "boolean"
+                      },
                       "id": {
                         "description": "The ID of a view that is maintained for the use of JS API functions, e.g., positions of a view",
                         "type": "string"
@@ -3453,7 +3502,7 @@
                             "$ref": "#/definitions/DomainChr"
                           }
                         ],
-                        "description": "Specify the visible region of genomic x-axis"
+                        "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
                       },
                       "xOffset": {
                         "description": "Specify the x offset of views in the unit of pixels",
@@ -3540,7 +3589,7 @@
                   "$ref": "#/definitions/DomainChr"
                 }
               ],
-              "description": "Specify the visible region of genomic x-axis"
+              "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
             },
             "xOffset": {
               "description": "Specify the x offset of views in the unit of pixels",
@@ -3604,14 +3653,18 @@
     },
     "IntervalTransform": {
       "additionalProperties": false,
+      "description": "Add the start of the following year to the last row of each year, so that yearly intervals can be drawn with `x` (`transformedDateField`) and `xe` (`newField`). Rows are sorted by `yearField` and `weekField`.",
       "properties": {
         "field": {
+          "description": "Required but currently unused.",
           "type": "string"
         },
         "newField": {
+          "description": "Field that receives the start date of the following year.",
           "type": "string"
         },
         "transformedDateField": {
+          "description": "Field with the converted date (Unix seconds) of a row.",
           "type": "string"
         },
         "type": {
@@ -3619,9 +3672,11 @@
           "type": "string"
         },
         "weekField": {
+          "description": "Field with the calendar week of a row.",
           "type": "string"
         },
         "yearField": {
+          "description": "Field with the year of a row.",
           "type": "string"
         }
       },
@@ -3732,20 +3787,26 @@
     },
     "JsonTimeData": {
       "additionalProperties": false,
-      "description": "The JSON data format allows users to include data directly in the Gosling's JSON specification.",
+      "description": "Temporal data in JSON, loaded from `url` or given inline in `values`. Time fields are converted to Unix epoch seconds, the coordinates of a temporal axis.",
       "properties": {
         "dateFields": {
+          "description": "Fields with dates, converted to Unix seconds and stored in the first field. One field holds a date or date-time string (e.g., `2012-01-31`, `2012-01-31T08:00:00Z`, or a year); several fields are date components named `year`, `month`, `day`, `hour`, `minute`, `second`. Date-times without a time zone are read as UTC.",
           "items": {
             "type": "string"
           },
           "type": "array"
         },
         "sampleLength": {
-          "description": "Specify the number of rows loaded from the URL.\n\n__Default:__ `1000`",
+          "description": "Opt-in random sampling: the maximum number of rows per tile. When a tile has more rows, a random sample of this size is drawn, so some rows are not shown.\n\n__Default:__ no sampling (all rows are shown)",
           "type": "number"
         },
         "timestampField": {
+          "description": "Field with Unix timestamps (see `timestampUnit`).",
           "type": "string"
+        },
+        "timestampUnit": {
+          "$ref": "#/definitions/TimestampUnit",
+          "description": "Unit of the Unix timestamps in `timestampField`: seconds (`\"s\"`) or milliseconds (`\"ms\"`).\n\n__Default:__ `\"s\"`"
         },
         "type": {
           "const": "json-time",
@@ -3753,6 +3814,7 @@
           "type": "string"
         },
         "url": {
+          "description": "URL of a JSON file with an array of rows (alternative to `values`).",
           "type": "string"
         },
         "values": {
@@ -3936,6 +3998,10 @@
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
         },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
+        },
         "id": {
           "description": "The ID of a view that is maintained for the use of JS API functions, e.g., positions of a view",
           "type": "string"
@@ -3994,7 +4060,7 @@
               "$ref": "#/definitions/DomainChr"
             }
           ],
-          "description": "Specify the visible region of genomic x-axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -4178,6 +4244,10 @@
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
         },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
+        },
         "color": {
           "anyOf": [
             {
@@ -4298,6 +4368,10 @@
               "centerRadius": {
                 "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                 "type": "number"
+              },
+              "clockwise": {
+                "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                "type": "boolean"
               },
               "color": {
                 "anyOf": [
@@ -4520,7 +4594,7 @@
                     "$ref": "#/definitions/DomainChr"
                   }
                 ],
-                "description": "Specify the visible region of genomic x-axis"
+                "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
               },
               "xOffset": {
                 "description": "Specify the x offset of views in the unit of pixels",
@@ -4751,7 +4825,7 @@
               "$ref": "#/definitions/DomainChr"
             }
           ],
-          "description": "Specify the visible region of genomic x-axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -4866,6 +4940,10 @@
         "centerRadius": {
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
+        },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
         },
         "color": {
           "anyOf": [
@@ -5113,7 +5191,7 @@
               "$ref": "#/definitions/DomainChr"
             }
           ],
-          "description": "Specify the visible region of genomic x-axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -5235,6 +5313,10 @@
         "centerRadius": {
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
+        },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
         },
         "color": {
           "anyOf": [
@@ -5372,6 +5454,10 @@
               "centerRadius": {
                 "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                 "type": "number"
+              },
+              "clockwise": {
+                "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                "type": "boolean"
               },
               "color": {
                 "anyOf": [
@@ -5594,7 +5680,7 @@
                     "$ref": "#/definitions/DomainChr"
                   }
                 ],
-                "description": "Specify the visible region of genomic x-axis"
+                "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
               },
               "xOffset": {
                 "description": "Specify the x offset of views in the unit of pixels",
@@ -5852,7 +5938,7 @@
               "$ref": "#/definitions/DomainChr"
             }
           ],
-          "description": "Specify the visible region of genomic x-axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -6120,6 +6206,10 @@
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
         },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
+        },
         "color": {
           "anyOf": [
             {
@@ -6360,7 +6450,7 @@
               "$ref": "#/definitions/DomainChr"
             }
           ],
-          "description": "Specify the visible region of genomic x-axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -6478,6 +6568,10 @@
             "centerRadius": {
               "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
               "type": "number"
+            },
+            "clockwise": {
+              "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+              "type": "boolean"
             },
             "color": {
               "anyOf": [
@@ -6626,6 +6720,10 @@
                       "centerRadius": {
                         "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                         "type": "number"
+                      },
+                      "clockwise": {
+                        "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                        "type": "boolean"
                       },
                       "color": {
                         "anyOf": [
@@ -6890,7 +6988,7 @@
                             "$ref": "#/definitions/DomainChr"
                           }
                         ],
-                        "description": "Specify the visible region of genomic x-axis"
+                        "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
                       },
                       "xOffset": {
                         "description": "Specify the x offset of views in the unit of pixels",
@@ -7123,7 +7221,7 @@
                   "$ref": "#/definitions/DomainChr"
                 }
               ],
-              "description": "Specify the visible region of genomic x-axis"
+              "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
             },
             "xOffset": {
               "description": "Specify the x offset of views in the unit of pixels",
@@ -7239,6 +7337,10 @@
             "centerRadius": {
               "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
               "type": "number"
+            },
+            "clockwise": {
+              "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+              "type": "boolean"
             },
             "color": {
               "anyOf": [
@@ -7387,6 +7489,10 @@
                       "centerRadius": {
                         "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                         "type": "number"
+                      },
+                      "clockwise": {
+                        "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                        "type": "boolean"
                       },
                       "color": {
                         "anyOf": [
@@ -7651,7 +7757,7 @@
                             "$ref": "#/definitions/DomainChr"
                           }
                         ],
-                        "description": "Specify the visible region of genomic x-axis"
+                        "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
                       },
                       "xOffset": {
                         "description": "Specify the x offset of views in the unit of pixels",
@@ -7891,7 +7997,7 @@
                   "$ref": "#/definitions/DomainChr"
                 }
               ],
-              "description": "Specify the visible region of genomic x-axis"
+              "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
             },
             "xOffset": {
               "description": "Specify the x offset of views in the unit of pixels",
@@ -7992,6 +8098,10 @@
               "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
               "type": "number"
             },
+            "clockwise": {
+              "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+              "type": "boolean"
+            },
             "id": {
               "description": "The ID of a view that is maintained for the use of JS API functions, e.g., positions of a view",
               "type": "string"
@@ -8053,6 +8163,10 @@
                       "centerRadius": {
                         "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
                         "type": "number"
+                      },
+                      "clockwise": {
+                        "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+                        "type": "boolean"
                       },
                       "color": {
                         "anyOf": [
@@ -8317,7 +8431,7 @@
                             "$ref": "#/definitions/DomainChr"
                           }
                         ],
-                        "description": "Specify the visible region of genomic x-axis"
+                        "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
                       },
                       "xOffset": {
                         "description": "Specify the x offset of views in the unit of pixels",
@@ -8440,7 +8554,7 @@
                   "$ref": "#/definitions/DomainChr"
                 }
               ],
-              "description": "Specify the visible region of genomic x-axis"
+              "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
             },
             "xOffset": {
               "description": "Specify the x offset of views in the unit of pixels",
@@ -8967,6 +9081,10 @@
           "description": "Proportion of the radius of the center white space.\n\n__Default:__ `0.3`",
           "type": "number"
         },
+        "clockwise": {
+          "description": "Whether circular tracks run clockwise from 12 o'clock (`true`) or anticlockwise (`false`).\n\n__Default:__ `true` for tracks with a temporal `x` channel, otherwise `false`",
+          "type": "boolean"
+        },
         "data": {
           "$ref": "#/definitions/DataDeep"
         },
@@ -9062,7 +9180,7 @@
               "$ref": "#/definitions/DomainChr"
             }
           ],
-          "description": "Specify the visible region of genomic x-axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -9135,7 +9253,7 @@
       "additionalProperties": false,
       "properties": {
         "interval": {
-          "description": "Show a certain interval within entire chromosome",
+          "description": "Show a certain time interval, as `[start, end]` in Unix epoch seconds (e.g., `[946684800, 1262304000]` for 2000-2010)",
           "items": {
             "type": "number"
           },
@@ -9148,6 +9266,14 @@
         "interval"
       ],
       "type": "object"
+    },
+    "TimestampUnit": {
+      "description": "Unit of Unix timestamps: seconds or milliseconds.",
+      "enum": [
+        "s",
+        "ms"
+      ],
+      "type": "string"
     },
     "Tooltip": {
       "additionalProperties": false,
@@ -9398,12 +9524,11 @@
           "description": "Values of the visual channel."
         },
         "type": {
-          "description": "Specify the data type.",
+          "description": "Specify the data type. A `temporal` axis is only supported on `x`.",
           "enum": [
             "quantitative",
             "nominal",
-            "genomic",
-            "temporal"
+            "genomic"
           ],
           "type": "string"
         },
@@ -9439,7 +9564,7 @@
           "type": "string"
         },
         "threshold": {
-          "description": "Set a threshold in the unit of base pairs (bp)",
+          "description": "Set a threshold in the unit of the x-axis: base pairs (bp) on a genomic axis, seconds on a temporal axis (e.g., `86400` is one day of visible time)",
           "type": "number"
         },
         "transitionPadding": {

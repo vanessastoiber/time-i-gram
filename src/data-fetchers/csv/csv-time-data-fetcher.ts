@@ -2,6 +2,7 @@ import { sampleSize } from 'lodash-es';
 import { dsvFormat as d3dsvFormat, type DSVRowString } from 'd3-dsv';
 import type { CSVTimeData } from '@gosling-lang/gosling-schema';
 import { type CommonDataConfig, filterUsingGenoPos } from '../utils';
+import { formatIsoDate, parseDateTime, timestampToSeconds, utcSeconds, TIME_MAX_POS, TIME_MIN_POS } from '../time-utils';
 
 type CsvTimeDataConfig = CSVTimeData & CommonDataConfig;
 
@@ -16,6 +17,13 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
     class CSVTimeDataFetcherClass {
         private dataConfig: CsvTimeDataConfig;
         private values: any;
+        // Resolves once `this.values` is actually populated. `tilesetInfo()` awaits this
+        // before invoking its callback so HiGlass doesn't request tiles against an empty
+        // array while the fetch is still in flight (previously the callback fired
+        // synchronously, so the first, empty, tile response was cached and nothing
+        // re-rendered once the network fetch actually resolved).
+        private dataPromise: Promise<void>;
+        private hasWarnedUnparseable = false;
 
         constructor(params: any[]) {
             const [dataConfig] = params;
@@ -23,35 +31,33 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
 
             if (!dataConfig.url) {
                 console.error('Please provide `values` of the JSON data');
+                this.dataPromise = Promise.resolve();
                 return;
             }
 
             this.values = [];
             const separator = this.dataConfig.separator ?? ',';
-            this.fetchData().then(data => {
+            this.dataPromise = this.fetchData().then(data => {
                 d3dsvFormat(separator).parse(data, (row: DSVRowString<string>) => {
                     const timestampField = this.dataConfig.timestampField;
-                    if (timestampField && this.isValidTimestamp(Number(row[timestampField]))) {
+                    if (timestampField && row[timestampField] !== '' && this.isValidTimestamp(Number(row[timestampField]))) {
+                        (row as any)[timestampField] = timestampToSeconds(Number(row[timestampField]), this.dataConfig.timestampUnit);
                         this.values.push(row);
                         return row;
                     }
-                    // TODO
-                    const intervalSpec = this.dataConfig.interval;
-                    if (intervalSpec && this.isValidTimestamp(Number(row[intervalSpec[0]])) && this.isValidTimestamp(Number(row[intervalSpec[1]]))) {
-                        this.values.push(row);
-                        return row;
-                    } else if (intervalSpec && row[intervalSpec[0]] !== undefined && row[intervalSpec[1]] !== undefined) {
-                        if (typeof row[intervalSpec[0]] === 'string' && typeof row[intervalSpec[1]] === 'string' && row[intervalSpec[0]] && row[intervalSpec[1]] && !this.isValidDate(row[intervalSpec[0]] || "") && !this.isValidDate(row[intervalSpec[1]] || "")) {
-                            if (intervalSpec[0] !== undefined && intervalSpec[1] !== undefined) {
-                                row[intervalSpec[0]] = intervalSpec[0] && row[intervalSpec[0]] ? this.processRow(row, [...intervalSpec[0]]) : row[intervalSpec[0]];
-                                row[intervalSpec[1]] = intervalSpec[1] && row[intervalSpec[1]] ? this.processRow(row, [...intervalSpec[1]]) : row[intervalSpec[1]];
-                                this.values.push(row);
-                                return row;
-                            }
-                        }
-                    }
-                    const convertToDate = this.dataConfig.dateFields;
-                    const convertedRow = this.processRow(row, convertToDate);
+                    // Convert the start and end columns of an interval individually: numbers are
+                    // taken as Unix timestamps, anything else is parsed as a date.
+                    const intervalSpec = this.dataConfig.interval ?? [];
+                    intervalSpec.forEach(field => {
+                        const value = row[field];
+                        if (value === undefined || value === '') return;
+                        (row as any)[field] = /^-?\d+(\.\d+)?$/.test(value.trim())
+                            ? timestampToSeconds(Number(value), this.dataConfig.timestampUnit)
+                            : this.parseAndConvertToSeconds(value);
+                    });
+                    // Interval columns are already converted, so leave them out of `dateFields`.
+                    const convertToDate = this.dataConfig.dateFields?.filter(field => !intervalSpec.includes(field));
+                    const convertedRow = this.processRow(row, convertToDate?.length ? convertToDate : undefined);
                     this.values.push(convertedRow);
                 });
             })
@@ -83,61 +89,21 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
             return !isNaN(date.getTime());
         }
 
-        isValidDate(dateString: string) {
-            return !isNaN(Date.parse(dateString));
-        }
-
         isValidTimeFormat(timeString: string) {
         const timeRegex = /^\d{2}:\d{2}:\d{2}$/;
         return timeRegex.test(timeString);
         }
 
-        isValidYear(year: number | string) {
-            let parsedYear: number;
-            if (typeof year === 'number') {
-                parsedYear = year;
-            } else {
-                parsedYear = parseInt(year, 10);
-            }
-            const currentYear = new Date().getFullYear();
-            
-            // Check if year is a number and within a reasonable range
-            if (isNaN(parsedYear) || parsedYear < 1000 || parsedYear > currentYear) {
-                return false;
-            }
-            
-            return true;
-        }
-
-        // parse each date to YYYY-MM-DD format
-        parseDate(dateString: string) {
-            // only handle dates without time
-            if (dateString.includes('T') || dateString.includes(':')) {
-                return dateString;
-            };
-            // check which separator is used for the date
-            let separatorChar = "";
-            if (dateString.includes('-')) {
-                separatorChar = '-';
-            } else if (dateString.includes('.')) {
-                separatorChar = '.';
-            } else if (dateString.includes('/')) {
-                separatorChar = '/';
-            // assume that the date is in the format YYYY
-            } else if (this.isValidYear(dateString)) {
-                return `${dateString}-01-01`;
-            }
-            const parts = dateString.split(separatorChar);
-            //todo change year to month
-            const formattedDate = (this.dataConfig.dayFirstDate) ? `${parts[2]}-${parts[1]}-${parts[0]}` : this.dataConfig.yearFirstDate ? `${parts[0]}-${parts[1]}-${parts[2]}` : `${parts[2]}-${parts[0]}-${parts[1]}`;
-            
-            // check again for valid date format
-            const regex = /(((19|20)([2468][048]|[13579][26]|0[48])|2000)[\/-]02[\/-](29|0?[1-9]|1[0-9]|2[0-8])|((19|20)[0-9]{2}[\/-](0?[4678]|1[02])[\/-](0?[1-9]|[12][0-9]|30)|(19|20)[0-9]{2}[\/-](0?[1359]|11)[\/-](0?[1-9]|[12][0-9]|3[01])|(19|20)[0-9]{2}[\/-]0?2[\/-](0?[1-9]|1[0-9]|2[0-8])))/;
-            if (formattedDate.match(regex))  {
-                return formattedDate;
-            } else {
-                return "1970-01-01";
-            }
+        /** Warn (once per data source) about a date that cannot be parsed; such rows are not drawn. */
+        warnUnparseable(value: unknown) {
+            if (this.hasWarnedUnparseable) return;
+            this.hasWarnedUnparseable = true;
+            console.warn(
+                `[csv-time] Could not parse the date "${value}" in ${this.dataConfig.url}. ` +
+                    'Rows with unparseable dates are not drawn. ' +
+                    'Use `dayFirstDate` or `yearFirstDate` if the date order is ambiguous. ' +
+                    'Further warnings for this data source are suppressed.'
+            );
         }
 
         createDateFromFields(fields: { year: number; month: number; day: number, hour: number, minute: number, second: number }) {
@@ -157,12 +123,12 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
                             break;
                         case 2:
                             if (this.isValidTimeFormat(row[convertToDate[1]])) {
-                                const fullDate = `${this.parseDate(row[convertToDate[0]])}T${row[convertToDate[1]]}`;
+                                const fullDate = `${row[convertToDate[0]]} ${row[convertToDate[1]]}`;
                                 row[convertToDate[0]] = this.parseAndConvertToSeconds(fullDate);
                             // Check if we're dealing with a calendar week format in the second convertToDate field
                             } else if (this.dataConfig.includesCalendarWeek && this.containsCalendarWeek(row[convertToDate[1]])) {
                                 const calendarWeekMonday = this.weekToDate(row[convertToDate[0]], row[convertToDate[1]]);
-                                row[convertToDate[0]] = (calendarWeekMonday) ? this.parseAndConvertToSeconds(calendarWeekMonday) : 0;
+                                row[convertToDate[0]] = (calendarWeekMonday) ? this.parseAndConvertToSeconds(calendarWeekMonday) : NaN;
                             } else {
                                 convertToDate.forEach((field, i) => {
                                     row[field] = this.parseAndConvertToSeconds(row[field]);
@@ -176,9 +142,15 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
                                     timeFormat[field as keyof typeof timeFormat] = row[field];
                                 }
                             }
-                            row[convertToDate[0]] = this.parseAndConvertToSeconds(
-                                `${timeFormat.year}-${timeFormat.month}-${timeFormat.day}T${timeFormat.hour}:${timeFormat.minute}:${timeFormat.second}`
+                            row[convertToDate[0]] = utcSeconds(
+                                +timeFormat.year,
+                                +timeFormat.month,
+                                +timeFormat.day,
+                                +timeFormat.hour,
+                                +timeFormat.minute,
+                                +timeFormat.second
                             );
+                            if (isNaN(row[convertToDate[0]])) this.warnUnparseable(JSON.stringify(timeFormat));
                             break;
                     }
                 }
@@ -189,9 +161,11 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
             }
         }
         
+        /** Parse a date or date-time string into Unix seconds (UTC unless the string has a zone). */
         parseAndConvertToSeconds(date: string): number {
-            const validatedDate = this.parseDate(date);
-            return Date.parse(validatedDate) / 1000;
+            const seconds = parseDateTime(date, this.dataConfig);
+            if (isNaN(seconds)) this.warnUnparseable(date);
+            return seconds;
         }
 
         containsCalendarWeek(date: string): boolean {
@@ -211,30 +185,29 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
             if (weekNumber === undefined) {
                 return undefined;
             }
-            var date = new Date(Number(year), 0, 1 + (weekNumber - 1) * 7);
-            if (date.getDay() <= 4)
-                date.setDate(date.getDate() - date.getDay() + 1);
+            const date = new Date(Date.UTC(2000, 0, 1 + (weekNumber - 1) * 7));
+            date.setUTCFullYear(Number(year));
+            if (date.getUTCDay() <= 4)
+                date.setUTCDate(date.getUTCDate() - date.getUTCDay() + 1);
             else
-                date.setDate(date.getDate() + 8 - date.getDay());
-            
-            // Format the date as a string
-            return `${date.getFullYear()}-${("0" + (date.getMonth() + 1)).slice(-2)}-${("0" + date.getDate()).slice(-2)}`;
+                date.setUTCDate(date.getUTCDate() + 8 - date.getUTCDay());
+
+            return formatIsoDate(date.getTime() / 1000);
         }
 
         tilesetInfo(callback?: any) {
             const TILE_SIZE = 1024;
-            // TODO: Make dynamic
-            const totalLength = 1702153965000;
+            const totalLength = TIME_MAX_POS - TIME_MIN_POS;
             const retVal = {
                 tile_size: TILE_SIZE,
                 max_zoom: Math.ceil(Math.log(totalLength / TILE_SIZE) / Math.log(2)),
                 max_width: totalLength,
-                min_pos: [0, 0],
-                max_pos: [totalLength, totalLength]
+                min_pos: [TIME_MIN_POS, TIME_MIN_POS],
+                max_pos: [TIME_MAX_POS, TIME_MAX_POS]
             };
 
             if (callback) {
-                callback(retVal);
+                this.dataPromise.then(() => callback(retVal));
             }
 
             return retVal;
@@ -258,7 +231,7 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
                 }
 
                 validTileIds.push(tileId);
-                tilePromises.push(this.tile(z, x, y));
+                tilePromises.push(this.dataPromise.then(() => this.tile(z, x, y)));
             }
 
             Promise.all(tilePromises).then(values => {
@@ -285,8 +258,9 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
             let tabularData = filterUsingGenoPos(this.values, [minX, maxX], this.dataConfig);
 
             // sample the data to make it managable for visualization components
-            const sizeLimit = this.dataConfig.sampleLength ?? 1000;
-            if (sizeLimit < tabularData.length) {
+            // sampling is opt-in: randomly dropping rows of a time series is misleading by default
+            const sizeLimit = this.dataConfig.sampleLength;
+            if (sizeLimit !== undefined && sizeLimit < tabularData.length) {
                 tabularData = sampleSize(tabularData, sizeLimit);
             }
 
