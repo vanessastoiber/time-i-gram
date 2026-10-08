@@ -109,8 +109,51 @@ function removeTemporalOnlyProperties(track: Track, warn: Warn) {
     );
 }
 
+/** What a bound of a time interval is: a date string, a duration string, a number (seconds) or neither. */
+function boundKind(value: number | string): 'date' | 'duration' | 'number' | 'invalid' {
+    if (typeof value === 'number') return 'number';
+    if (!isNaN(parseTimeValue(value))) return 'date';
+    return isNaN(parseDuration(value)) ? 'invalid' : 'duration';
+}
+
+/**
+ * Drop temporal x domains of the wrong kind, before their strings are converted: durations on an absolute axis,
+ * and dates on a relative axis (whose domain is offsets). A relative axis also ignores a view-level `xDomain`
+ * unless it is given as durations, since a view's domain is usually in absolute time.
+ */
+function checkDomainKinds(track: Track, warn: Warn) {
+    const inherited = (track as CommonTrackDef).xDomain;
+    const members: Partial<SingleTrack>[] = IsOverlaidTrack(track) ? [track, ...track.overlay] : [track as SingleTrack];
+    members.forEach(member => {
+        const x = member.x;
+        if (!IsChannelDeep(x) || x.type !== 'temporal' || !x.domain || !('interval' in (x.domain as object))) return;
+        const interval = (x.domain as { interval: (number | string)[] }).interval;
+        const kinds = interval.map(boundKind);
+        const isInherited = JSON.stringify(x.domain) === JSON.stringify(inherited);
+        if ('relative' in x && x.relative) {
+            if (kinds.includes('date') || (isInherited && !kinds.every(k => k === 'duration'))) {
+                warn(
+                    `x.domain ${JSON.stringify(
+                        interval
+                    )}: a relative axis takes offsets (e.g. ["-6 months", "6 months"]), ` +
+                        'not dates, so the domain is ignored; set the offsets on x.domain.'
+                );
+                x.domain = undefined;
+            }
+        } else if (!('period' in x && x.period) && kinds.includes('duration')) {
+            warn(
+                `x.domain ${JSON.stringify(
+                    interval
+                )}: an absolute time axis takes dates, not durations, so the domain is ignored.`
+            );
+            x.domain = undefined;
+        }
+    });
+}
+
 function resolveTrack(track: Track, warn: Warn) {
     removeTemporalOnlyProperties(track, warn);
+    checkDomainKinds(track, warn);
     const isTemporal = !!getTemporalChannelFromTrack(track as SingleTrack);
     if (isTemporal) expandGranularityRules(track, warn);
     const members: Partial<SingleTrack>[] = IsOverlaidTrack(track) ? [track, ...track.overlay] : [track as SingleTrack];
@@ -591,6 +634,14 @@ function resolveInterval(interval: (number | string)[], warn: Warn): [number, nu
             `interval ${JSON.stringify(
                 interval
             )}: "${bad}" is not a date (e.g. "2010", "2010-12", "2010-12-31", "2010-12-31T12:00:00Z"), so the domain is ignored.`
+        );
+        return undefined;
+    }
+    if (start >= end) {
+        warn(
+            `interval ${JSON.stringify(interval)} ${
+                start > end ? 'ends before it starts' : 'is empty'
+            }, so the domain is ignored.`
         );
         return undefined;
     }

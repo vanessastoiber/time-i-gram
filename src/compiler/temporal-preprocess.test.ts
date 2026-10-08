@@ -86,6 +86,46 @@ describe('date strings in temporal domains', () => {
         const { gs } = compiled(spec);
         expect(JSON.stringify(gs)).toMatch(/"chromosome":"chr1","interval":\[1,1000\]/);
     });
+
+    it('of the wrong kind, reversed or empty are ignored with a warning', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const initial = (spec: object) => compiled(spec as GoslingSpec).hg.views[0].initialXDomain;
+        const withoutDomain = initial({ tracks: [timeTrack()] });
+        const cases: [object, RegExp][] = [
+            [
+                {
+                    tracks: [
+                        timeTrack({
+                            x: { field: 'date', type: 'temporal', domain: { interval: ['10 years', '20 years'] } }
+                        })
+                    ]
+                },
+                /an absolute time axis takes dates, not durations/
+            ],
+            [{ xDomain: { interval: ['2012', '2010'] }, tracks: [timeTrack()] }, /ends before it starts/],
+            [{ xDomain: { interval: ['2010-05-03T00:00', '2010-05-03T00:00'] }, tracks: [timeTrack()] }, /is empty/]
+        ];
+        cases.forEach(([spec, message]) => {
+            warn.mockClear();
+            expect(initial(spec)).toEqual(withoutDomain);
+            expect(warn.mock.calls.flat().join(' ')).toMatch(message);
+        });
+
+        // a relative axis does not take the view's domain of dates as offsets
+        warn.mockClear();
+        const relative = timeTrack({ x: { field: 'date', type: 'temporal', relative: { anchor: 'first' } } });
+        expect(initial({ xDomain: { interval: ['2008', '2010'] }, tracks: [relative] })).toEqual([
+            -365.2425 * 86400,
+            365.2425 * 86400
+        ]);
+        expect(warn.mock.calls.flat().join(' ')).toMatch(/a relative axis takes offsets/);
+        // durations at the view level are offsets, and are kept
+        expect(initial({ xDomain: { interval: ['-6 months', '6 months'] }, tracks: [relative] })).toEqual([
+            -0.5 * 365.2425 * 86400,
+            0.5 * 365.2425 * 86400
+        ]);
+        warn.mockRestore();
+    });
 });
 
 describe('durations', () => {
