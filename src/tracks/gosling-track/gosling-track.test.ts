@@ -1,4 +1,4 @@
-import { PRINT_RENDERING_CYCLE, publishGenomicLocation } from './gosling-track';
+import { PRINT_RENDERING_CYCLE, drawsTemporalLines, publishGenomicLocation } from './gosling-track';
 import { subscribe, unsubscribe } from '../../api/pubsub';
 
 describe('Check debug-purpose variables', () => {
@@ -36,5 +36,19 @@ describe('JS API `location` event', () => {
         publishGenomicLocation('view-1', [946684800, 1262304000], 'unknown', spec);
         await flush();
         expect(received).toEqual([]);
+    });
+});
+
+describe('tiles of temporal lines are combined', () => {
+    const track = (mark: string, type: string) => ({ mark, x: { field: 'x', type }, width: 10, height: 10 }) as any;
+
+    it('for lines and areas on a temporal axis', () => {
+        expect(drawsTemporalLines([track('line', 'temporal')])).toBe(true);
+        expect(drawsTemporalLines([track('point', 'temporal'), track('area', 'temporal')])).toBe(true);
+    });
+
+    it('not for other marks or for genomic tracks', () => {
+        expect(drawsTemporalLines([track('bar', 'temporal'), track('point', 'temporal')])).toBe(false);
+        expect(drawsTemporalLines([track('line', 'genomic'), track('area', 'genomic')])).toBe(false);
     });
 });
