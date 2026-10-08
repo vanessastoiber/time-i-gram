@@ -23,7 +23,7 @@ import {
 } from 'd3-scale';
 import { interpolateViridis } from 'd3-scale-chromatic';
 import { min as d3min, max as d3max, sum as d3sum, group } from 'd3-array';
-import { HIGLASS_AXIS_SIZE } from '../../compiler/higlass-model';
+import { getXAxisSize } from '../../compiler/higlass-model';
 import { SUPPORTED_CHANNELS } from '../../core/mark';
 import type { PIXIVisualProperty } from '../../core/visual-property.schema';
 import { rectProperty } from '../../core/mark/rect';
@@ -167,15 +167,15 @@ export class GoslingTrackModel {
             if (IsChannelDeep(spec.x) && spec.x.axis !== undefined && spec.x.axis !== 'none') {
                 // for linear layouts, prepare a horizontal or vertical space for the axis
                 // we already switched the width and height in vertical tracks, so use `height`
-                spec.height -= HIGLASS_AXIS_SIZE;
+                spec.height -= getXAxisSize(spec);
             }
             // TODO: consider 2D
         } else {
             // for circular layouts, prepare a space in radius for the axis
             if (xOrY === 'x' && isAxisShown && IsChannelDeep(spec.x) && spec.x.axis === 'top') {
-                spec['outerRadius'] = ((spec['outerRadius'] as number) - HIGLASS_AXIS_SIZE) as number;
+                spec['outerRadius'] = ((spec['outerRadius'] as number) - getXAxisSize(spec)) as number;
             } else if (xOrY === 'x' && isAxisShown && IsChannelDeep(spec.x) && spec.x.axis === 'bottom') {
-                spec['innerRadius'] = ((spec['innerRadius'] as number) + HIGLASS_AXIS_SIZE) as number;
+                spec['innerRadius'] = ((spec['innerRadius'] as number) + getXAxisSize(spec)) as number;
             }
         }
 
