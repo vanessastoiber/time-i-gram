@@ -1,9 +1,22 @@
 import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 
 // Supplementary material, Fig. S7 (WHO Flu Data; paper Fig. 1A).
-// Copied verbatim from the supplementary PDF. The printed spec is a fragment
-// (root keys without the enclosing braces); it is wrapped in a root object here.
-// Not yet fixed: see docs/grammar-audit.md §7.
+// Copied from the supplementary PDF (a fragment, wrapped in a root object). Fixed since
+// (docs/grammar-audit.md §7): the circular view shows one year (2010), as in the published figure,
+// instead of the root domain (2009-09 to 2012-04), and the two comparison views, which had no data,
+// read the superimposed file.
+//
+// `who_flu_usa_superimposed` is `who_flu_usa.csv` with the year of every ISO_SDATE set to 2010
+// (ISO_YEAR keeps the real year), which is what stacks the seasons on one ring. It was made by hand,
+// and ISO week 1 of 2013, 2014 and 2015 starts in late December, so those points sit at the end of
+// the ring instead of the start. Left as is on purpose: a period-based cyclic layout should replace
+// this preprocessing.
+
+const SUPERIMPOSED_DATA = {
+    url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/5_who-flu/who_flu_usa_superimposed',
+    type: 'csv-time',
+    dateFields: ['ISO_SDATE']
+};
 
 const spec = {
     xDomain: { interval: [1251763200, 1333238400] },
@@ -17,12 +30,10 @@ const spec = {
             spacing: 0,
             layout: 'circular',
             alignment: 'stack',
+            // one ring per year: the superimposed data covers 2010 only
+            xDomain: { interval: [1262304000, 1293840000] },
 
-            data: {
-                url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/5_who-flu/who_flu_usa_superimposed',
-                type: 'csv-time',
-                dateFields: ['ISO_SDATE']
-            },
+            data: SUPERIMPOSED_DATA,
 
             tracks: [
                 {
@@ -57,6 +68,7 @@ const spec = {
                 {
                     tracks: [
                         {
+                            data: SUPERIMPOSED_DATA,
                             mark: 'line',
                             size: { value: 2.5 },
 
@@ -81,6 +93,7 @@ const spec = {
                 {
                     tracks: [
                         {
+                            data: SUPERIMPOSED_DATA,
                             mark: 'line',
                             size: { value: 2.5 },
 
