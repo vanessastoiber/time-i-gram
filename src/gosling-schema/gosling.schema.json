@@ -9832,6 +9832,7 @@
               "items": {
                 "$ref": "#/definitions/TimeUnitRule"
               },
+              "minItems": 1,
               "type": "array"
             }
           ],

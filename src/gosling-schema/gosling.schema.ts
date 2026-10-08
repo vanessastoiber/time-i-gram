@@ -807,7 +807,7 @@ export interface X extends Omit<AxisCommon, 'domain'> {
      *
      * Only for `type: "temporal"` on `x`.
      */
-    timeUnit?: TimeUnit | TimeUnitRule[];
+    timeUnit?: TimeUnit | [TimeUnitRule, ...TimeUnitRule[]];
     /**
      * Re-express time as an offset from a reference event, which sets the axis' time coordinate system to
      * `relative`: each row is placed at its signed offset from the anchor of its group (a fixed date, the group's

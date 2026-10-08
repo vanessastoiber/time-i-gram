@@ -193,6 +193,10 @@ function expandGranularityRules(track: Track, warn: Warn) {
         if (merged.mark === 'brush' || !hasRules(merged.x)) return [member];
         const x = merged.x as X & { timeUnit: TimeUnitRule[] };
         const rules = validRules(x.timeUnit, warn);
+        if (rules.length === 0) {
+            warn('x.timeUnit has no valid timeUnit rule, so the track shows raw rows.');
+            return [{ ...member, x: { ...x, timeUnit: undefined } }];
+        }
         const userVisibility = merged.visibility ?? [];
         return rules.map((rule, i) => {
             const bounds: VisibilityCondition[] = [];

@@ -625,6 +625,22 @@ describe('granularity transition rules', () => {
         warn.mockRestore();
     });
 
+    it('fall back to the raw track when no valid rule remains, instead of deleting it', () => {
+        expect(validateGoslingSpec({ tracks: [rulesTrack([])] }).state).not.toEqual('success');
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        [[], [{ unit: 'fortnight' }]].forEach(rules => {
+            warn.mockClear();
+            const { gs, hg } = compiled({ tracks: [rulesTrack(rules)] } as GoslingSpec);
+            const overlay = (gs as any).tracks[0].overlay;
+            expect(overlay.length).toEqual(1);
+            expect(overlay[0].x?.timeUnit).toBeUndefined();
+            expect(overlay[0].visibility ?? []).toEqual([]);
+            expect(dataTrack(hg).options.spec._timeUnit).toBeUndefined();
+            expect(warn.mock.calls.flat().join(' ')).toMatch(/no valid timeUnit rule, so the track shows raw rows/);
+        });
+        warn.mockRestore();
+    });
+
     it('is idempotent', () => {
         const { gs } = compiled({ tracks: [rulesTrack(RULES)] } as GoslingSpec);
         const copy = JSON.parse(JSON.stringify(gs));
