@@ -20,7 +20,7 @@ With time-i-gram, users can declaratively specify rich, interactive time-series 
 ## Key Features
 
 ### Temporal Data Type
-A new `"temporal"` field type for encoding time on axes (`x` or `y`), alongside the existing `"genomic"`, `"quantitative"`, and `"nominal"` types.
+A new `"temporal"` field type for encoding time on the `x` axis (also `xe`, `x1`, `x1e`), alongside the existing `"genomic"`, `"quantitative"`, and `"nominal"` types. Temporal `y` axes are not supported.
 
 ```jsonc
 {
@@ -50,6 +50,65 @@ Both support `dateFields` (for human-readable dates), `timestampField` (for Unix
 
 ### Unix Time Axis Track
 A dedicated axis track that renders human-readable time labels (years, months, days, hours, etc.) with automatic tick formatting that adapts to the current zoom level.
+
+### Time Coordinate Systems
+
+Every temporal x axis has a **time coordinate system**, which decides where a time is placed, how the axis is labeled, and which views can be linked:
+
+| System | Syntax (on `x`) | A time is placed at | Axis labels |
+|---|---|---|---|
+| absolute (default) | — | its instant (Unix seconds) | dates |
+| period | `period: "year" \| "month" \| "week" \| "day"` or `{ unit, weekBased?, start?, newField? }` | its position within its calendar period, so all periods share one axis (or one revolution in a circular layout) | `Jan`…`Dec`, `W1`…`W53`, `Mon`…`Sun`, `00:00`…`23:00` |
+| relative | `relative: { anchor, groupby?, unit? }` | its signed offset from a reference event | `−2 wk`, `0`, `+3 wk` |
+
+```jsonc
+// every year on one ring, ISO week 1 at 12 o'clock; each row's year goes to the field "year"
+"x": { "field": "date", "type": "temporal", "period": { "unit": "year", "weekBased": true, "newField": "year" } },
+"color": { "field": "year", "type": "nominal" }   // or "row" for one concentric ring per year
+
+// flu seasons (ISO week 40 to 39) aligned to their own peak
+"x": { "field": "date", "type": "temporal",
+       "relative": { "anchor": { "argmax": "cases" },
+                     "groupby": { "period": { "unit": "year", "weekBased": true, "start": 40, "newField": "season" } },
+                     "unit": "week" },
+       "domain": { "interval": ["-16 weeks", "16 weeks"] } }
+```
+
+- **Period.** Years align by calendar date in a leap reference year; `weekBased` uses ISO week-years; `start` begins each period at another month, ISO week, weekday, or hour (e.g. August–July seasons). Intervals (`x`/`xe`) that cross a period boundary are split. A `domain` on a period axis is ignored (the whole period is shown).
+- **Relative.** `anchor` is a date, `"first"`, `"last"`, `{ "argmax": field }`, `{ "argmin": field }` (per `groupby` group), or `{ "field": name }` (per row). Set the domain as offsets (durations or seconds).
+- **Linking.** Views are linked (`linkingId`, brushes) only within one coordinate system: a position within a period stands for many absolute instants. A `linkingId` that joins views in different systems leaves the later ones out of the link, with a warning.
+
+### Calendar Granularity
+
+```jsonc
+// date strings in domains (a partial date as the end includes the whole unit) and durations
+"xDomain": { "interval": ["2000-01", "2010-12"] },
+"zoomLimits": ["1 hour", "20 years"],
+"visibility": [{ "measure": "zoomLevel", "operation": "lt", "threshold": "3 months", "target": "track" }],
+
+// "show by month": truncate to the unit and aggregate per unit and nominal channel field
+"x": { "field": "date", "type": "temporal", "timeUnit": "month" },
+"y": { "field": "rate", "type": "quantitative", "aggregate": "mean" },   // count, sum, mean, median, min, max
+"color": { "field": "series", "type": "nominal" },
+
+// granularity transition rules: daily below 3 months of visible time, monthly above
+"x": { "field": "date", "type": "temporal",
+       "timeUnit": [{ "unit": "day", "maxSpan": "3 months" }, { "unit": "month" }] }
+```
+
+- **Units:** `millisecond`, `second`, `minute`, `hour`, `day`, `week` (ISO, Monday–Sunday), `month`, `quarter`, `year`, `decade`, all in UTC.
+- **Durations:** `"<number> <unit>"`, e.g. `"90 minutes"`, `"2 weeks"`, `"-36 mo"`; a month is 30.44 days, a year 365.2425 days.
+- **Aggregation is exact under tiling:** the time data fetchers give each unit to the tile that contains its start.
+- **Granularity rules** are shorthand for overlaid copies of the track, one per unit, with `visibility` conditions on the zoom level.
+
+### Time Transforms
+
+| Transform | Does |
+|---|---|
+| `{ "type": "timeUnit", "field", "unit", "newField"?, "endField"? }` | truncates a time field to the start (and end) of its unit |
+| `{ "type": "span", "field", "duration", "unit"?, "newField" }` | adds a duration (a numeric field in `unit`, or a literal such as `"15 minutes"`) to a start time: an interval for `x`/`xe` |
+
+Editor examples under **Temporal Data**: *Period: WHO Flu by Week of the Year*, *Period: FitBit Weekly and Daily Cycles*, *Granularity: Unemployment by Month or Year (zoom)*, *Relative: Flu Seasons and Unemployment Aligned to Events*, *Spans: NYC Taxi Trips and the Daily Cycle*. Design and comparison with Vega-Lite: [docs/temporal-grammar-design.md](docs/temporal-grammar-design.md), [docs/temporal-grammar-report.md](docs/temporal-grammar-report.md).
 
 ### All Gosling.js Features
 time-i-gram inherits the full power of Gosling.js, including:
