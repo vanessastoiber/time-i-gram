@@ -9398,6 +9398,39 @@
       ],
       "type": "string"
     },
+    "TimeUnitRule": {
+      "additionalProperties": false,
+      "description": "A granularity transition rule of `x.timeUnit`.",
+      "properties": {
+        "maxSpan": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/Duration"
+            }
+          ],
+          "description": "The rule applies while the visible span of the x-axis is below this duration (e.g. `\"3 months\"`) or number of seconds, and at or above the `maxSpan` of the previous rule. Omitted in the last rule."
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TimeUnit"
+            },
+            {
+              "const": "none",
+              "type": "string"
+            }
+          ],
+          "description": "The unit used by this rule; `\"none\"` draws the rows as they are (no truncation, no aggregation)."
+        }
+      },
+      "required": [
+        "unit"
+      ],
+      "type": "object"
+    },
     "TimeUnitTransform": {
       "additionalProperties": false,
       "description": "Truncate a time field (Unix seconds) to the start of the calendar unit that contains it (UTC), e.g. the first instant of its month. Rows are kept; to aggregate by unit, use `x.timeUnit` with an `aggregate` channel.",
@@ -9640,8 +9673,18 @@
           "description": "Values of the visual channel."
         },
         "timeUnit": {
-          "$ref": "#/definitions/TimeUnit",
-          "description": "Show time by calendar unit (\"show by month\"): every row is placed at the start of the unit that contains its time (for `bar` and `rect` marks without `xe`, each mark spans its unit). If another channel of the track has an `aggregate`, rows are grouped by the unit and by the fields of the track's nominal channels (`color`, `row`, `stroke`, ...), and each aggregated channel is reduced with its operation: one mark per unit and group.\n\nWith `period`, units are taken in absolute time and must lie within the period (e.g. months of a year).\n\nOnly for `type: \"temporal\"` on `x`."
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TimeUnit"
+            },
+            {
+              "items": {
+                "$ref": "#/definitions/TimeUnitRule"
+              },
+              "type": "array"
+            }
+          ],
+          "description": "Show time by calendar unit (\"show by month\"): every row is placed at the start of the unit that contains its time (for `bar` and `rect` marks without `xe`, each mark spans its unit). If another channel of the track has an `aggregate`, rows are grouped by the unit and by the fields of the track's nominal channels (`color`, `row`, `stroke`, ...), and each aggregated channel is reduced with its operation: one mark per unit and group.\n\nWith `period`, units are taken in absolute time and must lie within the period (e.g. months of a year).\n\n__Granularity transition rules:__ a list of rules from fine to coarse, each with the largest visible span at which it applies (`maxSpan`), switches the unit with zoom: at any zoom level the track is drawn with the first rule whose `maxSpan` exceeds the visible time span; the last rule has no `maxSpan`. For example, `[{ \"unit\": \"day\", \"maxSpan\": \"3 months\" }, { \"unit\": \"month\" }]` shows days below 3 months of visible time and months above. This is shorthand for overlaid copies of the track, each with one unit and `visibility` conditions on the zoom level.\n\nOnly for `type: \"temporal\"` on `x`."
         },
         "type": {
           "description": "Specify the data type.",

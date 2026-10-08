@@ -1,5 +1,7 @@
 import type {
     TimeUnit,
+    TimeUnitRule,
+    X,
     ChannelDeep,
     CommonTrackDef,
     CommonViewDef,
@@ -84,6 +86,7 @@ function resolveViewDef(def: CommonViewDef | CommonTrackDef, warn: Warn) {
 
 function resolveTrack(track: Track, warn: Warn) {
     const isTemporal = !!getTemporalChannelFromTrack(track as SingleTrack);
+    if (isTemporal) expandGranularityRules(track, warn);
     const members: Partial<SingleTrack>[] = IsOverlaidTrack(track) ? [track, ...track.overlay] : [track as SingleTrack];
 
     // tracks also carry the inherited view-level `xDomain`
@@ -133,6 +136,81 @@ function resolveTrack(track: Track, warn: Warn) {
         resolveTimeCoordinates(track, warn);
         resolveTimeUnits(track, warn);
     }
+}
+
+/**
+ * Granularity transition rules (`x.timeUnit` as a list of `{ unit, maxSpan }`) are shorthand: the track (or
+ * overlaid track) becomes one overlaid copy per rule, with that rule's unit and `visibility` conditions that
+ * show it while the visible span is at or above the previous rule's `maxSpan` and below its own.
+ * User-defined `visibility` conditions are kept on every copy (conditions are combined with AND).
+ */
+function expandGranularityRules(track: Track, warn: Warn) {
+    const base = track as Partial<SingleTrack>;
+    const isOverlay = IsOverlaidTrack(track);
+    const members: Partial<SingleTrack>[] = isOverlay ? track.overlay : [{}];
+    const hasRules = (x: unknown) => IsChannelDeep(x as ChannelDeep) && Array.isArray((x as { timeUnit?: unknown }).timeUnit);
+    if (!hasRules(base.x) && !members.some(m => hasRules(m.x))) return;
+
+    const expanded = members.flatMap(member => {
+        const merged = { ...base, ...member } as Partial<SingleTrack>;
+        if (merged.mark === 'brush' || !hasRules(merged.x)) return [member];
+        const x = merged.x as X & { timeUnit: TimeUnitRule[] };
+        const rules = validRules(x.timeUnit, warn);
+        const userVisibility = merged.visibility ?? [];
+        return rules.map((rule, i) => {
+            const bounds: VisibilityCondition[] = [];
+            if (i > 0) bounds.push({ measure: 'zoomLevel', operation: 'gtet', threshold: rules[i - 1].maxSpan!, target: 'track' });
+            if (rule.maxSpan !== undefined) bounds.push({ measure: 'zoomLevel', operation: 'lt', threshold: rule.maxSpan, target: 'track' });
+            const copy: Partial<SingleTrack> = {
+                ...member,
+                x: { ...x, timeUnit: rule.unit === 'none' ? undefined : rule.unit },
+                visibility: [...userVisibility, ...bounds]
+            };
+            if (rule.unit === 'none') {
+                // raw rows: aggregates only apply to units
+                AGGREGATABLE_CHANNELS.forEach(key => {
+                    const channel = merged[key];
+                    if (IsChannelDeep(channel) && 'aggregate' in channel && channel.aggregate) {
+                        (copy as Record<string, unknown>)[key] = { ...channel, aggregate: undefined };
+                    }
+                });
+            }
+            return copy;
+        });
+    });
+
+    if (IsChannelDeep(base.x) && Array.isArray((base.x as { timeUnit?: unknown }).timeUnit)) {
+        base.x = { ...(base.x as X), timeUnit: undefined };
+    }
+    (track as { overlay: Partial<SingleTrack>[] }).overlay = expanded;
+}
+
+/** Rules with `maxSpan`s in seconds, increasing, and only the last one without `maxSpan`. */
+function validRules(rules: TimeUnitRule[], warn: Warn): { unit: TimeUnit | 'none'; maxSpan?: number }[] {
+    const valid: { unit: TimeUnit | 'none'; maxSpan?: number }[] = [];
+    for (const rule of rules) {
+        if (rule.unit !== 'none' && !TIME_UNITS.includes(rule.unit)) {
+            warn(`timeUnit rule: "${rule.unit}" is not a time unit, so the rule is ignored.`);
+            continue;
+        }
+        const last = valid[valid.length - 1];
+        if (last && last.maxSpan === undefined) {
+            warn('timeUnit rules: only the last rule may omit maxSpan, so the rules after it are ignored.');
+            break;
+        }
+        const maxSpan = rule.maxSpan === undefined ? undefined : parseDuration(rule.maxSpan);
+        if (maxSpan !== undefined && (isNaN(maxSpan) || (last && maxSpan <= last.maxSpan!))) {
+            warn(`timeUnit rules: maxSpan "${rule.maxSpan}" must be a duration larger than the previous one, so the rule is ignored.`);
+            continue;
+        }
+        valid.push({ unit: rule.unit, maxSpan });
+    }
+    const last = valid[valid.length - 1];
+    if (last && last.maxSpan !== undefined) {
+        // the last rule applies to every larger span
+        last.maxSpan = undefined;
+    }
+    return valid;
 }
 
 const NOMINAL_CHANNELS = ['color', 'row', 'stroke', 'strokeWidth', 'opacity', 'size', 'text'] as const;

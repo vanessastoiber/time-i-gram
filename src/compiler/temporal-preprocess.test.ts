@@ -368,3 +368,121 @@ describe('timeUnit (channel form)', () => {
         expect(dataTrack(hg).data.timeUnitTiling).toBeUndefined();
     });
 });
+
+describe('granularity transition rules', () => {
+    const DAY = 86400;
+    const rulesTrack = (rules: unknown, extra: object = {}) =>
+        timeTrack({
+            mark: 'line',
+            x: { field: 'date', type: 'temporal', timeUnit: rules },
+            y: { field: 'v', type: 'quantitative', aggregate: 'sum' },
+            ...extra
+        });
+    const RULES = [
+        { unit: 'day', maxSpan: '3 months' },
+        { unit: 'week', maxSpan: '2 years' },
+        { unit: 'month' }
+    ];
+
+    it('are schema-valid', () => {
+        expect(validateGoslingSpec({ tracks: [rulesTrack(RULES)] }).state).toEqual('success');
+        expect(validateGoslingSpec({ tracks: [rulesTrack([{ unit: 'none', maxSpan: 3600 }, { unit: 'hour' }])] }).state).toEqual(
+            'success'
+        );
+    });
+
+    it('expand to one overlaid track per rule with zoom-level visibility bands', () => {
+        const { hg } = compiled({ tracks: [rulesTrack(RULES)] } as GoslingSpec);
+        const { options, data } = dataTrack(hg);
+        const overlay = options.spec.overlay;
+        expect(overlay.map((o: any) => o._timeUnit.unit)).toEqual(['day', 'week', 'month']);
+        const month = 30.436875 * DAY;
+        expect(overlay.map((o: any) => o.visibility.map((v: any) => [v.operation, v.threshold]))).toEqual([
+            [['lt', 3 * month]],
+            [
+                ['gtet', 3 * month],
+                ['lt', 2 * 365.2425 * DAY]
+            ],
+            [['gtet', 2 * 365.2425 * DAY]]
+        ]);
+        // one fetcher serves all units, each unit tile-exact
+        expect(data.timeUnitTiling.units).toEqual(['day', 'week', 'month']);
+    });
+
+    it('show exactly one rule at any visible span', () => {
+        const { hg } = compiled({ tracks: [rulesTrack(RULES)] } as GoslingSpec);
+        const overlay = dataTrack(hg).options.spec.overlay;
+        const visible = (span: number) =>
+            overlay
+                .filter((o: any) =>
+                    o.visibility.every((v: any) => (v.operation === 'lt' ? span < v.threshold : span >= v.threshold))
+                )
+                .map((o: any) => o._timeUnit.unit);
+        expect(visible(10 * DAY)).toEqual(['day']);
+        expect(visible(91.3 * DAY)).toEqual(['day']); // just below 3 months (91.31 days)
+        expect(visible(3 * 30.436875 * DAY)).toEqual(['week']); // exactly 3 months
+        expect(visible(365 * DAY)).toEqual(['week']);
+        expect(visible(3000 * DAY)).toEqual(['month']);
+    });
+
+    it('keep user visibility conditions and support raw rows ("none")', () => {
+        const userCondition = { measure: 'width', operation: 'gt', threshold: 100, target: 'track' };
+        const { hg } = compiled({
+            tracks: [rulesTrack([{ unit: 'none', maxSpan: '2 days' }, { unit: 'hour' }], { visibility: [userCondition] })]
+        } as GoslingSpec);
+        const [raw, hourly] = dataTrack(hg).options.spec.overlay;
+        expect(raw._timeUnit).toBeUndefined();
+        expect(raw.y.aggregate).toBeUndefined();
+        expect(raw.visibility[0]).toEqual(userCondition);
+        expect(hourly.visibility[0]).toEqual(userCondition);
+        expect(dataTrack(hg).data.timeUnitTiling).toEqual({ source: 'date', units: ['hour'], raw: true });
+    });
+
+    it('expand inside overlaid tracks and leave brushes alone', () => {
+        const { hg } = compiled({
+            tracks: [
+                {
+                    ...rulesTrack(RULES, { mark: undefined }),
+                    alignment: 'overlay',
+                    tracks: [{ mark: 'line' }, { mark: 'point' }, { mark: 'brush', x: { linkingId: 'b' } }]
+                }
+            ]
+        } as unknown as GoslingSpec);
+        const overlay = dataTrack(hg).options.spec.overlay;
+        expect(overlay.map((o: any) => `${o.mark}:${o._timeUnit?.unit ?? '-'}`)).toEqual([
+            'line:day',
+            'line:week',
+            'line:month',
+            'point:day',
+            'point:week',
+            'point:month',
+            'brush:-'
+        ]);
+    });
+
+    it('warn about and drop invalid rules', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const { hg } = compiled({
+            tracks: [
+                rulesTrack([
+                    { unit: 'day', maxSpan: '1 year' },
+                    { unit: 'week', maxSpan: '1 month' },
+                    { unit: 'month' },
+                    { unit: 'year' }
+                ])
+            ]
+        } as GoslingSpec);
+        expect(dataTrack(hg).options.spec.overlay.map((o: any) => o._timeUnit.unit)).toEqual(['day', 'month']);
+        const messages = warn.mock.calls.flat().join(' ');
+        expect(messages).toMatch(/must be a duration larger than the previous one/);
+        expect(messages).toMatch(/only the last rule may omit maxSpan/);
+        warn.mockRestore();
+    });
+
+    it('is idempotent', () => {
+        const { gs } = compiled({ tracks: [rulesTrack(RULES)] } as GoslingSpec);
+        const copy = JSON.parse(JSON.stringify(gs));
+        resolveTemporalSugar(copy);
+        expect(copy).toEqual(JSON.parse(JSON.stringify(gs)));
+    });
+});

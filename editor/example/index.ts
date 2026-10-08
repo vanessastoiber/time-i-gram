@@ -585,7 +585,7 @@ const editorExampleObj: {
     },
     TEMPORAL_DATA_UNEMPLOYMENT_GRANULARITY: {
         group: 'Temporal Data',
-        name: 'Granularity: Unemployment by Year and Month',
+        name: 'Granularity: Unemployment by Month or Year (zoom)',
         spec: EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY,
         underDevelopment: true
     }

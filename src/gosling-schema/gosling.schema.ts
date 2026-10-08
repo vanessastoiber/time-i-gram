@@ -798,9 +798,27 @@ export interface X extends Omit<AxisCommon, 'domain'> {
      *
      * With `period`, units are taken in absolute time and must lie within the period (e.g. months of a year).
      *
+     * __Granularity transition rules:__ a list of rules from fine to coarse, each with the largest visible span
+     * at which it applies (`maxSpan`), switches the unit with zoom: at any zoom level the track is drawn with the
+     * first rule whose `maxSpan` exceeds the visible time span; the last rule has no `maxSpan`. For example,
+     * `[{ "unit": "day", "maxSpan": "3 months" }, { "unit": "month" }]` shows days below 3 months of visible
+     * time and months above. This is shorthand for overlaid copies of the track, each with one unit and
+     * `visibility` conditions on the zoom level.
+     *
      * Only for `type: "temporal"` on `x`.
      */
-    timeUnit?: TimeUnit;
+    timeUnit?: TimeUnit | TimeUnitRule[];
+}
+
+/** A granularity transition rule of `x.timeUnit`. */
+export interface TimeUnitRule {
+    /** The unit used by this rule; `"none"` draws the rows as they are (no truncation, no aggregation). */
+    unit: TimeUnit | 'none';
+    /**
+     * The rule applies while the visible span of the x-axis is below this duration (e.g. `"3 months"`) or
+     * number of seconds, and at or above the `maxSpan` of the previous rule. Omitted in the last rule.
+     */
+    maxSpan?: number | Duration;
 }
 
 /** Calendar periods by which a temporal axis can be wrapped. */
