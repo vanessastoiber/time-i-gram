@@ -283,6 +283,44 @@ describe('period (time coordinate system)', () => {
     });
 });
 
+describe('temporal-only properties on a genomic x channel', () => {
+    const misuses = {
+        period: 'year',
+        timeUnit: 'month',
+        relative: { anchor: 'first' },
+        rules: [{ unit: 'month' }]
+    } as const;
+
+    it('are schema errors', () => {
+        Object.entries(misuses).forEach(([key, value]) => {
+            const x = { field: 'p', type: 'genomic', [key === 'rules' ? 'timeUnit' : key]: value };
+            expect(validateGoslingSpec({ tracks: [genomicTrack({ x })] }).state).not.toEqual('success');
+        });
+        // still valid on temporal channels
+        expect(
+            validateGoslingSpec({ tracks: [timeTrack({ x: { field: 'date', type: 'temporal', period: 'year' } })] })
+                .state
+        ).toEqual('success');
+    });
+
+    it('are removed by the compiler with a warning, leaving the genomic track unchanged', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const plain = compiled({ tracks: [genomicTrack()] } as GoslingSpec);
+        Object.entries(misuses).forEach(([key, value]) => {
+            warn.mockClear();
+            const prop = key === 'rules' ? 'timeUnit' : key;
+            const { gs } = compiled({
+                tracks: [genomicTrack({ x: { field: 'p', type: 'genomic', [prop]: value } })]
+            } as GoslingSpec);
+            expect(warn.mock.calls.flat().join(' ')).toMatch(new RegExp(`x.${prop} only applies to temporal channels`));
+            const x = (spec: GoslingSpec) => ({ ...(spec as any).tracks[0].x, linkingId: undefined }); // a random id
+            expect(x(gs)[prop]).toBeUndefined();
+            expect(x(gs)).toEqual(x(plain.gs));
+        });
+        warn.mockRestore();
+    });
+});
+
 describe('linking across time coordinate systems', () => {
     const view = (x: object, extra: object = {}) => ({
         tracks: [timeTrack({ x: { field: 'date', type: 'temporal', linkingId: 'link', ...x }, ...extra })]

@@ -9757,6 +9757,18 @@
     },
     "X": {
       "additionalProperties": false,
+      "if": {
+        "not": {
+          "properties": {
+            "type": {
+              "const": "temporal"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        }
+      },
       "properties": {
         "aggregate": {
           "$ref": "#/definitions/Aggregate",
@@ -9832,6 +9844,13 @@
             "temporal"
           ],
           "type": "string"
+        }
+      },
+      "then": {
+        "properties": {
+          "period": false,
+          "relative": false,
+          "timeUnit": false
         }
       },
       "type": "object"

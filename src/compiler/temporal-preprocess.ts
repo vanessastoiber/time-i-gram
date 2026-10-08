@@ -91,7 +91,27 @@ function resolveViewDef(def: CommonViewDef | CommonTrackDef, warn: Warn) {
     }
 }
 
+/** Properties of temporal x channels that have no meaning on other channels. */
+const TEMPORAL_ONLY_PROPERTIES = ['period', 'timeUnit', 'relative'] as const;
+
+/** Remove temporal-only properties from non-temporal x channels (also a schema error), with a warning. */
+function removeTemporalOnlyProperties(track: Track, warn: Warn) {
+    const members: Partial<SingleTrack>[] = IsOverlaidTrack(track) ? [track, ...track.overlay] : [track as SingleTrack];
+    members.forEach(member =>
+        X_CHANNELS.forEach(key => {
+            const channel = member[key] as Record<string, unknown> | undefined;
+            if (!IsChannelDeep(channel as ChannelDeep) || channel!.type === 'temporal') return;
+            TEMPORAL_ONLY_PROPERTIES.forEach(prop => {
+                if (channel![prop] === undefined) return;
+                warn(`${key}.${prop} only applies to temporal channels (type: "temporal"), so it is ignored.`);
+                delete channel![prop];
+            });
+        })
+    );
+}
+
 function resolveTrack(track: Track, warn: Warn) {
+    removeTemporalOnlyProperties(track, warn);
     const isTemporal = !!getTemporalChannelFromTrack(track as SingleTrack);
     if (isTemporal) expandGranularityRules(track, warn);
     const members: Partial<SingleTrack>[] = IsOverlaidTrack(track) ? [track, ...track.overlay] : [track as SingleTrack];
