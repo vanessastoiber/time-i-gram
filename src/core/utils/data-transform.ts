@@ -35,6 +35,7 @@ import {
     type TimeCoordinateSystem,
     type TimeUnitBinning
 } from './time-coordinate-system';
+import { warnOnce } from './temporal-warnings';
 // import Logging from './log';
 
 /**
@@ -104,8 +105,6 @@ export function truncateTime(t: TimeUnitTransform, data: Datum[]): Datum[] {
     });
 }
 
-let hasWarnedNegativeSpan = false;
-
 /**
  * Turn spans into intervals: `newField` = `field` + a duration (a numeric field in `unit`, or a duration literal).
  */
@@ -116,8 +115,7 @@ export function addSpan(t: SpanTransform, data: Datum[]): Datum[] {
         const [n, unit] = literal ? [literal.value, literal.unit] : [+d[t.duration], t.unit ?? 'second'];
         let end = isFinite(start) && isFinite(n) && n >= 0 ? addDuration(start, unit, n) : NaN;
         if (n < 0) {
-            if (!hasWarnedNegativeSpan) console.warn(`[time-i-gram] span: negative durations in "${t.duration}" are not drawn.`);
-            hasWarnedNegativeSpan = true;
+            warnOnce(`span: negative durations in "${t.duration}" are not drawn.`);
             end = NaN;
         }
         return { ...d, [t.newField]: end };

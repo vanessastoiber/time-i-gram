@@ -1,7 +1,9 @@
 import { addSpan, binByTimeUnit, truncateTime } from './data-transform';
+import { resolveTemporalSugar } from '../../compiler/temporal-preprocess';
 import {
     ABSOLUTE_TIME,
     applyDerivedTimeCoordinates,
+    applyTimeCoordinates,
     filterByTimeUnits,
     isRowInTile,
     periodCoordinates,
@@ -260,6 +262,41 @@ describe('span ends in period and relative coordinate systems', () => {
             '2000-01-01T11:00:00.000Z',
             '2000-01-02T00:00:00.000Z'
         ]);
+        warn.mockRestore();
+    });
+});
+
+describe('warnings at render time', () => {
+    const split = (days: number) =>
+        applyTimeCoordinates([{ start: utc(2010, 1, 1), end: utc(2010, 1, 1) + days * 86400 }], {
+            system: periodCoordinates('day'),
+            fields: [
+                { source: 'start', coord: '__period_start' },
+                { source: 'end', coord: '__period_end' }
+            ],
+            interval: ['start', 'end']
+        });
+
+    it('report intervals cut at the maximum number of pieces', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        expect(split(10).length).toEqual(10);
+        expect(warn).not.toHaveBeenCalled();
+        expect(split(1500).length).toEqual(1000);
+        expect(warn.mock.calls.flat().join(' ')).toMatch(/split into more than 1000 pieces/);
+        warn.mockRestore();
+    });
+
+    it('are given once per compiled spec, not once per page', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const negative = () => addSpan({ type: 'span', field: 's', duration: 'd', newField: 'e' }, [{ s: 0, d: -1 }]);
+        const spanWarnings = () => warn.mock.calls.flat().filter(m => /negative durations/.test(String(m))).length;
+        resolveTemporalSugar({ tracks: [] } as any); // a spec
+        negative();
+        negative();
+        expect(spanWarnings()).toEqual(1);
+        resolveTemporalSugar({ tracks: [] } as any); // the next spec
+        negative();
+        expect(spanWarnings()).toEqual(2);
         warn.mockRestore();
     });
 });

@@ -14,6 +14,7 @@
  */
 
 import type { Period, PeriodUnit, TimeUnit } from '@gosling-lang/gosling-schema';
+import { warnOnce } from './temporal-warnings';
 import { UNIT_SECONDS, floorTime, isoWeekDate, isoWeekStart, offsetTime, parseTimeValue, utcParts } from './time-units';
 
 export type TimeCoordinateSystem = AbsoluteTime | PeriodTime | RelativeTime;
@@ -415,7 +416,14 @@ export function applyTimeCoordinates<T extends Record<string, unknown>>(
 
         // split the interval at period boundaries
         let pieceStart = start;
-        for (let i = 0; i < MAX_PIECES && pieceStart < end; i++) {
+        for (let i = 0; pieceStart < end; i++) {
+            if (i === MAX_PIECES) {
+                warnOnce(
+                    `period: an interval was split into more than ${MAX_PIECES} pieces (one per ${system.unit}); ` +
+                        'the rest of it is not drawn.'
+                );
+                break;
+            }
             const pieceEnd = Math.min(periodEndOf(pieceStart, system), end);
             const copy = mapRow({ [startField]: pieceStart });
             const endCoord = config.fields.find(f => f.source === endField)?.coord;
@@ -567,8 +575,6 @@ export function filterByTimeUnits<T extends Record<string, unknown>>(
     );
 }
 
-let hasWarnedClippedSpan = false;
-
 /**
  * Map the time fields that the track's data transforms compute (span ends, `TimeCoordinatesConfig.derived`) into
  * the coordinate system: in a relative system the end is the start's offset plus the duration; in a period
@@ -595,11 +601,8 @@ export function applyDerivedTimeCoordinates<T extends Record<string, unknown>>(
                 return;
             }
             const periodEnd = periodEndOf(startTime, system);
-            if (endTime > periodEnd && !hasWarnedClippedSpan) {
-                hasWarnedClippedSpan = true;
-                console.warn(
-                    '[time-i-gram] span: intervals that cross the end of their period are clipped at the period end.'
-                );
+            if (endTime > periodEnd) {
+                warnOnce('span: intervals that cross the end of their period are clipped at the period end.');
             }
             copy[coord] = toPeriodEndCoordinate(Math.min(endTime, periodEnd), system);
         });

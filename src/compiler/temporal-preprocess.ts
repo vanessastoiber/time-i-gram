@@ -41,6 +41,7 @@ import {
     type TimeUnitBinning
 } from '../core/utils/time-coordinate-system';
 import { traverseTracksAndViews } from './spec-preprocess';
+import { resetTemporalWarnings } from '../core/utils/temporal-warnings';
 
 const X_CHANNELS = ['x', 'xe', 'x1', 'x1e'] as const;
 
@@ -53,6 +54,8 @@ const X_CHANNELS = ['x', 'xe', 'x1', 'x1e'] as const;
  * Idempotent: numbers are kept as they are, so the function can run again after a responsive re-fix.
  */
 export function resolveTemporalSugar(spec: GoslingSpec): string[] {
+    // a new spec: render-time warnings may be given again
+    resetTemporalWarnings();
     const messages: string[] = [];
     const warn = (message: string) => {
         messages.push(message);
