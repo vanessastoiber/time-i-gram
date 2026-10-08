@@ -301,10 +301,46 @@ describe('linking across time coordinate systems', () => {
     it('leaves views in another coordinate system out of the link, with a warning', () => {
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const { hg } = compiled({ views: [view({ period: 'year' }), view({})] } as unknown as GoslingSpec);
-        expect(lockedViews(hg)).toEqual(1);
+        // each view is alone in its coordinate system, so neither is linked
+        expect(lockedViews(hg)).toEqual(0);
         expect(warn.mock.calls.flat().join(' ')).toMatch(
-            /linkingId "link" joins views in different coordinate systems \(period \(year\) and absolute time\)/
+            /linkingId "link" joins views in different coordinate systems \(period \(year\), absolute time\)/
         );
+        warn.mockRestore();
+    });
+
+    it('keeps every compatible group linked, whatever the order of the views', () => {
+        const ring = {
+            tracks: [
+                timeTrack({
+                    layout: 'circular',
+                    alignment: 'overlay',
+                    x: { field: 'date', type: 'temporal', period: 'year' },
+                    tracks: [{ mark: 'line' }, { mark: 'brush', x: { linkingId: 'link' } }]
+                })
+            ]
+        };
+        const brushTargets = (hg: HiGlassSpec) =>
+            hg.views.flatMap(v =>
+                ((v.tracks as any).whole ?? []).filter((t: any) => t.fromViewUid).map((t: any) => t.fromViewUid)
+            );
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        for (const order of [
+            [view({}), ring, view({ period: 'year' })],
+            [ring, view({ period: 'year' }), view({})],
+            [view({ period: 'year' }), view({}), ring]
+        ]) {
+            warn.mockClear();
+            const { hg } = compiled({ views: order } as unknown as GoslingSpec);
+            const periodView = hg.views[order.findIndex(v => v !== ring && (v.tracks[0].x as any).period)].uid;
+            // the ring's brush drives the linear period view
+            expect(brushTargets(hg)).toEqual([periodView]);
+            // the absolute view, alone in its system, is not locked
+            const linked = Object.entries(hg.zoomLocks.locksByViewUid).filter(([, id]) => /^link/.test(id as string));
+            expect(linked.map(([uid]) => uid)).toEqual([periodView]);
+            // one warning per linkingId
+            expect(warn.mock.calls.filter(c => /linkingId "link"/.test(c.join(' '))).length).toEqual(1);
+        }
         warn.mockRestore();
     });
 
@@ -313,7 +349,7 @@ describe('linking across time coordinate systems', () => {
         const { hg } = compiled({
             views: [view({ period: 'year' }), view({ period: { unit: 'year', weekBased: true } })]
         } as unknown as GoslingSpec);
-        expect(lockedViews(hg)).toEqual(1);
+        expect(lockedViews(hg)).toEqual(0);
         warn.mockRestore();
     });
 
@@ -708,8 +744,8 @@ describe('relative (time coordinate system)', () => {
         const mixed = compiled({
             views: [view({ relative: { anchor: 'first' } }), view({})]
         } as unknown as GoslingSpec);
-        expect(lockedViews(mixed.hg)).toEqual(1);
-        expect(warn.mock.calls.flat().join(' ')).toMatch(/relative time and absolute time/);
+        expect(lockedViews(mixed.hg)).toEqual(0);
+        expect(warn.mock.calls.flat().join(' ')).toMatch(/relative time, absolute time/);
         warn.mockRestore();
     });
 });
