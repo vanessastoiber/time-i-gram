@@ -99,7 +99,7 @@ const spec = {
       dateFields: ['date']
     },
     mark: 'bar',
-    x: { field: 'date', type: 'temporal', axis: 'bottom' },
+    x: { field: 'date', type: 'temporal', axis: 'bottom', domain: { interval: [1325376000, 1451606400] } }, // 2012-2015 in Unix seconds
     y: { field: 'precipitation', type: 'quantitative' },
     width: 800,
     height: 200
@@ -151,8 +151,7 @@ const baseData = {
   url: CSV_URL,
   separator: ",",
   dateFields: ["date"],
-  sampleLength: 2000,
-  genomicFields: ["date"]
+  sampleLength: 2000
 };
 
 const timeDomain = { interval: [946713600, 1293782400] };
