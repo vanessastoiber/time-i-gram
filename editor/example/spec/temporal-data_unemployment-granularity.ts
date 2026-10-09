@@ -16,23 +16,31 @@ const UNEMPLOYMENT = {
 
 const SERIES = ['Construction', 'Manufacturing', 'Finance', 'Information', 'Education and Health'];
 const SERIES_FILTER = [{ type: 'filter', field: 'series', oneOf: SERIES }] as const;
-const SERIES_COLOR = { field: 'series', type: 'nominal', domain: SERIES, legend: true } as const;
-const RATE = { field: 'rate', type: 'quantitative', aggregate: 'mean', domain: [0, 25], axis: 'left' } as const;
+const SERIES_COLOR = { field: 'series', type: 'nominal', domain: SERIES, legend: true, title: 'Industry' } as const;
+const RATE = {
+    field: 'rate',
+    type: 'quantitative',
+    aggregate: 'mean',
+    domain: [0, 25],
+    axis: 'left',
+    title: 'Unemployment rate (%)'
+} as const;
 
 /** Granularity transition rules: monthly below 4 years of visible time, yearly above. */
 const BY_MONTH_THEN_YEAR = [{ unit: 'month', maxSpan: '4 years' }, { unit: 'year' }];
 
 const spec = {
-    title: 'U.S. Unemployment Rate by Industry: Granularity Changes with Zoom',
-    subtitle: 'timeUnit rules: by month below 4 years of visible time, by year above (zoom to switch)',
+    title: 'How did unemployment change by industry from 2000 to 2009?',
+    subtitle: 'Monthly means while less than 4 years are visible, yearly means above: zoom either view to switch',
     zoomLimits: ['6 months', '20 years'],
     arrangement: 'vertical',
     views: [
         {
-            xDomain: { interval: ['2000', '2010-02'] },
+            // whole years only: a mean of the last, partial year (January and February 2010) would look like a year
+            xDomain: { interval: ['2000', '2009-12'] },
             tracks: [
                 {
-                    title: 'Overview: 10 years visible, so yearly means',
+                    title: 'Overview: 10 years visible, yearly means',
                     alignment: 'overlay',
                     data: UNEMPLOYMENT,
                     dataTransform: SERIES_FILTER,
@@ -54,7 +62,7 @@ const spec = {
             linkingId: 'detail',
             tracks: [
                 {
-                    title: 'Detail: 2 years visible, so monthly means',
+                    title: 'Detail: 2 years visible, monthly means',
                     alignment: 'overlay',
                     data: UNEMPLOYMENT,
                     dataTransform: SERIES_FILTER,
