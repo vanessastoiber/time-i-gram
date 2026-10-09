@@ -7,6 +7,8 @@ import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 // spec schema-invalid. The data is daily for 2022 (the paper describes hourly data for 2021-2024).
 
 const spec = {
+    title: 'Does solar power generation follow the weather?',
+    subtitle: 'A photovoltaic system and the local weather, by day in 2022',
     xDomain: {
         interval: [1640995200, 1672444800]
     },
@@ -16,7 +18,7 @@ const spec = {
     views: [
         {
             // --- Overview with brush for time-range selection ---
-            title: 'Overview',
+            title: 'Overview: total generation (brush to zoom in)',
 
             data: {
                 url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/3_solar-power/photovoltaics_01012022-31122022.csv',
@@ -33,6 +35,8 @@ const spec = {
                 type: 'temporal',
                 axis: 'bottom'
             },
+            y: { field: 'Gesamt Erzeugung', type: 'quantitative', axis: 'none' },
+            color: { value: '#74c476' },
 
             tracks: [
                 {},
@@ -48,15 +52,15 @@ const spec = {
             ],
 
             width: 600,
-            height: 40
+            height: 60
         },
 
         {
             // --- Energy fed into the grid vs. self-consumption ---
-            height: 100,
+            height: 120,
             width: 600,
             alignment: 'overlay',
-            title: 'Fed into the power grid vs. consumption (Wh)',
+            title: 'Energy fed into the grid and consumed on site',
 
             data: {
                 url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/3_solar-power/photovoltaics_01012022-31122022.csv',
@@ -82,19 +86,20 @@ const spec = {
                         field: 'Energie ins Netz eingespeist',
                         type: 'quantitative',
                         domain: [0, 300000],
-                        legend: true
+                        title: 'Energy (Wh)'
                     },
+                    style: { legendTitle: 'Energy', legendLabel: 'Fed into the grid' },
                     tooltip: [
                         {
                             field: 'Energie ins Netz eingespeist',
                             type: 'quantitative',
-                            alt: 'Consumption (KWh)',
+                            alt: 'Fed into the grid (Wh)',
                             format: ',.2r'
                         },
                         {
                             field: 'Eigenverbrauch',
                             type: 'quantitative',
-                            alt: 'Consumption (KWh)',
+                            alt: 'Consumed on site (Wh)',
                             format: ',.2r'
                         }
                     ],
@@ -111,17 +116,18 @@ const spec = {
                         type: 'quantitative',
                         domain: [0, 300000]
                     },
+                    style: { legendLabel: 'Consumed on site' },
                     tooltip: [
                         {
                             field: 'Energie ins Netz eingespeist',
                             type: 'quantitative',
-                            alt: 'Solar power fed into the power grid (KWh)',
+                            alt: 'Fed into the grid (Wh)',
                             format: ',.2r'
                         },
                         {
                             field: 'Eigenverbrauch',
                             type: 'quantitative',
-                            alt: 'Consumption (KWh)',
+                            alt: 'Consumed on site (Wh)',
                             format: ',.2r'
                         }
                     ]
@@ -131,10 +137,10 @@ const spec = {
 
         {
             // --- Total generation vs. energy obtained from the grid ---
-            height: 100,
+            height: 120,
             width: 600,
             alignment: 'overlay',
-            title: 'Generated vs. obtained from the power grid (Wh)',
+            title: 'Energy generated and drawn from the grid',
 
             data: {
                 url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/3_solar-power/photovoltaics_01012022-31122022.csv',
@@ -159,19 +165,21 @@ const spec = {
                     y: {
                         field: 'Gesamt Erzeugung',
                         type: 'quantitative',
-                        domain: [0, 300000]
+                        domain: [0, 300000],
+                        title: 'Energy (Wh)'
                     },
+                    style: { legendTitle: 'Energy', legendLabel: 'Generated' },
                     tooltip: [
                         {
                             field: 'Gesamt Erzeugung',
                             type: 'quantitative',
-                            alt: 'Generated solar power (KWh)',
+                            alt: 'Generated (Wh)',
                             format: ',.2r'
                         },
                         {
                             field: 'Energie vom Netz bezogen',
                             type: 'quantitative',
-                            alt: 'Solar power obtained from the power grid (KWh)',
+                            alt: 'Drawn from the grid (Wh)',
                             format: ',.2r'
                         }
                     ]
@@ -186,17 +194,18 @@ const spec = {
                         type: 'quantitative',
                         domain: [0, 300000]
                     },
+                    style: { legendLabel: 'Drawn from the grid' },
                     tooltip: [
                         {
                             field: 'Gesamt Erzeugung',
                             type: 'quantitative',
-                            alt: 'Generated solar power (KWh)',
+                            alt: 'Generated (Wh)',
                             format: ',.2r'
                         },
                         {
                             field: 'Energie vom Netz bezogen',
                             type: 'quantitative',
-                            alt: 'Solar power obtained from the power grid (KWh)',
+                            alt: 'Drawn from the grid (Wh)',
                             format: ',.2r'
                         }
                     ]
@@ -206,10 +215,10 @@ const spec = {
 
         {
             // --- Local weather context: minimum and maximum temperature ---
-            height: 100,
+            height: 120,
             width: 600,
             alignment: 'overlay',
-            title: 'Local temperature',
+            title: 'Daily temperature',
 
             data: {
                 url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/3_solar-power/weather_data_local_20220101T0000_20221231T0000.csv',
@@ -233,18 +242,20 @@ const spec = {
                     y: {
                         field: 'tlmin',
                         type: 'quantitative',
-                        domain: [-10, 40]
+                        domain: [-10, 40],
+                        title: 'Temperature (°C)'
                     },
+                    style: { legendTitle: 'Temperature', legendLabel: 'Minimum' },
                     tooltip: [
                         {
                             field: 'tlmax',
                             type: 'quantitative',
-                            alt: 'Maximum temperature'
+                            alt: 'Maximum temperature (°C)'
                         },
                         {
                             field: 'tlmin',
                             type: 'quantitative',
-                            alt: 'Minimum temperature'
+                            alt: 'Minimum temperature (°C)'
                         }
                     ]
                 },
@@ -258,16 +269,17 @@ const spec = {
                         type: 'quantitative',
                         domain: [-10, 40]
                     },
+                    style: { legendLabel: 'Maximum' },
                     tooltip: [
                         {
                             field: 'tlmax',
                             type: 'quantitative',
-                            alt: 'Maximum temperature'
+                            alt: 'Maximum temperature (°C)'
                         },
                         {
                             field: 'tlmin',
                             type: 'quantitative',
-                            alt: 'Minimum temperature'
+                            alt: 'Minimum temperature (°C)'
                         }
                     ]
                 }
@@ -276,10 +288,10 @@ const spec = {
 
         {
             // --- Sunshine duration ---
-            height: 100,
+            height: 120,
             width: 600,
             alignment: 'overlay',
-            title: 'Sunshine',
+            title: 'Sunshine duration',
 
             data: {
                 url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/3_solar-power/weather_data_local_20220101T0000_20221231T0000.csv',
@@ -303,7 +315,8 @@ const spec = {
                     y: {
                         field: 'sonnenscheindauer',
                         type: 'quantitative',
-                        domain: [0, 16]
+                        domain: [0, 16],
+                        title: 'Sunshine (h)'
                     },
                     tooltip: [
                         {
@@ -318,7 +331,7 @@ const spec = {
 
         {
             // --- Precipitation amount and type ---
-            height: 100,
+            height: 120,
             width: 600,
             alignment: 'overlay',
             title: 'Precipitation',
@@ -345,7 +358,8 @@ const spec = {
                         field: 'niederschlagsart_24h',
                         type: 'nominal',
                         range: ['#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#084594'],
-                        legend: true
+                        legend: true,
+                        title: 'Type'
                     },
 
                     // Keep only non-zero precipitation events in a visible range
@@ -372,7 +386,8 @@ const spec = {
                     y: {
                         field: 'niederschlag_24h_summe',
                         type: 'quantitative',
-                        domain: [-1, 40]
+                        domain: [-1, 40],
+                        title: 'Precipitation (mm)'
                     },
 
                     // Point size reinforces precipitation intensity
@@ -385,7 +400,7 @@ const spec = {
                         {
                             field: 'niederschlag_24h_summe',
                             type: 'quantitative',
-                            alt: 'Precipitation over 24h'
+                            alt: 'Precipitation over 24 h (mm)'
                         }
                     ]
                 }
