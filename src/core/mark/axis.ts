@@ -8,6 +8,7 @@ import { cartesianToPolar, isAnticlockwise, valueToRadian } from '../utils/polar
 import { isNumberArray, isStringArray } from '../utils/array';
 import { getTextStyle } from '../utils/text-style';
 import { HEADER_LINE_HEIGHT, yTitleLabel, type HeaderLayout } from './temporal-header';
+import { isTemporalRing } from './ring-center';
 
 const EXTENT_TICK_SIZE = 8;
 const TICK_SIZE = 6;
@@ -248,9 +249,10 @@ export function drawCircularYAxis(
     /* render */
     const graphics = tile.graphics; // We do not use `pBorder` as in linear layouts.
 
-    // the title of the radial axis (`y.title`), in the center of the ring
+    // the title of the radial axis (`y.title`), in the center of the ring (with the legend on temporal rings,
+    // see `drawRingCenter`)
     const title = IsChannelDeep(yChannel) && 'title' in yChannel ? yChannel.title : undefined;
-    if (title) {
+    if (title && !isTemporalRing(spec)) {
         const titleGraphic = new HGC.libraries.PIXI.Text(title, {
             ...getTextStyle({
                 color: theme.axis.labelColor,

@@ -6,6 +6,7 @@ import type { CompleteThemeDeep } from '../utils/theme';
 import type { Dimension } from '../utils/position';
 import { scaleLinear, type ScaleLinear } from 'd3-scale';
 import { getTextStyle } from '../utils/text-style';
+import { RING_LINE_HEIGHT, isTemporalRing, ringCenterLayout, wrapText } from './ring-center';
 import {
     HEADER_LINE_HEIGHT,
     LEGEND_GAP,
@@ -39,11 +40,14 @@ export function drawColorLegend(
     const spec = model.spec();
     const offset: LegendOffset = { offsetRight: 0 };
 
+    // rings on a temporal axis: the y title and, if it fits, the legend in the center of the ring
+    const legendInRing = isTemporalRing(spec) && drawRingCenter(HGC, trackInfo, _tile, model, theme);
+
     if (IsChannelDeep(spec.color) && spec.color.legend) {
         switch (spec.color.type) {
             case 'nominal':
                 // tracks with a header strip draw their categories in its legend (see `drawHeaderLegend`)
-                if (!(spec as { _headerHeight?: number })._headerHeight) {
+                if (!(spec as { _headerHeight?: number })._headerHeight && !legendInRing) {
                     drawColorLegendCategories(HGC, trackInfo, _tile, model, theme);
                 }
                 break;
@@ -612,7 +616,9 @@ export function drawHeaderLegend(
                 ? model.encodedValue('color', entry.category)
                 : ((entry.spec.color as { value?: string }).value as string)
         );
-        const opacity = Math.max(+(model.encodedValue('opacity') ?? 1) || 1, 0.6);
+        // a category's swatch shows its color at full strength; a labeled track's, close to its own opacity
+        const opacity =
+            entry.category !== undefined ? 1 : Math.max(+(model.encodedValue('opacity') ?? 1) || 1, 0.6);
         graphics.lineStyle(0, 0, 0);
         switch (entry.spec.mark) {
             case 'line':
@@ -636,4 +642,80 @@ export function drawHeaderLegend(
         addText(entry.label, false);
         x += LEGEND_GAP;
     });
+}
+
+/**
+ * The center of a ring on a temporal axis (see `core/mark/ring-center.ts`): the y title and, if it fits, the
+ * color legend. Returns whether the legend was drawn there.
+ */
+export function drawRingCenter(
+    HGC: { libraries: Libraries },
+    trackInfo: any,
+    tile: unknown,
+    model: GoslingTrackModel,
+    theme: Required<CompleteThemeDeep>
+): boolean {
+    const spec = model.spec();
+    const graphics = (tile as { graphics?: import('pixi.js').Graphics })?.graphics;
+    if (!graphics) return false;
+    const y = spec.y;
+    const yTitle = IsChannelDeep(y) && 'title' in y ? y.title : undefined;
+    const color = spec.color;
+    const hasLegend = IsChannelDeep(color) && color.type === 'nominal' && !!color.legend;
+    const innerRadius = spec.innerRadius ?? 0;
+
+    const labelStyle = getTextStyle({
+        color: theme.legend.labelColor,
+        size: theme.legend.labelFontSize,
+        fontWeight: theme.legend.labelFontWeight,
+        fontFamily: theme.legend.labelFontFamily
+    });
+    const styleOf = (bold: boolean) => (bold ? { ...labelStyle, fontWeight: 'bold' as const } : labelStyle);
+    const measure = (text: string, bold: boolean) =>
+        HGC.libraries.PIXI.TextMetrics.measureText(text, new HGC.libraries.PIXI.TextStyle(styleOf(bold))).width;
+
+    const content = {
+        titleLines: yTitle ? wrapText(yTitle, innerRadius * 1.5, measure) : [],
+        legendTitle: hasLegend ? (color as { title?: string }).title ?? spec.style?.legendTitle : undefined,
+        // the whole domain: overlaid rings are separate tracks, so this track may draw only some categories
+        categories: hasLegend
+            ? Array.isArray((color as { domain?: unknown }).domain)
+                ? ((color as { domain: (string | number)[] }).domain as (string | number)[]).map(String)
+                : colorCategories(spec, model.data())
+            : []
+    };
+    const layout = ringCenterLayout(content, innerRadius, measure);
+    const [tw, th] = trackInfo.dimensions;
+    const [cx, cy] = [tw / 2, th / 2];
+    let lineY = cy - layout.height / 2 + RING_LINE_HEIGHT / 2;
+
+    const addText = (text: string, x: number, bold: boolean, anchorX: number) => {
+        const t = new HGC.libraries.PIXI.Text(text, styleOf(bold));
+        t.anchor.x = anchorX;
+        t.anchor.y = 0.5;
+        t.position.x = x;
+        t.position.y = lineY;
+        graphics.addChild(t);
+    };
+    content.titleLines.forEach(line => {
+        addText(line, cx, false, 0.5);
+        lineY += RING_LINE_HEIGHT;
+    });
+    if (!layout.legendInCenter || !hasLegend) return layout.legendInCenter && hasLegend;
+
+    if (content.titleLines.length > 0) lineY += RING_LINE_HEIGHT / 2;
+    const left = cx - layout.width / 2;
+    if (content.legendTitle) {
+        addText(content.legendTitle, left, true, 0);
+        lineY += RING_LINE_HEIGHT;
+    }
+    content.categories.forEach(category => {
+        graphics.lineStyle(0, 0, 0);
+        graphics.beginFill(colorToHex(model.encodedValue('color', category)), 1);
+        graphics.drawCircle(left + 4, lineY, 4);
+        graphics.endFill();
+        addText(category, left + 14, false, 0);
+        lineY += RING_LINE_HEIGHT;
+    });
+    return true;
 }
