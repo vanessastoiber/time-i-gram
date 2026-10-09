@@ -56,8 +56,10 @@ export function isFinerUnit(a: TimeUnit, b: TimeUnit): boolean {
 
 /** Unix seconds of a UTC calendar date; month and day may overflow (month 13 is January of the next year). */
 export function utc(year: number, month: number, day = 1, secondsOfDay = 0): number {
+    // `Date.UTC` maps years 0-99 to 1900-1999, so only those need a full year set explicitly (slower; this
+    // function runs for every row of a period axis)
+    if (year >= 100 || year < 0) return Date.UTC(year, month - 1, day) / 1000 + secondsOfDay;
     const date = new Date(Date.UTC(2000, 0, 1));
-    // `Date.UTC` maps years 0-99 to 1900-1999, so set the full year explicitly.
     date.setUTCFullYear(year, month - 1, day);
     return date.getTime() / 1000 + secondsOfDay;
 }
@@ -136,6 +138,11 @@ export function isoWeekDate(t: number) {
     const week = Math.floor((thursday - utc(year, 1)) / WEEK) + 1;
     const weekday = Math.floor((t - monday) / DAY) + 1;
     return { year, week, weekday };
+}
+
+/** ISO weekday of an instant (1 = Monday ... 7 = Sunday), without the week-year. */
+export function isoWeekday(t: number): number {
+    return Math.floor((t - EPOCH_MONDAY) / DAY) - Math.floor((t - EPOCH_MONDAY) / WEEK) * 7 + 1;
 }
 
 /** Number of ISO weeks (52 or 53) in an ISO week-year. */

@@ -1,4 +1,6 @@
 import {
+    isoWeekday,
+    utc,
     TIME_UNITS,
     UNIT_SECONDS,
     ceilUnitEnd,
@@ -176,5 +178,28 @@ describe('parseDuration', () => {
         expect(parseUnitName('Months')).toEqual('month');
         expect(parseUnitName('hrs')).toEqual('hour');
         expect(parseUnitName('fortnight')).toBeUndefined();
+    });
+});
+
+describe('fast calendar helpers', () => {
+    it('utc() agrees with the Date API for every month boundary, overflowing months and years before 100', () => {
+        const viaDate = (y: number, m: number, d: number) => {
+            const date = new Date(Date.UTC(2000, 0, 1));
+            date.setUTCFullYear(y, m - 1, d);
+            return date.getTime() / 1000;
+        };
+        for (const year of [-5, 0, 1, 50, 99, 100, 1918, 1969, 1970, 2000, 2016, 9999]) {
+            for (const month of [-1, 0, 1, 2, 12, 13, 25]) {
+                for (const day of [0, 1, 29, 31]) expect(utc(year, month, day)).toEqual(viaDate(year, month, day));
+            }
+        }
+        expect(utc(2016, 4, 12, 3600)).toEqual(Date.UTC(2016, 3, 12, 1) / 1000);
+    });
+
+    it('isoWeekday() is the weekday of isoWeekDate(), also before 1970', () => {
+        for (let t = Date.UTC(1965, 0, 1) / 1000; t < Date.UTC(1965, 0, 1) / 1000 + 20 * 86400; t += 7919) {
+            expect(isoWeekday(t)).toEqual(isoWeekDate(t).weekday);
+        }
+        expect(isoWeekday(Date.UTC(2016, 3, 17, 7) / 1000)).toEqual(7); // a Sunday
     });
 });

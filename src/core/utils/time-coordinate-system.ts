@@ -22,6 +22,7 @@ import {
     floorTime,
     isoWeekDate,
     isoWeekStart,
+    isoWeekday,
     offsetTime,
     parseTimeValue,
     utc,
@@ -150,7 +151,7 @@ export function periodReference(cs: PeriodTime): [number, number] {
 
 /** Days from the most recent period start of a week (weekday `start`) to `t`'s day. */
 function daysIntoWeek(t: number, start: number) {
-    return (isoWeekDate(t).weekday - start + 7) % 7;
+    return (isoWeekday(t) - start + 7) % 7;
 }
 
 /** The start (Unix seconds) of the period that contains `t`. */
@@ -201,7 +202,7 @@ export function toPeriodCoordinate(t: number, cs: PeriodTime): number {
             if (cs.weekBased) {
                 // weeks since the start of the season: week 1 follows the last week of the previous year, so a
                 // season without a week 53 leaves the last of the 53 slots empty
-                const { weekday } = isoWeekDate(t);
+                const weekday = isoWeekday(t);
                 const weeks = Math.round((floorTime(t, 'week') - periodStartOf(t, cs)) / WEEK);
                 return refStart + weeks * WEEK + (weekday - 1) * DAY + secondsOfDay;
             }
