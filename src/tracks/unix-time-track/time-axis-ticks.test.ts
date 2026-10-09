@@ -6,7 +6,7 @@ const s = (iso: string) => Date.parse(`${iso}Z`) / 1000;
 describe('time axis ticks', () => {
     it('label absolute time with dates and a context', () => {
         const { labels, context } = timeAxisTicks([s('2010-01-01T00:00:00'), s('2011-01-01T00:00:00')]);
-        expect(labels).toContain('March');
+        expect(labels).toContain('Mar');
         expect(context).toEqual('2010');
     });
 
@@ -172,5 +172,17 @@ describe('context label of absolute axes (G5)', () => {
         // hourly ticks: the day
         expect(timeAxisTicks([t('2016-02-03T06:00:00'), t('2016-02-03T18:00:00')]).context).toEqual('2016 Feb 3');
         expect(timeAxisTicks([t('2016-02-03T18:00:00'), t('2016-02-04T06:00:00')]).context).toEqual('2016 Feb 3–4');
+    });
+});
+
+describe('absolute tick labels (M9)', () => {
+    const t = (iso: string) => Date.parse(`${iso}Z`) / 1000;
+    it('use 24-hour times and short month names', () => {
+        const hour = timeAxisTicks([t('2016-02-03T12:35:00'), t('2016-02-03T13:35:00')]);
+        expect(hour.labels).toContain('13:00');
+        expect(hour.labels.join(' ')).not.toMatch(/PM|AM/);
+        expect(hour.context).toEqual('2016 Feb 3, 12:35\u201313:35');
+        const year = timeAxisTicks([t('2022-01-01T00:00:00'), t('2023-01-01T00:00:00')]);
+        expect(year.labels.slice(0, 3)).toEqual(['2022', 'Feb', 'Mar']);
     });
 });

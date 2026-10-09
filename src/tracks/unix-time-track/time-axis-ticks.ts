@@ -31,7 +31,6 @@ const formatDate = utcFormat('%Y %b %-d');
 const formatDayOfMonthOnly = utcFormat('%-d');
 const formatMonthDayOnly = utcFormat('%b %-d');
 const formatMonthOnly = utcFormat('%b');
-const formatContextHour = utcFormat('%Y %b %-d, %H:00');
 const formatContextMinute = utcFormat('%Y %b %-d, %H:%M');
 const formatContextSecond = utcFormat('%Y %b %-d, %H:%M:%S');
 
@@ -50,7 +49,11 @@ function absoluteContext([start, end]: [number, number], tickDelta: number): str
         format(a) === format(b) ? format(a) : `${format(a)} ${EN_DASH} ${format(b)}`;
     if (tickDelta < UNIT_SECONDS.second) return range(formatContextSecond);
     if (tickDelta < UNIT_SECONDS.minute) return range(formatContextMinute);
-    if (tickDelta < UNIT_SECONDS.hour) return range(formatContextHour);
+    if (tickDelta < UNIT_SECONDS.hour) {
+        // minute ticks: the visible times, e.g. "2016 Feb 3, 12:35\u201313:35"
+        if (formatDate(a) !== formatDate(b)) return range(formatContextMinute);
+        return `${formatDate(a)}, ${formatTickTime(a)}${EN_DASH}${formatTickTime(new Date(end * 1000))}`;
+    }
     if (tickDelta < DAY) {
         if (sameMonth)
             return formatDate(a) === formatDate(b)
@@ -162,10 +165,30 @@ function relativeTicks(domain: [number, number], cs: RelativeTime, count: number
     };
 }
 
+const formatTickMillisecond = utcFormat('.%L');
+const formatTickSecond = utcFormat(':%S');
+const formatTickTime = utcFormat('%H:%M');
+const formatTickDay = utcFormat('%b %-d');
+const formatTickMonth = utcFormat('%b');
+const formatTickYear = utcFormat('%Y');
+
+/**
+ * Label of an absolute tick at the coarsest unit it starts (as d3's multi-scale format, but with 24-hour times
+ * and short month names, which stay readable and short): ".250", ":30", "13:00", "Feb 3", "Feb", "2022".
+ */
+function formatAbsoluteTick(date: Date): string {
+    if (date.getUTCMilliseconds() !== 0) return formatTickMillisecond(date);
+    if (date.getUTCSeconds() !== 0) return formatTickSecond(date);
+    if (date.getUTCHours() !== 0 || date.getUTCMinutes() !== 0) return formatTickTime(date);
+    if (date.getUTCDate() !== 1) return formatTickDay(date);
+    if (date.getUTCMonth() !== 0) return formatTickMonth(date);
+    return formatTickYear(date);
+}
+
 function absoluteTicks(domain: [number, number], count: number): TimeAxisTicks {
     const scale = scaleUtc().domain(domain.map(d => d * 1000));
     const dates = scale.ticks(count);
-    const format = scale.tickFormat(count);
+    const format = formatAbsoluteTick;
     const delta = dates.length > 1 ? (+dates[1] - +dates[0]) / 1000 : Infinity;
     return {
         ticks: dates.map(d => +d / 1000),
