@@ -106,3 +106,16 @@ describe('header legends of stroked marks', () => {
         expect(legend.entries.map(e => e.label)).toEqual(['A', 'B']);
     });
 });
+
+describe('links under a header strip', () => {
+    it('are at most as high as the row below the header', () => {
+        const link = (extra: object) =>
+            new GoslingTrackModel(
+                track({ mark: 'withinLink', x1: { field: 'e', type: 'temporal' }, y: undefined, ...extra }),
+                [{ t: 1, e: 2 }],
+                getTheme()
+            ).spec().y as any;
+        expect(link({}).value).toEqual(100);
+        expect(link({ _headerHeight: 16 }).value).toEqual(100 - 16 - 7);
+    });
+});

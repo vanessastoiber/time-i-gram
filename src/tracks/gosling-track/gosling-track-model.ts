@@ -617,7 +617,7 @@ export class GoslingTrackModel {
                             value = (spec.width as number) / 2.0;
                             break;
                         case 'y':
-                            if (spec.mark === 'withinLink') value = rowHeight;
+                            if (spec.mark === 'withinLink') value = rowHeight - headerHeightIn(spec, rowHeight);
                             else value = rowHeight / 2.0;
                             break;
                         case 'size':
