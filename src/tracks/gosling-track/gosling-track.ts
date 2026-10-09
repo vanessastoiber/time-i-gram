@@ -51,6 +51,7 @@ import {
     isRowInTile
 } from '../../core/utils/time-coordinate-system';
 import { publish } from '../../api/pubsub';
+import { combineTemporalTiles, combineTilesUpstream } from './combine-tiles';
 import { getRelativeGenomicPosition } from '../../core/utils/assembly';
 import { getTextStyle } from '../../core/utils/text-style';
 import {
@@ -139,7 +140,7 @@ interface ProcessedTileInfo {
     /** Single tile can contain multiple gosling models if multiple tracks are superposed */
     goslingModels: GoslingTrackModel[];
     tabularData: Datum[];
-    /** The tile's own rows, kept when the rows of all visible tiles are combined into the first tile */
+    /** The tile's own rows, kept when the rows of all visible tiles are combined (see `combine-tiles.ts`) */
     ownTabularData?: Datum[];
     /** Flag variable that indicate that rendering of this tile should be skipped */
     skipRendering: boolean;
@@ -799,60 +800,32 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
 
             const tiles = this.visibleAndFetchedTiles();
 
-            // undo a previous combination: the visible tiles may have changed since
-            tiles.forEach(tile => {
-                const tileInfo = this.#processedTileInfo[tile.tileId];
-                if (!tileInfo) return;
-                tileInfo.skipRendering = false;
-                if (tileInfo.ownTabularData) tileInfo.tabularData = tileInfo.ownTabularData;
-            });
+            if (hasDataTransform(this.options.spec, 'displace')) {
+                // upstream Gosling's path, unchanged
+                if (!tiles || tiles.length <= 1) {
+                    // Does not make sense to combine tiles
+                    return;
+                }
 
-            if (!tiles || tiles.length <= 1) {
-                // Does not make sense to combine tiles
+                // Increase the size of tiles by length
+                this.tileSize = (this.tilesetInfo?.tile_size ?? 1024) * tiles.length;
+
+                combineTilesUpstream(tiles.map(tile => this.#processedTileInfo[tile.tileId]));
                 return;
             }
 
-            const isDisplace = hasDataTransform(this.options.spec, 'displace');
-            if (isDisplace) {
-                // Increase the size of tiles by length
-                this.tileSize = (this.tilesetInfo?.tile_size ?? 1024) * tiles.length;
-            }
-
-            let merged: Datum[] = [];
-
-            tiles.forEach((tile, i) => {
-                const tileInfo = this.#processedTileInfo[tile.tileId];
-                if (tileInfo) {
-                    // Combine data (each tile's own rows: the first tile may hold a previous combination)
-                    tileInfo.ownTabularData = tileInfo.ownTabularData ?? tileInfo.tabularData;
-                    merged = [...merged, ...tileInfo.ownTabularData];
-
-                    // Since we merge the data to the first one, skip rendering the rest
-                    tileInfo.skipRendering = i !== 0;
-                }
-            });
-
-            const firstTileInfo = this.#processedTileInfo[tiles[0].tileId];
-            firstTileInfo.tabularData = merged;
-
-            // Remove duplicated if any. Sparse tiles can have duplications.
-            if (firstTileInfo.tabularData[0]?.uid) {
-                firstTileInfo.tabularData = uniqBy(firstTileInfo.tabularData, 'uid');
-            } else if (!isDisplace) {
-                // the time data fetchers return the same row objects in every tile that needs them
-                firstTileInfo.tabularData = Array.from(new Set(firstTileInfo.tabularData));
-            }
+            // lines and areas on a temporal axis
+            combineTemporalTiles(tiles.map(tile => this.#processedTileInfo[tile.tileId]));
+            if (tiles.length <= 1 || !this.#processedTileInfo[tiles[0].tileId] || !this.tilesetInfo) return;
 
             // the combined rows cover all visible tiles (see `#rowsOfTileForTimeUnit`)
-            if (!isDisplace && this.tilesetInfo) {
-                const bounds = tiles
-                    .filter(tile => tile.tileData.tilePos)
-                    .map(tile => this.getTilePosAndDimensions(tile.tileData.zoomLevel, tile.tileData.tilePos!));
-                this.#combinedTileBounds = [
-                    Math.min(...bounds.map(b => b.tileX)),
-                    Math.max(...bounds.map(b => b.tileX + b.tileWidth))
-                ];
-            }
+            const bounds = tiles
+                .filter(tile => tile.tileData.tilePos)
+                .map(tile => this.getTilePosAndDimensions(tile.tileData.zoomLevel, tile.tileData.tilePos!));
+            this.#combinedTileBounds = [
+                Math.min(...bounds.map(b => b.tileX)),
+                Math.max(...bounds.map(b => b.tileX + b.tileWidth))
+            ];
         }
         /**
          * Check whether tiles should be merged. Needs to be public since called by combineAllTilesIfNeeded()
