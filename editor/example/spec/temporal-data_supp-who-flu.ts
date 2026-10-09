@@ -10,7 +10,9 @@ import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 // (ISO_YEAR keeps the real year), which is what stacks the seasons on one ring. It was made by hand,
 // and ISO week 1 of 2013, 2014 and 2015 starts in late December, so those points sit at the end of
 // the ring instead of the start. Left as is on purpose: a period-based cyclic layout should replace
-// this preprocessing.
+// this preprocessing (see the period example).
+// Since fixed: the two linear views show the end and the start of the season instead of the same range, the
+// timeline covers all years, and every view has titles, axis titles and a year legend.
 
 const SUPERIMPOSED_DATA = {
     url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/5_who-flu/who_flu_usa_superimposed',
@@ -18,11 +20,21 @@ const SUPERIMPOSED_DATA = {
     dateFields: ['ISO_SDATE']
 };
 
+const YEARS = {
+    field: 'ISO_YEAR',
+    type: 'nominal',
+    domain: ['2010', '2011', '2012', '2013', '2014'],
+    range: ['#C635BB', '#E5C011', '#12C340', '#1279C3', '#CC2F06'],
+    title: 'Year'
+} as const;
+
 const spec = {
+    title: 'Does the flu season peak at the same time every year?',
+    subtitle: 'Weekly influenza A cases in the USA, 2010 to 2014, with every year drawn over 2010',
     xDomain: { interval: [1251763200, 1333238400] },
 
     arrangement: 'vertical',
-    spacing: 0,
+    spacing: 20,
 
     views: [
         {
@@ -30,6 +42,7 @@ const spec = {
             spacing: 0,
             layout: 'circular',
             alignment: 'stack',
+            centerRadius: 0.45,
             // one ring per year: the superimposed data covers 2010 only
             xDomain: { interval: [1262304000, 1293840000] },
 
@@ -41,16 +54,10 @@ const spec = {
                     size: { value: 2.5 },
 
                     // Color encodes year for comparison across cycles
-                    color: {
-                        field: 'ISO_YEAR',
-                        type: 'nominal',
-                        legend: true,
-                        domain: ['2010', '2011', '2012', '2013', '2014'],
-                        range: ['#C635BB', '#E5C011', '#12C340', '#1279C3', '#CC2F06']
-                    },
+                    color: { ...YEARS, legend: true },
 
                     x: { field: 'ISO_SDATE', type: 'temporal', axis: 'top' },
-                    y: { field: 'INF_A', type: 'quantitative', domain: [0, 15000] },
+                    y: { field: 'INF_A', type: 'quantitative', domain: [0, 15000], title: 'Cases per week' },
 
                     style: { outlineWidth: 0 },
                     width: 400,
@@ -61,60 +68,57 @@ const spec = {
 
         {
             // --- Linear comparison views: support direct year-to-year comparison ---
-            spacing: 0,
+            spacing: 30,
             arrangement: 'horizontal',
 
+            // the two halves of the season: its end (January to May) and its start (September to December)
             views: [
                 {
+                    xDomain: { interval: ['2010-01', '2010-05'] },
                     tracks: [
                         {
+                            title: 'End of the season',
                             data: SUPERIMPOSED_DATA,
                             mark: 'line',
                             size: { value: 2.5 },
 
-                            color: {
-                                field: 'ISO_YEAR',
-                                type: 'nominal',
-                                domain: ['2010', '2011', '2012', '2013', '2014'],
-                                range: ['#C635BB', '#E5C011', '#12C340', '#1279C3', '#CC2F06']
-                            },
-
-                            x: { field: 'ISO_SDATE', type: 'temporal', axis: 'bottom' },
-                            y: {
-                                field: 'INF_A',
-                                type: 'quantitative',
-                                domain: [0, 10000]
-                            },
-
-                            width: 300
-                        }
-                    ]
-                },
-                {
-                    tracks: [
-                        {
-                            data: SUPERIMPOSED_DATA,
-                            mark: 'line',
-                            size: { value: 2.5 },
-
-                            // Legend shown only once to reduce redundancy
-                            color: {
-                                field: 'ISO_YEAR',
-                                type: 'nominal',
-                                legend: true,
-                                domain: ['2010', '2011', '2012', '2013', '2014'],
-                                range: ['#C635BB', '#E5C011', '#12C340', '#1279C3', '#CC2F06']
-                            },
+                            color: YEARS,
 
                             x: { field: 'ISO_SDATE', type: 'temporal', axis: 'bottom' },
                             y: {
                                 field: 'INF_A',
                                 type: 'quantitative',
                                 domain: [0, 10000],
-                                axis: 'none'
+                                title: 'Cases per week'
                             },
 
-                            width: 300
+                            width: 300,
+                            height: 150
+                        }
+                    ]
+                },
+                {
+                    xDomain: { interval: ['2010-09', '2010-12'] },
+                    tracks: [
+                        {
+                            title: 'Start of the season',
+                            data: SUPERIMPOSED_DATA,
+                            mark: 'line',
+                            size: { value: 2.5 },
+
+                            // the legend of these colors is in the center of the ring
+                            color: YEARS,
+
+                            x: { field: 'ISO_SDATE', type: 'temporal', axis: 'bottom' },
+                            y: {
+                                field: 'INF_A',
+                                type: 'quantitative',
+                                domain: [0, 10000],
+                                title: 'Cases per week'
+                            },
+
+                            width: 300,
+                            height: 150
                         }
                     ]
                 }
@@ -124,8 +128,11 @@ const spec = {
         {
             // --- Timeline overview: provides global temporal context ---
             alignment: 'overlay',
+            title: 'All weeks, 2010 to 2014',
             width: 600,
-            height: 110,
+            height: 130,
+            // the whole timeline, so that every year's band is visible
+            xDomain: { interval: ['2010', '2014'] },
 
             data: {
                 url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/5_who-flu/who_flu_usa.csv',
@@ -135,103 +142,17 @@ const spec = {
 
             tracks: [
                 {
-                    // Aggregate flu cases over time
+                    // Weekly flu cases over time, colored by year as in the ring (the published figure drew
+                    // colored year bands with labels above the bars instead)
                     mark: 'bar',
-                    color: { value: 'black' },
+                    color: { ...YEARS, legend: true },
                     size: { value: 5 },
 
                     x: { field: 'ISO_SDATE', type: 'temporal', axis: 'bottom' },
-                    y: { field: 'INF_A', type: 'quantitative', domain: [0, 8000] },
+                    y: { field: 'INF_A', type: 'quantitative', domain: [0, 14000], title: 'Cases per week' },
 
                     width: 400,
-                    height: 110
-                },
-
-                {
-                    // Highlight yearly intervals (week 1 as anchor)
-                    mark: 'rect',
-                    dataTransform: [
-                        { type: 'filter', field: 'ISO_WEEK', oneOf: ['1'] },
-                        {
-                            type: 'interval',
-                            field: 'ISO_YEAR',
-                            yearField: 'ISO_YEAR',
-                            weekField: 'ISO_WEEK',
-                            transformedDateField: 'ISO_SDATE',
-                            newField: 'NEXT_YEAR'
-                        }
-                    ],
-
-                    color: {
-                        field: 'ISO_YEAR',
-                        type: 'nominal',
-                        domain: ['2010', '2011', '2012', '2013', '2014'],
-                        range: ['#C635BB', '#E5C011', '#12C340', '#1279C3', '#CC2F06']
-                    },
-
-                    x: { field: 'ISO_SDATE', type: 'temporal' },
-                    xe: { field: 'NEXT_YEAR', type: 'temporal' },
-
-                    y: { value: 100 },
-                    size: { value: 15 }
-                },
-
-                {
-                    // Year labels
-                    dataTransform: [
-                        { type: 'filter', field: 'ISO_WEEK', oneOf: ['1'] },
-                        {
-                            type: 'interval',
-                            field: 'ISO_YEAR',
-                            yearField: 'ISO_YEAR',
-                            weekField: 'ISO_WEEK',
-                            transformedDateField: 'ISO_SDATE',
-                            newField: 'NEXT_YEAR'
-                        },
-                        {
-                            type: 'filter',
-                            field: 'ISO_YEAR',
-                            oneOf: ['2015'],
-                            not: true
-                        }
-                    ],
-
-                    mark: 'text',
-                    text: { field: 'ISO_YEAR', type: 'nominal' },
-                    color: { value: 'white' },
-
-                    x: { field: 'ISO_SDATE', type: 'temporal' },
-                    xe: { field: 'NEXT_YEAR', type: 'temporal' },
-
-                    size: { value: 15 },
-                    style: { textFontSize: 5, dy: 45 }
-                },
-
-                {
-                    // Year boundary lines
-                    dataTransform: [
-                        { type: 'filter', field: 'ISO_WEEK', oneOf: ['1'] },
-                        {
-                            type: 'interval',
-                            field: 'ISO_YEAR',
-                            yearField: 'ISO_YEAR',
-                            weekField: 'ISO_WEEK',
-                            transformedDateField: 'ISO_SDATE',
-                            newField: 'NEXT_YEAR'
-                        },
-                        {
-                            type: 'filter',
-                            field: 'ISO_YEAR',
-                            oneOf: ['2015'],
-                            not: true
-                        }
-                    ],
-
-                    mark: 'rule',
-                    color: { value: 'lightgray' },
-
-                    x: { field: 'ISO_SDATE', type: 'temporal' },
-                    strokeWidth: { value: 1 }
+                    height: 130
                 }
             ]
         }
