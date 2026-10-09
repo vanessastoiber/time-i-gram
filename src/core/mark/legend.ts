@@ -339,8 +339,12 @@ export function drawColorLegendCategories(
     /* render */
     const graphics = track.pBorder; // use pBorder not to be affected by zoomming
 
+    // legends of temporal tracks (on rings; linear ones are in the header strip) are compact and titled
+    const isTemporal = IsChannelDeep(spec.x) && spec.x.type === 'temporal';
+    const legendTitle = spec.style?.legendTitle ?? (isTemporal ? spec.color.title : undefined);
+
     const paddingX = 10;
-    const paddingY = 4;
+    const paddingY = isTemporal ? 2 : 4;
     let cumY = paddingY;
     let maxWidth = 0;
 
@@ -394,8 +398,8 @@ export function drawColorLegendCategories(
     } else {
         // Show legend vertically
 
-        if (spec.style?.legendTitle) {
-            const textGraphic = new HGC.libraries.PIXI.Text(spec.style?.legendTitle, {
+        if (legendTitle) {
+            const textGraphic = new HGC.libraries.PIXI.Text(legendTitle, {
                 ...labelTextStyle,
                 fontWeight: 'bold'
             });
@@ -405,7 +409,9 @@ export function drawColorLegendCategories(
             textGraphic.position.y = track.position[1] + cumY;
 
             const textStyleObj = new HGC.libraries.PIXI.TextStyle({ ...labelTextStyle, fontWeight: 'bold' });
-            const textMetrics = HGC.libraries.PIXI.TextMetrics.measureText(spec.style?.legendTitle, textStyleObj);
+            const textMetrics = HGC.libraries.PIXI.TextMetrics.measureText(legendTitle, textStyleObj);
+            // the box fits the title (temporal tracks only: genomic legends are drawn as upstream)
+            if (isTemporal) maxWidth = Math.max(maxWidth, textMetrics.width + paddingX * 2);
 
             graphics.addChild(textGraphic);
 
