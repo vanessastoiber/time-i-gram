@@ -117,6 +117,20 @@ export function rowsInVisibleArc<T extends Datum>(spec: SingleTrack, rows: T[], 
     return rows.filter(row => min <= +row[field] && +row[field] <= max);
 }
 
+/**
+ * The track models drawn in the visible tiles (not skipped, and visible at `zoomLevel`): a header legend lists the
+ * categories of all of them, since each tile holds only its own rows.
+ */
+export function modelsOfVisibleTiles(
+    tileInfos: (Pick<ProcessedTileInfo, 'goslingModels' | 'skipRendering'> | undefined)[],
+    zoomLevel: number
+): GoslingTrackModel[] {
+    return tileInfos
+        .filter(info => info && !info.skipRendering)
+        .flatMap(info => info!.goslingModels)
+        .filter(model => model.trackVisibility({ zoomLevel }));
+}
+
 export const PRINT_RENDERING_CYCLE = false;
 
 // For using libraries, refer to https://github.com/higlass/higlass/blob/f82c0a4f7b2ab1c145091166b0457638934b15f3/app/scripts/configs/available-for-plugins.js
@@ -446,9 +460,13 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                 drawMark(HGC, this, tile, model);
                 drawPostEmbellishment(HGC, this, tile, model, this.options.theme);
             });
-            // linear tracks on a temporal axis: one legend in the header strip for all overlaid tracks
+            // linear tracks on a temporal axis: one legend in the header strip for all overlaid tracks, with the
+            // categories of all visible tiles (each tile redraws the header)
             if (usesTemporalHeader(visibleModels.map(model => model.spec()))) {
-                drawHeaderLegend(HGC, this, visibleModels, this.options.theme);
+                const trackWidth = this.dimensions[0];
+                const zoomLevel = this._xScale.invert(trackWidth) - this._xScale.invert(0);
+                const tileInfos = this.visibleAndFetchedTiles().map(t => this.#processedTileInfo[t.tileId]);
+                drawHeaderLegend(HGC, this, modelsOfVisibleTiles(tileInfos, zoomLevel), this.options.theme);
             }
 
             this.forceDraw();

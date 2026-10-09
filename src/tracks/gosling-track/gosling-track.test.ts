@@ -1,4 +1,10 @@
-import { PRINT_RENDERING_CYCLE, drawsTemporalLines, publishGenomicLocation, rowsInVisibleArc } from './gosling-track';
+import {
+    PRINT_RENDERING_CYCLE,
+    drawsTemporalLines,
+    modelsOfVisibleTiles,
+    publishGenomicLocation,
+    rowsInVisibleArc
+} from './gosling-track';
 import { subscribe, unsubscribe } from '../../api/pubsub';
 
 describe('Check debug-purpose variables', () => {
@@ -74,5 +80,21 @@ describe('circular temporal lines and areas', () => {
         expect(rowsInVisibleArc(spec({ layout: 'linear' }), rows, [10, 20])).toBe(rows);
         expect(rowsInVisibleArc(spec({ mark: 'point' }), rows, [10, 20])).toBe(rows);
         expect(rowsInVisibleArc(spec({ x: { field: 'x', type: 'genomic' } }), rows, [10, 20])).toBe(rows);
+    });
+});
+
+describe('models of the header legend', () => {
+    const model = (visible: boolean) => ({ trackVisibility: () => visible }) as any;
+    it('come from every visible tile, not only the one being drawn', () => {
+        const a = model(true);
+        const b = model(true);
+        const hidden = model(false);
+        const tiles = [
+            { goslingModels: [a], skipRendering: false },
+            { goslingModels: [b, hidden], skipRendering: false },
+            { goslingModels: [model(true)], skipRendering: true },
+            undefined
+        ];
+        expect(modelsOfVisibleTiles(tiles, 100)).toEqual([a, b]);
     });
 });
