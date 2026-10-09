@@ -53,6 +53,14 @@ import {
 import { publish } from '../../api/pubsub';
 import { combineTemporalTiles, combineTilesUpstream } from './combine-tiles';
 import { modelsCacheKey } from './model-cache';
+import {
+    colorCategories,
+    headerLayout,
+    headerLegend,
+    usesTemporalHeader,
+    yAxisTitles
+} from '../../core/mark/temporal-header';
+import { drawHeaderLegend } from '../../core/mark/legend';
 import { getRelativeGenomicPosition } from '../../core/utils/assembly';
 import { getTextStyle } from '../../core/utils/text-style';
 import {
@@ -424,6 +432,7 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
 
             // Because a single tile contains one track or multiple tracks overlaid, we draw marks and embellishments
             // for each GoslingTrackModel
+            const visibleModels: GoslingTrackModel[] = [];
             tileInfo.goslingModels.forEach((model: GoslingTrackModel) => {
                 // check visibility condition
                 const trackWidth = this.dimensions[0];
@@ -432,10 +441,15 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                 if (!model.trackVisibility({ zoomLevel })) {
                     return;
                 }
+                visibleModels.push(model);
                 drawPreEmbellishment(HGC, this, tile, model, this.options.theme);
                 drawMark(HGC, this, tile, model);
                 drawPostEmbellishment(HGC, this, tile, model, this.options.theme);
             });
+            // linear tracks on a temporal axis: one legend in the header strip for all overlaid tracks
+            if (usesTemporalHeader(visibleModels.map(model => model.spec()))) {
+                drawHeaderLegend(HGC, this, visibleModels, this.options.theme);
+            }
 
             this.forceDraw();
         }
@@ -878,6 +892,18 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
             return drawsTemporalLines(this.#getResolvedTracks());
         }
 
+        /** Width of a text in the legend style, in px. */
+        #measureText = (text: string, bold: boolean) => {
+            const { legend } = this.options.theme;
+            const style = getTextStyle({
+                color: legend.labelColor,
+                size: legend.labelFontSize,
+                fontWeight: bold ? 'bold' : legend.labelFontWeight,
+                fontFamily: legend.labelFontFamily
+            });
+            return HGC.libraries.PIXI.TextMetrics.measureText(text, new HGC.libraries.PIXI.TextStyle(style)).width;
+        };
+
         /**
          * Creates an array of SingleTracks if there are overlaid tracks
          */
@@ -994,6 +1020,20 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
             tileInfo.goslingModels = [];
 
             const resolvedTracks = this.#getResolvedTracks();
+
+            // linear tracks on a temporal axis: a header strip at the top for the title and the legend, so that
+            // they cover neither the y axis nor the data (the y range starts below it, see `GoslingTrackModel`)
+            if (usesTemporalHeader(resolvedTracks)) {
+                const legend = headerLegend(resolvedTracks, spec => colorCategories(spec, tileInfo.tabularData));
+                const layout = headerLayout(
+                    resolvedTracks[0].title,
+                    yAxisTitles(resolvedTracks),
+                    legend,
+                    this.dimensions[0],
+                    this.#measureText
+                );
+                resolvedTracks.forEach(spec => Object.assign(spec, { _headerHeight: layout.height, _header: layout }));
+            }
             resolvedTracks.forEach(resolvedSpec => {
                 let tabularDataTransformed = this.#rowsOfTileForTimeUnit(tile, resolvedSpec, tileInfo.tabularData);
                 resolvedSpec.dataTransform?.forEach(t => {

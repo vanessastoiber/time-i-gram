@@ -598,6 +598,12 @@ export interface Style {
      * If defined, show legend title on the top or left
      */
     legendTitle?: string;
+    /**
+     * Label of this track in the legend, for a track with a constant `color` (e.g. one of several overlaid lines,
+     * areas or bars): the legend shows the label next to a swatch of the track's mark and color. Drawn in the
+     * header legend of linear tracks on a temporal axis.
+     */
+    legendLabel?: string;
 
     // below options could instead be used with channel options (e.g., size, stroke, strokeWidth)
     /**
@@ -892,6 +898,11 @@ export interface Period {
 export interface Y extends AxisCommon {
     /** Specify the data type. A `temporal` axis is only supported on `x`. */
     type?: 'quantitative' | 'nominal' | 'genomic';
+    /**
+     * Title of the y axis, with units, e.g. `"Consumption (Wh)"`. Drawn above the axis ("↑ Consumption (Wh)")
+     * in the header strip of linear tracks on a temporal axis, and in the center of a ring in circular layouts.
+     */
+    title?: string;
     /** Custom baseline of the y-axis. __Default__: `0` */
     baseline?: string | number;
     /** Specify whether to use zero baseline. __Default__: `true`  */

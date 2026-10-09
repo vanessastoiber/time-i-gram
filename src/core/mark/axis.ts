@@ -7,6 +7,7 @@ import type { CompleteThemeDeep } from '../utils/theme';
 import { cartesianToPolar, isAnticlockwise, valueToRadian } from '../utils/polar';
 import { isNumberArray, isStringArray } from '../utils/array';
 import { getTextStyle } from '../utils/text-style';
+import { HEADER_LINE_HEIGHT, yTitleLabel, type HeaderLayout } from './temporal-header';
 
 const EXTENT_TICK_SIZE = 8;
 const TICK_SIZE = 6;
@@ -78,6 +79,8 @@ export function drawLinearYAxis(
         const rowPosition = model.encodedValue('row', category);
         const dx = isLeft ? tx : tx + tw;
         const dy = ty + rowPosition;
+        // the axis spans the range of the scale: the whole row, or the row below a header strip
+        const top = rowHeight - Math.max(...(yRange as number[]));
 
         /* Axis Baseline */
         graphics.lineStyle(
@@ -86,7 +89,7 @@ export function drawLinearYAxis(
             1, // alpha
             0.5 // alignment of the line to draw, (0 = inner, 0.5 = middle, 1 = outter)
         );
-        graphics.moveTo(dx, dy);
+        graphics.moveTo(dx, dy + top);
         graphics.lineTo(dx, dy + rowHeight);
 
         /* Ticks */
@@ -113,8 +116,8 @@ export function drawLinearYAxis(
 
         // Two ticks on the bottom and top
         tickEnd = isLeft ? dx + EXTENT_TICK_SIZE : dx - EXTENT_TICK_SIZE;
-        graphics.moveTo(dx, dy);
-        graphics.lineTo(tickEnd, dy);
+        graphics.moveTo(dx, dy + top);
+        graphics.lineTo(tickEnd, dy + top);
         graphics.moveTo(dx, dy + rowHeight);
         graphics.lineTo(tickEnd, dy + rowHeight);
 
@@ -144,6 +147,43 @@ export function drawLinearYAxis(
             graphics.addChild(textGraphic);
         });
     });
+
+    drawLinearYAxisTitle(HGC, trackInfo, model, theme, isLeft);
+}
+
+/**
+ * The title of a linear y axis (`y.title`), above the axis in the track's header strip (linear tracks on a
+ * temporal axis, see `core/mark/temporal-header.ts`): "\u2191 Title" on the left, "Title \u2191" on the right.
+ * Tracks without a header strip do not draw y titles.
+ */
+function drawLinearYAxisTitle(
+    HGC: { libraries: { PIXI: typeof import('pixi.js') } },
+    trackInfo: any,
+    model: GoslingTrackModel,
+    theme: Required<CompleteThemeDeep>,
+    isLeft: boolean
+) {
+    const spec = model.spec();
+    const layout = (spec as { _header?: HeaderLayout })._header;
+    const yChannel = spec.y;
+    const title = IsChannelDeep(yChannel) && 'title' in yChannel ? yChannel.title : undefined;
+    if (!title || !layout || layout.height === 0) return;
+    const [tw] = trackInfo.dimensions;
+    const [tx, ty] = trackInfo.position;
+    const textGraphic = new HGC.libraries.PIXI.Text(
+        yTitleLabel(title, isLeft ? 'left' : 'right'),
+        getTextStyle({
+            color: theme.axis.labelColor,
+            size: theme.axis.labelFontSize,
+            fontFamily: theme.axis.labelFontFamily,
+            fontWeight: theme.axis.labelFontWeight
+        })
+    );
+    textGraphic.anchor.x = isLeft ? 0 : 1;
+    textGraphic.anchor.y = 0.5;
+    textGraphic.position.x = isLeft ? tx + 2 : tx + tw - 2;
+    textGraphic.position.y = ty + (layout.yTitleLine + 0.5) * HEADER_LINE_HEIGHT;
+    trackInfo.pBorder.addChild(textGraphic);
 }
 
 /**
@@ -207,6 +247,27 @@ export function drawCircularYAxis(
 
     /* render */
     const graphics = tile.graphics; // We do not use `pBorder` as in linear layouts.
+
+    // the title of the radial axis (`y.title`), in the center of the ring
+    const title = IsChannelDeep(yChannel) && 'title' in yChannel ? yChannel.title : undefined;
+    if (title) {
+        const titleGraphic = new HGC.libraries.PIXI.Text(title, {
+            ...getTextStyle({
+                color: theme.axis.labelColor,
+                size: theme.axis.labelFontSize,
+                fontFamily: theme.axis.labelFontFamily,
+                fontWeight: theme.axis.labelFontWeight
+            }),
+            wordWrap: true,
+            wordWrapWidth: Math.max(trackInnerRadius * 1.6, 60),
+            align: 'center'
+        });
+        titleGraphic.anchor.x = 0.5;
+        titleGraphic.anchor.y = 0.5;
+        titleGraphic.position.x = cx;
+        titleGraphic.position.y = cy;
+        graphics.addChild(titleGraphic);
+    }
 
     rowCategories.forEach(category => {
         // if (rowCategories.length > 1 ? i !== 1 : i !== 0) {

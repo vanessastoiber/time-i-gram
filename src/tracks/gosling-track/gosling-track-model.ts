@@ -54,6 +54,19 @@ export type ScaleType =
     | ScaleSequential<any>
     | (() => string | number); // constant value
 
+/**
+ * Space at the top of each row that marks do not use: the header strip (linear tracks on a temporal axis, see
+ * `core/mark/temporal-header.ts`), set by the track as `_headerHeight`, plus half a label, so that the top tick
+ * label of the y axis stays below the header; at most half of the row.
+ */
+function headerHeightIn(spec: SingleTrack, rowHeight: number): number {
+    const header = (spec as { _headerHeight?: number })._headerHeight ?? 0;
+    return Math.min(header > 0 ? header + HEADER_LABEL_MARGIN : 0, rowHeight / 2);
+}
+
+/** Half the height of a y-axis label, in px. */
+const HEADER_LABEL_MARGIN = 7;
+
 export class GoslingTrackModel {
     private id: string;
 
@@ -583,7 +596,7 @@ export class GoslingTrackModel {
                             channel.range = [0, spec.width] as [number, number]; // TODO: not considering vertical direction tracks
                             break;
                         case 'y':
-                            channel.range = [0, rowHeight];
+                            channel.range = [0, rowHeight - headerHeightIn(spec, rowHeight)];
                             break;
                     }
                 }
@@ -685,7 +698,7 @@ export class GoslingTrackModel {
                                 break;
                             case 'y':
                             case 'ye':
-                                range = [0, rowHeight];
+                                range = [0, rowHeight - headerHeightIn(spec, rowHeight)];
                                 break;
                             case 'color':
                             case 'stroke':

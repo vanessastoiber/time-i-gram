@@ -6,6 +6,14 @@ import type { CompleteThemeDeep } from '../utils/theme';
 import type { Dimension } from '../utils/position';
 import { scaleLinear, type ScaleLinear } from 'd3-scale';
 import { getTextStyle } from '../utils/text-style';
+import {
+    HEADER_LINE_HEIGHT,
+    LEGEND_GAP,
+    SWATCH_WIDTH,
+    headerLegend,
+    legendWidth,
+    type HeaderLayout
+} from './temporal-header';
 import type { SubjectPosition, D3DragEvent } from 'd3-drag';
 
 // Just the libraries necesssary fro this module
@@ -33,7 +41,10 @@ export function drawColorLegend(
     if (IsChannelDeep(spec.color) && spec.color.legend) {
         switch (spec.color.type) {
             case 'nominal':
-                drawColorLegendCategories(HGC, trackInfo, _tile, model, theme);
+                // tracks with a header strip draw their categories in its legend (see `drawHeaderLegend`)
+                if (!(spec as { _headerHeight?: number })._headerHeight) {
+                    drawColorLegendCategories(HGC, trackInfo, _tile, model, theme);
+                }
                 break;
             case 'quantitative':
                 drawColorLegendQuantitative(HGC, trackInfo, _tile, model, theme, 'color', offset);
@@ -531,5 +542,93 @@ export function drawRowLegend(
             textMetrics.width + paddingX * 2,
             textMetrics.height + paddingY * 2
         );
+    });
+}
+
+/**
+ * The legend in the header strip of a linear track on a temporal axis (see `core/mark/temporal-header.ts`):
+ * one line, right-aligned, with an optional bold title and one compact entry per color category or labeled
+ * track, each with a swatch of the member's mark. It is placed next to the track title, or on the line below it
+ * when the header has two lines.
+ */
+export function drawHeaderLegend(
+    HGC: { libraries: Libraries },
+    trackInfo: any,
+    models: GoslingTrackModel[],
+    theme: Required<CompleteThemeDeep>
+) {
+    if (models.length === 0) return;
+    const specs = models.map(m => m.spec());
+    const layout = (specs[0] as { _header?: HeaderLayout })._header;
+    const header = layout?.height ?? 0;
+    const legend = headerLegend(specs, spec => {
+        const model = models[specs.indexOf(spec)];
+        return ((model.getChannelDomainArray('color') as string[]) ?? []).map(String);
+    });
+    if (legend.entries.length === 0 || header === 0) return;
+
+    const graphics = trackInfo.pBorder;
+    const labelStyle = getTextStyle({
+        color: theme.legend.labelColor,
+        size: theme.legend.labelFontSize,
+        fontWeight: theme.legend.labelFontWeight,
+        fontFamily: theme.legend.labelFontFamily
+    });
+    const measure = (text: string, bold: boolean) =>
+        HGC.libraries.PIXI.TextMetrics.measureText(
+            text,
+            new HGC.libraries.PIXI.TextStyle(bold ? { ...labelStyle, fontWeight: 'bold' } : labelStyle)
+        ).width;
+
+    const [tx, ty] = trackInfo.position;
+    const [tw] = trackInfo.dimensions;
+    const lineY = ty + (layout?.legendLine ?? 0) * HEADER_LINE_HEIGHT;
+    const midY = lineY + HEADER_LINE_HEIGHT / 2;
+    let x = tx + tw - legendWidth(legend, measure) - 2;
+
+    const addText = (text: string, bold: boolean) => {
+        const t = new HGC.libraries.PIXI.Text(text, bold ? { ...labelStyle, fontWeight: 'bold' } : labelStyle);
+        t.anchor.x = 0;
+        t.anchor.y = 0.5;
+        t.position.x = x;
+        t.position.y = midY;
+        graphics.addChild(t);
+        x += measure(text, bold);
+    };
+
+    if (legend.title) {
+        addText(`${legend.title}:`, true);
+        x += LEGEND_GAP / 2;
+    }
+    legend.entries.forEach(entry => {
+        const model = models[specs.indexOf(entry.spec)];
+        const color = colorToHex(
+            entry.category !== undefined
+                ? model.encodedValue('color', entry.category)
+                : ((entry.spec.color as { value?: string }).value as string)
+        );
+        const opacity = Math.max(+(model.encodedValue('opacity') ?? 1) || 1, 0.6);
+        graphics.lineStyle(0, 0, 0);
+        switch (entry.spec.mark) {
+            case 'line':
+                graphics.lineStyle(2, color, 1);
+                graphics.moveTo(x, midY);
+                graphics.lineTo(x + SWATCH_WIDTH - 4, midY);
+                graphics.lineStyle(0, 0, 0);
+                break;
+            case 'point':
+            case 'text':
+                graphics.beginFill(color, opacity);
+                graphics.drawCircle(x + (SWATCH_WIDTH - 4) / 2, midY, 4);
+                graphics.endFill();
+                break;
+            default:
+                graphics.beginFill(color, opacity);
+                graphics.drawRect(x, midY - 5, SWATCH_WIDTH - 4, 10);
+                graphics.endFill();
+        }
+        x += SWATCH_WIDTH;
+        addText(entry.label, false);
+        x += LEGEND_GAP;
     });
 }
