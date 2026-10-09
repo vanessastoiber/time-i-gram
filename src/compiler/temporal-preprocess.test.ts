@@ -306,6 +306,20 @@ describe('period (time coordinate system)', () => {
         warn.mockRestore();
     });
 
+    it('fills the whole revolution of a ring, without the layout gap at the origin', () => {
+        const ring = (x: object) =>
+            compiled({
+                layout: 'circular',
+                tracks: [timeTrack({ x: { field: 'date', type: 'temporal', ...x } })]
+            } as GoslingSpec).gs as any;
+        const angles = (gs: any) => [gs.tracks[0].startAngle, gs.tracks[0].endAngle].sort((a: number, b: number) => a - b);
+        expect(angles(ring({ period: 'year' }))).toEqual([0, 360]);
+        // absolute time and genomic rings keep the gap
+        expect(angles(ring({}))[0]).toBeGreaterThan(0);
+        const genomic = compiled({ layout: 'circular', tracks: [genomicTrack()] } as GoslingSpec).gs as any;
+        expect(angles(genomic)[0]).toBeGreaterThan(0);
+    });
+
     it('cannot zoom out past one period by default', () => {
         const year = compiled({
             tracks: [timeTrack({ x: { field: 'date', type: 'temporal', period: 'year' } })]

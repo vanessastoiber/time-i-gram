@@ -17,6 +17,7 @@ import {
 import { resolveSuperposedTracks } from '../core/utils/overlay';
 import { traverseTracksAndViews, traverseViewArrangements } from './spec-preprocess';
 import type { CompleteThemeDeep } from '../core/utils/theme';
+import { getTrackTimeCoordinates } from '../core/utils/time-coordinate-system';
 
 export interface Size {
     width: number;
@@ -314,7 +315,12 @@ function traverseAndCollectTrackInfo(
             (spec.arrangement === 'parallel' || spec.arrangement === 'serial') &&
             spec.views.length > 1;
 
-        const SPACING = spec.spacing !== undefined ? spec.spacing : DEFAULT_VIEW_SPACING;
+        // A ring of periods (`x.period`) is a cycle: the end of one period is the start of the next, so it has no
+        // gap at the origin
+        const isPeriodRing =
+            cTracks.length > 0 &&
+            cTracks.every(t => getTrackTimeCoordinates(t.track)?.system.kind === 'period' || IsDummyTrack(t.track));
+        const SPACING = isPeriodRing ? 0 : spec.spacing !== undefined ? spec.spacing : DEFAULT_VIEW_SPACING;
         const PADDING = DEFAULT_CIRCULAR_VIEW_PADDING;
         const INNER_RADIUS = spec.centerRadius !== undefined ? spec.centerRadius : DEFAULT_INNER_RADIUS_PROP;
         const TOTAL_RADIUS = cumWidth / 2.0 + PADDING; // (cumWidth + cumHeight) / 2.0 / 2.0;
