@@ -523,85 +523,99 @@ const editorExampleObj: {
         group: 'Temporal Data',
         name: 'Unemployment - Overview + Detail',
         spec: EX_SPEC_TEMPORAL_OVERVIEW_DETAIL,
-        underDevelopment: true
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_OVERVIEW_DETAIL
     },
     TEMPORAL_DATA_SEATTLE_WEATHER: {
         group: 'Temporal Data',
         name: 'Seattle Weather',
         spec: EX_SPEC_TEMPORAL_SEATTLE_WEATHER,
-        underDevelopment: true
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_SEATTLE_WEATHER
     },
     TEMPORAL_DATA_UNEMPLOYMENT_CIRCULAR_LINEAR: {
         group: 'Temporal Data',
         name: 'Unemployment: Circular Overview + Linear Detail',
         spec: EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR,
-        underDevelopment: true
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_UNEMPLOYMENT_CIRCULAR_LINEAR
     },
     TEMPORAL_DATA_SUPP_UNEMPLOYMENT: {
         group: 'Temporal Data',
         name: 'Supp. S3: U.S. Unemployment Across Industries',
         spec: EX_SPEC_TEMPORAL_SUPP_UNEMPLOYMENT,
-        underDevelopment: true
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_SUPP_UNEMPLOYMENT
     },
     TEMPORAL_DATA_SUPP_SEATTLE_WEATHER: {
         group: 'Temporal Data',
         name: 'Supp. S4: Seattle Weather',
         spec: EX_SPEC_TEMPORAL_SUPP_SEATTLE_WEATHER,
-        underDevelopment: true
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_SUPP_SEATTLE_WEATHER
     },
     TEMPORAL_DATA_SUPP_SOLAR_WEATHER: {
         group: 'Temporal Data',
         name: 'Supp. S5: Solar Power and Local Weather',
         spec: EX_SPEC_TEMPORAL_SUPP_SOLAR_WEATHER,
-        underDevelopment: true
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_SUPP_SOLAR_WEATHER
     },
     TEMPORAL_DATA_SUPP_NYC_TAXI: {
         group: 'Temporal Data',
         name: 'Supp. S6: NYC Taxi Trip Duration',
         spec: EX_SPEC_TEMPORAL_SUPP_NYC_TAXI,
-        underDevelopment: true
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_SUPP_NYC_TAXI
     },
     TEMPORAL_DATA_SUPP_WHO_FLU: {
         group: 'Temporal Data',
         name: 'Supp. S7: WHO Flu Data',
         spec: EX_SPEC_TEMPORAL_SUPP_WHO_FLU,
-        underDevelopment: true
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_SUPP_WHO_FLU
     },
     TEMPORAL_DATA_SUPP_FITBIT: {
         group: 'Temporal Data',
         name: 'Supp. S8: FitBit Activity and Heart Rate',
         spec: EX_SPEC_TEMPORAL_SUPP_FITBIT,
-        underDevelopment: true
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_SUPP_FITBIT
     },
     TEMPORAL_DATA_WHO_FLU_PERIOD: {
         group: 'Temporal Data',
         name: 'Period: WHO Flu by Week of the Year',
         spec: EX_SPEC_TEMPORAL_WHO_FLU_PERIOD,
-        underDevelopment: true
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_WHO_FLU_PERIOD
     },
     TEMPORAL_DATA_FITBIT_CYCLES: {
         group: 'Temporal Data',
         name: 'Period: FitBit Weekly and Daily Cycles',
         spec: EX_SPEC_TEMPORAL_FITBIT_CYCLES,
-        underDevelopment: true
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_FITBIT_CYCLES
     },
     TEMPORAL_DATA_UNEMPLOYMENT_GRANULARITY: {
         group: 'Temporal Data',
         name: 'Granularity: Unemployment by Month or Year (zoom)',
         spec: EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY,
-        underDevelopment: true
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_UNEMPLOYMENT_GRANULARITY
     },
     TEMPORAL_DATA_RELATIVE_ALIGNMENT: {
         group: 'Temporal Data',
         name: 'Relative: Flu Seasons and Unemployment Aligned to Events',
         spec: EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT,
-        underDevelopment: true
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_RELATIVE_ALIGNMENT
     },
     TEMPORAL_DATA_TAXI_SPANS: {
         group: 'Temporal Data',
         name: 'Spans: NYC Taxi Trips and the Daily Cycle',
         spec: EX_SPEC_TEMPORAL_TAXI_SPANS,
-        underDevelopment: true
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_TAXI_SPANS
     }
 };
 
