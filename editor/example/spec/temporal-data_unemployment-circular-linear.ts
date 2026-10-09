@@ -26,23 +26,26 @@ const color = {
     type: 'nominal' as const,
     domain: SECTORS,
     range: COLORS,
-    legend: true
+    legend: true,
+    title: 'Industry'
 };
 
 const y = {
     field: 'count',
     type: 'quantitative' as const,
-    domain: [0, 2500]
+    domain: [0, 2500],
+    title: 'Unemployed (thousands)'
 };
 
 export const EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR: GoslingSpec = {
-    title: 'Temporal Data',
-    subtitle: 'Unemployment across industries: circular overview + linear detail',
+    title: 'Does unemployment follow a yearly cycle in every industry?',
+    subtitle: 'Five industries, 2000 to 2010. Brush the ring to zoom the detail. Source: U.S. Bureau of Labor Statistics',
     arrangement: 'horizontal',
     views: [
         {
             layout: 'circular',
             static: true,
+            centerRadius: 0.45,
             tracks: [
                 {
                     alignment: 'overlay',
@@ -68,7 +71,7 @@ export const EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR: GoslingSpec = {
         {
             tracks: [
                 {
-                    title: 'Detail',
+                    title: 'Detail (brushed period)',
                     data,
                     dataTransform,
                     mark: 'line',
