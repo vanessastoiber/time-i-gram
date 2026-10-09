@@ -1,4 +1,4 @@
-import { timeAxisTicks } from './time-axis-ticks';
+import { crowdedEnds, timeAxisTicks } from './time-axis-ticks';
 import { periodCoordinates, periodReference } from '../../core/utils/time-coordinate-system';
 
 const s = (iso: string) => Date.parse(`${iso}Z`) / 1000;
@@ -184,5 +184,33 @@ describe('absolute tick labels (M9)', () => {
         expect(hour.context).toEqual('2016 Feb 3, 12:35\u201313:35');
         const year = timeAxisTicks([t('2022-01-01T00:00:00'), t('2023-01-01T00:00:00')]);
         expect(year.labels.slice(0, 3)).toEqual(['2022', 'Feb', 'Mar']);
+    });
+});
+
+describe('labels at the ends of an axis (M9)', () => {
+    it('are hidden when, moved inside the axis, they would overlap their neighbor', () => {
+        // "Oct" at 560-580 and "2016" moved inside to 572-600
+        expect(
+            crowdedEnds([
+                { left: 0, width: 28 },
+                { left: 300, width: 20 },
+                { left: 560, width: 20 },
+                { left: 572, width: 28 }
+            ])
+        ).toEqual([3]);
+        expect(
+            crowdedEnds([
+                { left: 0, width: 28 },
+                { left: 20, width: 20 },
+                { left: 300, width: 20 }
+            ])
+        ).toEqual([0]);
+        expect(
+            crowdedEnds([
+                { left: 0, width: 28 },
+                { left: 100, width: 20 },
+                { left: 300, width: 20 }
+            ])
+        ).toEqual([]);
     });
 });

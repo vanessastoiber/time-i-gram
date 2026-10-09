@@ -286,3 +286,18 @@ function weekBasedTicks(domain: [number, number], cs: PeriodTime, count: number)
     }
     return { ticks, labels: ticks.map(weekLabel), context: '' };
 }
+
+/**
+ * Labels at the ends of a linear axis are moved inside it (a tick at the edge would cut its label); the indices
+ * of end labels that then overlap their neighbor, which are hidden. `boxes` are the labels' extents in px, in
+ * axis order.
+ */
+export function crowdedEnds(boxes: { left: number; width: number }[], gap = 4): number[] {
+    const overlaps = (a: { left: number; width: number }, b: { left: number; width: number }) =>
+        a.left + a.width + gap > b.left;
+    const hidden: number[] = [];
+    if (boxes.length > 1 && overlaps(boxes[0], boxes[1])) hidden.push(0);
+    const last = boxes.length - 1;
+    if (last > 1 && overlaps(boxes[last - 1], boxes[last])) hidden.push(last);
+    return hidden;
+}

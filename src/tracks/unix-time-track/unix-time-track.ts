@@ -1,6 +1,6 @@
 import type { PIXI } from '@higlass/libraries';
 import { scaleUtc } from 'd3-scale';
-import { timeAxisTicks, type TimeAxisTicks } from './time-axis-ticks';
+import { crowdedEnds, timeAxisTicks, type TimeAxisTicks } from './time-axis-ticks';
 import { cartesianToPolar } from '../../core/utils/polar';
 import colorToHex from '../../core/utils/color-to-hex';
 import * as uuid from 'uuid';
@@ -196,6 +196,14 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       else if (left + text.width > end) text.x -= left + text.width - end;
     }
 
+    /** Hide the labels at the ends of a linear axis that overlap their neighbor (see `crowdedEnds`). */
+    hideCrowdedEnds() {
+      const texts = this.axisTexts as PIXI.Text[];
+      texts.forEach(t => (t.visible = true));
+      const boxes = texts.map(t => ({ left: t.x - t.anchor.x * t.width, width: t.width }));
+      crowdedEnds(boxes).forEach(i => (texts[i].visible = false));
+    }
+
     drawTicks(tickStartY: number, tickEndY: number) {
       (this.axisTicks as TimeAxisTicks).ticks.forEach((tick: number, i: number) => {
         const xPos = this.position[0] + this.timeScale(tick * 1000);
@@ -242,6 +250,7 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       this.updateAxisTicks();
       this.createAxisTexts();
       this.drawTicks(tickStartY, tickEndY);
+      if (this.options.layout !== 'circular') this.hideCrowdedEnds();
       this.drawContext(tickStartY, tickEndY);
     }
 
