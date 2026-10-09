@@ -52,6 +52,7 @@ import {
 } from '../../core/utils/time-coordinate-system';
 import { publish } from '../../api/pubsub';
 import { combineTemporalTiles, combineTilesUpstream } from './combine-tiles';
+import { modelsCacheKey } from './model-cache';
 import { getRelativeGenomicPosition } from '../../core/utils/assembly';
 import { getTextStyle } from '../../core/utils/text-style';
 import {
@@ -156,6 +157,8 @@ interface ProcessedTileInfo {
     ownTabularData?: Datum[];
     /** Flag variable that indicate that rendering of this tile should be skipped */
     skipRendering: boolean;
+    /** Inputs of `goslingModels` (see `modelsCacheKey`); `undefined` if they are rebuilt on every draw */
+    modelsKey?: string;
 }
 
 /** Information about the rendered color legend */
@@ -213,6 +216,10 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
         #processedTileInfo: Record<string, ProcessedTileInfo>;
         /** The x extent of the visible tiles when their rows are combined into the first tile */
         #combinedTileBounds: [number, number] | undefined;
+        /** The tiles combined last (temporal lines): a combination is redone only when they change */
+        #lastCombination:
+            | { ids: string[]; infos: (ProcessedTileInfo | undefined)[]; bounds?: [number, number] }
+            | undefined;
         firstDraw = true; // False if draw has been called once already. Used with onNewTrack API. Public because used in draw()
         // Used in mark/legend.ts
         gLegend? = HGC.libraries.d3Selection.select(context.svgElement).append('g');
@@ -826,8 +833,16 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                 return;
             }
 
-            // lines and areas on a temporal axis
-            combineTemporalTiles(tiles.map(tile => this.#processedTileInfo[tile.tileId]));
+            // lines and areas on a temporal axis; nothing to redo while the same tiles stay visible
+            const ids = tiles.map(tile => tile.tileId);
+            const infos = tiles.map(tile => this.#processedTileInfo[tile.tileId]);
+            const last = this.#lastCombination;
+            if (last && isEqual(last.ids, ids) && last.infos.every((info, i) => info === infos[i]) && last.bounds) {
+                this.#combinedTileBounds = last.bounds;
+                return;
+            }
+            this.#lastCombination = { ids, infos };
+            combineTemporalTiles(infos);
             if (tiles.length <= 1 || !this.#processedTileInfo[tiles[0].tileId] || !this.tilesetInfo) return;
 
             // the combined rows cover all visible tiles (see `#rowsOfTileForTimeUnit`)
@@ -838,6 +853,7 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                 Math.min(...bounds.map(b => b.tileX)),
                 Math.max(...bounds.map(b => b.tileX + b.tileWidth))
             ];
+            this.#lastCombination.bounds = this.#combinedTileBounds;
         }
         /**
          * Check whether tiles should be merged. Needs to be public since called by combineAllTilesIfNeeded()
@@ -958,6 +974,21 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                 // so, no need to create track models
                 return [];
             }
+
+            // temporal tracks reuse their models while zoomed or panned within the same tiles
+            const modelsKey = modelsCacheKey(resolveSuperposedTracks(this.options.spec), {
+                tileId: tile.tileId,
+                combinedTileIds:
+                    this.#combinedTileBounds && this.#lastCombination?.ids[0] === tile.tileId
+                        ? this.#lastCombination.ids
+                        : undefined,
+                dimensions: this.dimensions,
+                domain: this._xScale.domain() as [number, number]
+            });
+            if (modelsKey !== undefined && tileInfo.modelsKey === modelsKey && tileInfo.goslingModels.length > 0) {
+                return tileInfo.goslingModels;
+            }
+            tileInfo.modelsKey = modelsKey;
 
             // clear the array first
             tileInfo.goslingModels = [];
