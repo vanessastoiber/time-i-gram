@@ -12,25 +12,38 @@ const TAXI = {
     dateFields: ['pickup_datetime']
 } as const;
 
-const VENDOR_COLOR = {
+/** The two taxi technology vendors of the data set, by name (the CSV has their ids). */
+const VENDOR_NAMES = {
+    type: 'replace',
     field: 'vendor_id',
+    newField: 'vendor',
+    replace: [
+        { from: '1', to: 'Creative Mobile Technologies' },
+        { from: '2', to: 'VeriFone' }
+    ]
+} as const;
+
+const VENDOR_COLOR = {
+    field: 'vendor',
     type: 'nominal',
-    domain: ['1', '2'],
+    domain: ['Creative Mobile Technologies', 'VeriFone'],
     range: ['#1f77b4', '#ff7f0e'],
-    legend: true
+    legend: true,
+    title: 'Vendor'
 } as const;
 
 const spec = {
-    title: 'NYC Taxi Trips: Spans and the Daily Cycle',
-    subtitle: 'Top: trips on 3 Feb 2016 as spans (pickup + trip_duration). Bottom: pickups per hour of the day',
+    title: 'When do New York taxi trips happen, and how long do they take?',
+    subtitle: 'Top: one hour of trips on 3 February 2016. Bottom: all trips of January to June 2016 by hour of the day.',
     arrangement: 'vertical',
     views: [
         {
             tracks: [
                 {
-                    title: 'Trips as intervals: pickup to pickup + trip_duration',
+                    title: 'Each trip as an arc from pickup to drop-off (pickup time + trip duration)',
                     data: TAXI,
                     dataTransform: [
+                        VENDOR_NAMES,
                         {
                             type: 'span',
                             field: 'pickup_datetime',
@@ -50,7 +63,8 @@ const spec = {
                     stroke: VENDOR_COLOR,
                     strokeWidth: { value: 1 },
                     opacity: { value: 0.6 },
-                    style: { linkStyle: 'elliptical' },
+                    // arc height grows with the trip's duration (up to the track height)
+                    style: { linkStyle: 'elliptical', linkMinHeight: 0.05 },
                     width: 800,
                     height: 220
                 }
@@ -59,12 +73,13 @@ const spec = {
         {
             tracks: [
                 {
-                    title: 'Pickups per hour of the day, all days (period: "day", timeUnit: "hour", count)',
+                    title: 'Pickups per hour of the day, all days',
                     data: TAXI,
+                    dataTransform: [VENDOR_NAMES],
                     mark: 'bar',
                     x: { field: 'pickup_datetime', type: 'temporal', period: 'day', timeUnit: 'hour', axis: 'bottom' },
-                    y: { field: 'id', type: 'quantitative', aggregate: 'count', axis: 'left' },
-                    row: { field: 'vendor_id', type: 'nominal', domain: ['1', '2'] },
+                    y: { field: 'id', type: 'quantitative', aggregate: 'count', axis: 'left', title: 'Trips (count)' },
+                    row: { field: 'vendor', type: 'nominal', domain: VENDOR_COLOR.domain },
                     color: VENDOR_COLOR,
                     width: 800,
                     height: 220
