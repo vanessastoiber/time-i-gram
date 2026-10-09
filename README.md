@@ -75,8 +75,8 @@ Every temporal x axis has a **time coordinate system**, which decides where a ti
 ```
 
 - **Period.** Years align by calendar date in a leap reference year; `weekBased` uses ISO week-years; `start` begins each period at another month, ISO week, weekday, or hour (e.g. August–July seasons). Intervals (`x`/`xe`) that cross a period boundary are split. A `domain` on a period axis is ignored (the whole period is shown).
-- **Relative.** `anchor` is a date, `"first"`, `"last"`, `{ "argmax": field }`, `{ "argmin": field }` (per `groupby` group), or `{ "field": name }` (per row). Set the domain as offsets (durations or seconds).
-- **Linking.** Views are linked (`linkingId`, brushes) only within one coordinate system: a position within a period stands for many absolute instants. A `linkingId` that joins views in different systems leaves the later ones out of the link, with a warning.
+- **Relative.** `anchor` is a date, `"first"`, `"last"`, `{ "argmax": field }`, `{ "argmin": field }` (per `groupby` group), or `{ "field": name }` (per row). Set the domain as offsets (durations or seconds). `label` names the event in the axis title (e.g. `"the season's peak"` gives "weeks from the season's peak").
+- **Linking.** Views are linked (`linkingId`, brushes) only within one coordinate system: a position within a period stands for many absolute instants. A `linkingId` that joins views in different systems is split into one link per system, whatever the order of the views, with a warning; a view alone in its system is not linked.
 
 ### Calendar Granularity
 
@@ -100,6 +100,7 @@ Every temporal x axis has a **time coordinate system**, which decides where a ti
 - **Durations:** `"<number> <unit>"`, e.g. `"90 minutes"`, `"2 weeks"`, `"-36 mo"`; a month is 30.44 days, a year 365.2425 days.
 - **Aggregation is exact under tiling:** the time data fetchers give each unit to the tile that contains its start.
 - **Granularity rules** are shorthand for overlaid copies of the track, one per unit, with `visibility` conditions on the zoom level.
+- **Edge units:** a unit at the edge of the data is aggregated from the rows present (e.g. a yearly mean of January and February only), so end a domain on whole units where that matters.
 
 ### Time Transforms
 
@@ -107,6 +108,30 @@ Every temporal x axis has a **time coordinate system**, which decides where a ti
 |---|---|
 | `{ "type": "timeUnit", "field", "unit", "newField"?, "endField"? }` | truncates a time field to the start (and end) of its unit |
 | `{ "type": "span", "field", "duration", "unit"?, "newField" }` | adds a duration (a numeric field in `unit`, or a literal such as `"15 minutes"`) to a start time: an interval for `x`/`xe` |
+
+### Titles, Axes and Legends of Temporal Tracks
+
+Linear tracks on a temporal axis keep a header strip at the top for the track title, the y-axis title and a one-line legend, so that none of them covers the axis or the data. On rings, the y-axis title and the legend go in the center when they fit.
+
+```jsonc
+"y": { "field": "INF_A", "type": "quantitative", "title": "Cases per week" },          // drawn as "↑ Cases per week"
+"color": { "field": "year", "type": "nominal", "legend": true, "title": "Year" },
+// a track with a constant color in the legend (e.g. bars vs line in an overlay)
+"tracks": [
+  { "mark": "bar", "color": { "value": "#f28e2b" }, "style": { "legendTitle": "Daily", "legendLabel": "Steps (bars)" } },
+  { "mark": "line", "color": { "value": "black" }, "style": { "legendLabel": "Very active minutes (line)" } }
+]
+```
+
+Time axes use 24-hour times and short month names, choose the number of ticks from their length, and name the visible range under the ticks (e.g. "2016 Feb 3, 12:35–13:35").
+
+### Compiled Specs
+
+The compiled spec (the editor's compiled view, and the track specs of the JavaScript API) contains internal names that the temporal grammar adds:
+- **Coordinate fields:** `x.field` is rewritten to the coordinate field that a period or relative axis is drawn on (`__period_date`, `__relative_date`), or to a time unit's start (`__month_date`).
+- **Internal properties:** tracks carry `_timeCoordinates`, `_timeUnit`, `_timeUnitTiling`, `_temporalResolved` and, on linear temporal tracks, `_headerHeight` / `_header`.
+
+Read the fields of your data (e.g. in tooltips) from your spec, not from the compiled one.
 
 Editor examples under **Temporal Data**: *Period: WHO Flu by Week of the Year*, *Period: FitBit Weekly and Daily Cycles*, *Granularity: Unemployment by Month or Year (zoom)*, *Relative: Flu Seasons and Unemployment Aligned to Events*, *Spans: NYC Taxi Trips and the Daily Cycle*. Design and comparison with Vega-Lite: [docs/temporal-grammar-design.md](docs/temporal-grammar-design.md), [docs/temporal-grammar-report.md](docs/temporal-grammar-report.md).
 
