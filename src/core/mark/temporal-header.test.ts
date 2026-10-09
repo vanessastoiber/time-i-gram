@@ -94,3 +94,15 @@ describe('header strip of temporal linear tracks (G1, G6)', () => {
         expect((range(track({ _headerHeight: 16 })) as any).range).toEqual([0, 77]); // header + half a label
     });
 });
+
+describe('header legends of stroked marks', () => {
+    it('show the categories of a nominal stroke', () => {
+        const link = track({
+            mark: 'withinLink',
+            stroke: { field: 'vendor', type: 'nominal', legend: true, title: 'Vendor', domain: ['A', 'B'] }
+        });
+        const legend = headerLegend([link], spec => colorCategories(spec, []));
+        expect(legend.title).toEqual('Vendor');
+        expect(legend.entries.map(e => e.label)).toEqual(['A', 'B']);
+    });
+});

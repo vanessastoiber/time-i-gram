@@ -13,6 +13,7 @@ import {
     SWATCH_WIDTH,
     colorCategories,
     headerLegend,
+    legendChannel,
     legendWidth,
     type HeaderLayout
 } from './temporal-header';
@@ -613,7 +614,7 @@ export function drawHeaderLegend(
         const model = models[specs.indexOf(entry.spec)];
         const color = colorToHex(
             entry.category !== undefined
-                ? model.encodedValue('color', entry.category)
+                ? model.encodedValue(legendChannel(entry.spec) ?? 'color', entry.category)
                 : ((entry.spec.color as { value?: string }).value as string)
         );
         // a category's swatch shows its color at full strength; a labeled track's, close to its own opacity
@@ -622,6 +623,9 @@ export function drawHeaderLegend(
         graphics.lineStyle(0, 0, 0);
         switch (entry.spec.mark) {
             case 'line':
+            case 'withinLink':
+            case 'betweenLink':
+            case 'rule':
                 graphics.lineStyle(2, color, 1);
                 graphics.moveTo(x, midY);
                 graphics.lineTo(x + SWATCH_WIDTH - 4, midY);

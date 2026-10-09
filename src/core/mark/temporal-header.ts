@@ -37,32 +37,48 @@ export function usesTemporalHeader(specs: SingleTrack[]): boolean {
 }
 
 /**
- * The legend of a track's header. Members that encode `color` by a nominal field with `legend: true` contribute
- * their categories: per field, the union over all members that encode it (e.g. one member per series), in the
- * order of the members; members with a constant color and `style.legendLabel` contribute one entry each. The
- * title is the first `color.title`, or the track's `style.legendTitle`.
+ * The channel whose categories a member's legend shows: `color`, or `stroke` for marks that are stroked (e.g.
+ * links), if it encodes a nominal field.
+ */
+export function legendChannel(spec: SingleTrack): 'color' | 'stroke' | undefined {
+    for (const key of ['color', 'stroke'] as const) {
+        const channel = spec[key];
+        if (IsChannelDeep(channel) && channel.type === 'nominal' && channel.field) return key;
+    }
+    return undefined;
+}
+
+/**
+ * The legend of a track's header. Members that encode `color` (or `stroke`) by a nominal field with
+ * `legend: true` contribute their categories: per field, the union over all members that encode it (e.g. one
+ * member per series), in the order of the members; members with a constant color and `style.legendLabel`
+ * contribute one entry each. The title is the first `title` of such a channel, or the track's
+ * `style.legendTitle`.
  */
 export function headerLegend(specs: SingleTrack[], categories: (spec: SingleTrack) => string[]): HeaderLegend {
     const entries: HeaderLegendEntry[] = [];
+    const channelOf = (spec: SingleTrack) => {
+        const key = legendChannel(spec);
+        return key ? (spec[key] as { field: string; legend?: boolean; title?: string }) : undefined;
+    };
     const legendFields = new Set<string>();
     specs.forEach(spec => {
-        const color = spec.color;
-        if (IsChannelDeep(color) && color.type === 'nominal' && color.legend && color.field)
-            legendFields.add(color.field);
+        const channel = channelOf(spec);
+        if (channel?.legend) legendFields.add(channel.field);
     });
     const seen = new Set<string>();
     let title: string | undefined;
     specs.forEach(spec => {
-        const color = spec.color;
-        if (IsChannelDeep(color) && color.type === 'nominal' && color.field && legendFields.has(color.field)) {
-            title = title ?? color.title;
+        const channel = channelOf(spec);
+        if (channel && legendFields.has(channel.field)) {
+            title = title ?? channel.title;
             categories(spec).forEach(category => {
-                const key = `${color.field}\u0000${category}`;
+                const key = `${channel.field}\u0000${category}`;
                 if (seen.has(key)) return;
                 seen.add(key);
                 entries.push({ label: category, spec, category });
             });
-        } else if (spec.style?.legendLabel && IsChannelValue(color)) {
+        } else if (spec.style?.legendLabel && IsChannelValue(spec.color)) {
             entries.push({ label: spec.style.legendLabel, spec });
         }
     });
@@ -71,16 +87,17 @@ export function headerLegend(specs: SingleTrack[], categories: (spec: SingleTrac
 }
 
 /**
- * Categories of a nominal color channel that a member draws: the values of its field in its rows, in the order
- * of `color.domain` (or of the rows, without a domain).
+ * Categories of the nominal legend channel (`color` or `stroke`) that a member draws: the values of its field in
+ * its rows, in the order of the channel's domain (or of the rows, without a domain).
  */
 export function colorCategories(spec: SingleTrack, rows: Datum[]): string[] {
-    const color = spec.color;
-    if (!IsChannelDeep(color) || !color.field) return [];
-    const field = color.field;
+    const key = legendChannel(spec);
+    const channel = key ? spec[key] : undefined;
+    if (!IsChannelDeep(channel) || !channel.field) return [];
+    const field = channel.field;
     const present = Array.from(new Set(rows.map(row => String(row[field]))));
-    if (!Array.isArray(color.domain)) return present;
-    const domain = (color.domain as (string | number)[]).map(String);
+    if (!Array.isArray(channel.domain)) return present;
+    const domain = (channel.domain as (string | number)[]).map(String);
     return rows.length === 0 ? domain : domain.filter(category => present.includes(category));
 }
 
