@@ -210,6 +210,8 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
 
         if (this.options.layout === 'circular') {
           const rope = this.addCurvedText(this.axisTexts[i], xPos - this.position[0]);
+          // labels at the sides of a ring stay inside the view
+          this.keepLabelInside(this.axisTexts[i]);
           rope && this.pTicksCircular.addChild(rope);
         } else {
           this.axisTexts[i].x = xPos;

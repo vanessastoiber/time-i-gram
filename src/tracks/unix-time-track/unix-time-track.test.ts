@@ -112,6 +112,9 @@ describe('unix time axis track: labels of circular axes (M9)', () => {
         track.position = [10, 50];
         track.draw();
         track.axisTexts.forEach((t: any) => {
+            // inside the view horizontally
+            expect(t.x - t.anchor.x * t.width).toBeGreaterThanOrEqual(10);
+            expect(t.x - t.anchor.x * t.width + t.width).toBeLessThanOrEqual(10 + 400);
             const r = Math.hypot(t.x - (10 + 200), t.y - (50 + 200));
             // the data ring ends 45 px (the axis size) inside the outer radius
             expect(r).toBeGreaterThan(200 - 45);
