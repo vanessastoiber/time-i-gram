@@ -20,10 +20,12 @@ const spec = {
     subtitle:
         'Hourly means, one participant, April to May 2016. Left: a ring per week (Monday at the top). Right: all days.',
     arrangement: 'horizontal',
+    // room for the ring's labels on its right
+    spacing: 40,
     views: [
         {
             layout: 'circular',
-            centerRadius: 0.25,
+            centerRadius: 0.45,
             tracks: [
                 {
                     data: HEART_RATE,
@@ -38,9 +40,16 @@ const spec = {
                         timeUnit: 'hour',
                         axis: 'top'
                     },
-                    y: { field: 'Value', type: 'quantitative', aggregate: 'mean', domain: [50, 130], axis: 'none' },
+                    y: {
+                        field: 'Value',
+                        type: 'quantitative',
+                        aggregate: 'mean',
+                        domain: [50, 130],
+                        axis: 'none',
+                        title: 'Heart rate (bpm)'
+                    },
                     row: { field: 'week', type: 'nominal' },
-                    color: { field: 'week', type: 'nominal', legend: true },
+                    color: { field: 'week', type: 'nominal', legend: true, title: 'Week (outer: first)' },
                     size: { value: 1.5 },
                     width: 420,
                     height: 160
@@ -50,12 +59,19 @@ const spec = {
         {
             tracks: [
                 {
-                    title: 'Mean heart rate by hour of the day (all days)',
+                    title: 'Mean by hour of the day, all days',
                     data: HEART_RATE,
                     dataTransform: ONE_PARTICIPANT,
                     mark: 'bar',
                     x: { field: 'Time', type: 'temporal', period: 'day', timeUnit: 'hour', axis: 'bottom' },
-                    y: { field: 'Value', type: 'quantitative', aggregate: 'mean', domain: [0, 130], axis: 'left' },
+                    y: {
+                        field: 'Value',
+                        type: 'quantitative',
+                        aggregate: 'mean',
+                        domain: [0, 130],
+                        axis: 'left',
+                        title: 'Heart rate (bpm)'
+                    },
                     color: { value: '#d62728' },
                     stroke: { value: 'white' },
                     strokeWidth: { value: 1 },
