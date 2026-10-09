@@ -1,19 +1,24 @@
 import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 
 // Supplementary material, Fig. S6 (NYC Taxi Trip Duration; paper Fig. 1C).
-// Copied verbatim from the supplementary PDF. The printed spec is a fragment
-// (root keys without the enclosing braces); it is wrapped in a root object here
-// and the trailing `];` became `]`. Not yet fixed: see docs/grammar-audit.md §7.
+// Copied from the supplementary PDF (a fragment, wrapped in a root object). Since fixed:
+// - it opens on one hour, where the arcs are drawn (they are hidden above 2 hours of visible time, and the
+//   spec used to open on eight months, so the top view looked empty);
+// - the bars are capped at one hour (a few trips last days and flattened every other bar);
+// - titles, axis titles and legends.
+// Loading takes a while: both views read the 39 MB CSV (291,000 trips).
 
 const spec = {
-    xDomain: { interval: [1448928000, 1470009600] },
+    title: 'How long are New York taxi trips, and when do they start?',
+    subtitle: 'Trips of one vendor on 3 February 2016, 12:35 to 13:35. Zoom out for other hours and days.',
+    xDomain: { interval: ['2016-02-03T12:35:00Z', '2016-02-03T13:35:00Z'] },
 
     views: [
         {
             // --- Detailed view: pickup-to-dropoff intervals as within-links ---
             spacing: 0,
             width: 800,
-            title: 'Trip Duration in Detail',
+            title: 'Trips as arcs from pickup to drop-off (longer trips, higher arcs)',
 
             data: {
                 url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/4_nyc-taxi-trip/nyc_taxi_trip_duration.csv',
@@ -32,7 +37,7 @@ const spec = {
                     x: {
                         field: 'pickup_datetime',
                         type: 'temporal',
-                        axis: 'none',
+                        axis: 'bottom',
                         linkingId: '1'
                     },
                     x1: {
@@ -45,13 +50,15 @@ const spec = {
                         {
                             operation: 'less-than',
                             measure: 'zoomLevel',
-                            threshold: 4000,
+                            threshold: '2 hours',
                             target: 'track'
                         }
                     ],
 
                     stroke: { value: 'steelblue' },
-                    style: { linkStyle: 'elliptical' }
+                    style: { linkStyle: 'elliptical', linkMinHeight: 0.05 },
+                    width: 800,
+                    height: 160
                 }
             ]
         },
@@ -59,7 +66,7 @@ const spec = {
         {
             // --- Overview: bar chart of trip duration, linked to the detailed view ---
             alignment: 'overlay',
-            title: 'Trip Duration',
+            title: 'Duration of each trip, at its pickup time',
             width: 800,
             height: 160,
 
@@ -84,21 +91,24 @@ const spec = {
                     mark: 'bar',
                     y: {
                         field: 'trip_duration',
-                        type: 'quantitative'
+                        type: 'quantitative',
+                        // trips of more than an hour are cut at the top
+                        domain: [0, 3600],
+                        title: 'Trip duration (s)'
                     },
 
                     // Passenger count is encoded redundantly with color and stroke
                     stroke: {
                         field: 'passenger_count',
                         type: 'nominal',
-                        domain: ['1', '2', '3', '4', '5', '6', '7'],
-                        legend: true
+                        domain: ['1', '2', '3', '4', '5', '6', '7']
                     },
                     color: {
                         field: 'passenger_count',
                         type: 'nominal',
                         domain: ['1', '2', '3', '4', '5', '6', '7'],
-                        legend: true
+                        legend: true,
+                        title: 'Passengers'
                     },
 
                     strokeWidth: { value: 3 }
