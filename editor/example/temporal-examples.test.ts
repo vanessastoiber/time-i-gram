@@ -3,6 +3,7 @@ import path from 'path';
 import { compile } from '../../src/compiler/compile';
 import { getTheme } from '../../src/core/utils/theme';
 import { validateGoslingSpec, type GoslingSpec } from '@gosling-lang/gosling-schema';
+import { parseTimeValue } from '../../src/core/utils/time-units';
 import { EX_SPEC_TEMPORAL_OVERVIEW_DETAIL } from './json-spec/temporal-data_overview-detail';
 import { EX_SPEC_TEMPORAL_SEATTLE_WEATHER } from './spec/temporal-data_seattle-weather';
 import { EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR } from './spec/temporal-data_unemployment-circular-linear';
@@ -103,10 +104,22 @@ describe('temporal example "supp S8 FitBit"', () => {
     const dailyActivity = spec.views[0].views[1];
 
     it('starts at the recording period of the heart-rate data (12 April to 12 May 2016)', () => {
-        expect(spec.xDomain.interval).toEqual([Date.UTC(2016, 3, 12) / 1000, Date.UTC(2016, 4, 13) / 1000]);
+        const [start, end] = spec.xDomain.interval;
+        expect([parseTimeValue(start, 'start'), parseTimeValue(end, 'end')]).toEqual([
+            Date.UTC(2016, 3, 12) / 1000,
+            Date.UTC(2016, 4, 13) / 1000
+        ]);
     });
 
-    it('colors calories as a quantitative field', () => {
-        expect(dailyActivity.tracks[0].color.type).toEqual('quantitative');
+    it('shows the activity of the participant whose heart rate it shows', () => {
+        const heartRate = spec.views[0].views[0].tracks[0];
+        expect(dailyActivity.dataTransform).toEqual(heartRate.dataTransform);
+    });
+
+    it('names the bars and the line in the legend and on their axes', () => {
+        expect(dailyActivity.tracks.map((t: any) => [t.mark, t.style.legendLabel, t.y.title])).toEqual([
+            ['bar', 'Steps (bars)', 'Steps'],
+            ['line', 'Very active minutes (line)', 'Very active minutes']
+        ]);
     });
 });
