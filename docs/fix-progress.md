@@ -1,8 +1,8 @@
 # Fix progress: review findings and example quality (`feat/temporal-grammar`)
 
-Status as of 2026-10-08. Sources: [review-temporal-grammar.md](review-temporal-grammar.md) (section A) and the requests for performance (B), example quality (C) and editor thumbnails (E1).
+Status as of 2026-10-09. Sources: [review-temporal-grammar.md](review-temporal-grammar.md) (section A) and the requests for performance (B), example quality (C) and editor thumbnails (E1).
 
-**State:** every commit is pushed to `denisseram/feat/temporal-grammar`. The last code commit is `0b05f99`. The suite has 394 tests, all passing, and `tsc --noEmit` is clean. Nothing is half-done.
+**State:** every commit is pushed to `denisseram/feat/temporal-grammar`. The suite has 411 tests, all passing, and `tsc --noEmit` is clean. Nothing is half-done.
 
 **Genomic check:** compiled output of all 57 genomic and doc examples is identical to `fix/temporal-bugs`. `MATRIX` differs only by its random demo data, the same as base vs base.
 
@@ -12,24 +12,24 @@ Status as of 2026-10-08. Sources: [review-temporal-grammar.md](review-temporal-g
 |---|---|---|
 | S1 `quarter` in a shifted year | Done | `6e2ef31` |
 | S2 links dropped by view order | Done | `de5638d` |
-| S3 `displace` back on the upstream path + `docs/upstream-proposals.md` | **Next** (group 2) | |
-| S4 week labels overlap | To do (group 2) | |
+| S3 `displace` back on the upstream path + `docs/upstream-proposals.md` | Done: the upstream logic is kept verbatim in `combine-tiles.ts`; render-level regression script `scripts/render-regression.cjs` | `aff8ae6` |
+| S4 week labels overlap | Done: tick count from the axis length; short week labels; the context names the visible weeks | `7a6d521` |
 | S5 temporal-only properties on genomic x | Done: a schema error (an `if`/`then` on `X`, added in `scripts/generate-schemas.mjs`) and a compiler warning | `e2452d1` |
-| S6 ring draws rows outside the visible arc | To do (group 2) | |
+| S6 ring draws rows outside the visible arc | Done | `d36b7eb` |
 | S7 period ticks before the period; no zoom limit | Done | `68b0cb8` |
 | S8 empty rule list deletes the track | Done: the track falls back to raw rows with a warning; schema `minItems: 1` | `1749e80` |
 | S9 partial yearly unit at the data edge | To do (example + one sentence in the semantics) | |
-| M1 ring brush notch | To do (group 2) | |
+| M1 ring brush notch | Done: the notch was the circular layout's gap at the origin; period rings now have none | `d4d5fa6` |
 | M2 week-53 gap | Done: the gap is now at the end of the season | `3683cd8` |
 | M3 domains of the wrong kind | Done | `6944185` |
 | M4 1,000-piece cap reported | Done | `e072928` |
-| M5 skipped tiles transformed | To do (group 2) | |
+| M5 skipped tiles transformed | Done: they were already not transformed, but kept stale models; those are now dropped | `522d417` |
 | M6 once-per-page warnings | Done: once per compiled spec, via `warnOnce` in `temporal-warnings.ts` | `e072928` |
-| M7 relative tick count by width | To do (group 2, with S4) | |
+| M7 relative tick count by width | Done (with S4) | `7a6d521` |
 | M8 document internal names | To do (README) | |
 | M9 label collisions | To do (with section C) | |
 | M10 one sentence in Limitations | To do (report) | |
-| §4 missing tests | Partly done: tests for S1, S2 (view order + brush), S5, S7, S8 added. **Still missing:** the render-level regression test for an interactive genomic example | |
+| §4 missing tests | Done: unit tests for every fix, and the render-level regression script for `MARK_DISPLACEMENT` (load, zoom, zoom + pan; it fails on `0b05f99` and passes now) | |
 | §5 code quality | Done: shared helpers `eec76af`, `linking.ts` import `e1f1b7c`, single resolved flag `0b05f99` | |
 
 **Behavior changes to note in the report:**
@@ -39,19 +39,31 @@ Status as of 2026-10-08. Sources: [review-temporal-grammar.md](review-temporal-g
 
 ## B. Performance
 
-Not started. Nothing has been measured yet.
+Done; numbers to go into the report.
 
-**To resume:**
-1. Run `fix/temporal-bugs` in a worktree on port 3457 and this branch on 3456.
-2. Measure in headless Chromium (Apple M1, 8 GB):
-   - load time;
-   - frame times during wheel zoom and drag-pan;
-   - on the 5 new examples (this branch only), S5 and S7 (both branches), and `MARK_DISPLACEMENT` and `LINKING` (both branches).
-3. Suspected costs in `gosling-track.ts`, all run on every `draw()`:
-   - `processAllTiles` re-merges tiles (`merged = [...merged, ...rows]`);
-   - `#getResolvedTracks` runs `structuredClone`;
-   - `#rowsOfTileForTimeUnit` calls `floorTime` per row;
-   - `binByTimeUnit` re-runs.
+**Method.**
+- **Browser:** headless Chromium on an Apple M1 (8 GB), with the dev editor serving each branch.
+- **Metrics:** load time and total blocking time (TBT), plus frame times and TBT during 10 wheel steps and a 20-step drag.
+- **Runs:** 3 runs each, medians reported.
+- **Noise:** the machine was busy (load average about 12), so compare runs made side by side, not absolute times.
+
+**Findings:**
+- **No regression on shared examples.** On examples that exist on both branches (genomic ×2, S5, S7), this branch is within run-to-run noise of `fix/temporal-bugs`.
+- **The slowness was the new FitBit cycles example.** It drew 154,000 per-second points twice, and Gosling redraws every mark on each interaction:
+  - zoom TBT: 51.1 s;
+  - drag TBT: 108.7 s;
+  - p95 frame: 6.2 s.
+- **Inherited cost.** Every example blocks 2–8 s per 10 wheel steps on both branches, because Gosling redraws everything on each event.
+
+**Fixes:**
+
+| Commit | Change |
+|---|---|
+| `ab6bc8b` | The FitBit example uses hourly means (`timeUnit`). Zoom TBT 51.1 → 4.1 s, drag TBT 108.7 → 3.0 s, p95 frame 6.2 → 0.45 s |
+| `d2732b9` | `utc()` / `isoWeekday()` without `Date` objects. `utc()` drops from 2.4 s to 0.1 s of CPU during the FitBit load |
+| `39db2a0` | Temporal tiles reuse their models while zooming or panning within the same tiles, and unchanged tiles are not recombined. `processAllTiles` no longer shows in a drag profile; it was 0.2 s per 20 steps |
+
+**Raw results:** the JSON and the summary were in the session scratchpad under `perf/`.
 
 ## C. Example quality (G1–G7, per example)
 
@@ -72,9 +84,13 @@ Not started.
 
 ## Next
 
-1. Group 2, in this order: S3, M5, S6, M1, S4/M7, then B (measure, fix, measure again).
-2. Push.
-3. Then C, S9, M8–M10, E1, re-render and check every screenshot, and the report.
+1. **C**, global rules first:
+   - G1/G6: header strip, compact inline legends;
+   - G2: `y.title`;
+   - G3: `style.legendLabel`;
+   - G5: context label from the visible range, none on rings.
+2. **Then** the per-example fixes with G4/G7, and S9.
+3. **Then** M8–M10, E1, re-render and check every screenshot, and the report.
 
 ## Resume notes
 
