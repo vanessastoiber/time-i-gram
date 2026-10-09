@@ -48,9 +48,19 @@ describe('header strip of temporal linear tracks (G1, G6)', () => {
         ]);
     });
 
-    it('reads categories from the data when the domain is not given', () => {
+    it('reads categories from the data, in the order of the domain', () => {
         const spec = track({ color: { field: 's', type: 'nominal' } });
         expect(colorCategories(spec, [{ s: 'x' }, { s: 'y' }, { s: 'x' }])).toEqual(['x', 'y']);
+        const withDomain = track({ color: { field: 's', type: 'nominal', domain: ['y', 'z', 'x'] } });
+        expect(colorCategories(withDomain, [{ s: 'x' }, { s: 'y' }])).toEqual(['y', 'x']);
+        expect(colorCategories(withDomain, [])).toEqual(['y', 'z', 'x']);
+    });
+
+    it('merges the categories of members that each draw one series', () => {
+        const member = (series: string) =>
+            track({ color: { field: 's', type: 'nominal', domain: ['A', 'B', 'C'], legend: series === 'A' }, series });
+        const legend = headerLegend([member('A'), member('C')], spec => [(spec as any).series]);
+        expect(legend.entries.map(e => e.label)).toEqual(['A', 'C']);
     });
 
     it('takes one line, or two when the title and the legend do not fit side by side', () => {

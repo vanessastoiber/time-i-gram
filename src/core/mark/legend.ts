@@ -10,6 +10,7 @@ import {
     HEADER_LINE_HEIGHT,
     LEGEND_GAP,
     SWATCH_WIDTH,
+    colorCategories,
     headerLegend,
     legendWidth,
     type HeaderLayout
@@ -567,10 +568,8 @@ export function drawHeaderLegend(
     const specs = models.map(m => m.spec());
     const layout = (specs[0] as { _header?: HeaderLayout })._header;
     const header = layout?.height ?? 0;
-    const legend = headerLegend(specs, spec => {
-        const model = models[specs.indexOf(spec)];
-        return ((model.getChannelDomainArray('color') as string[]) ?? []).map(String);
-    });
+    // each member's categories are those of its own rows (members may draw one series each)
+    const legend = headerLegend(specs, spec => colorCategories(spec, models[specs.indexOf(spec)].data()));
     if (legend.entries.length === 0 || header === 0) return;
 
     const graphics = trackInfo.pBorder;

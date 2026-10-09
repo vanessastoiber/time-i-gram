@@ -38,21 +38,30 @@ export function usesTemporalHeader(specs: SingleTrack[]): boolean {
 
 /**
  * The legend of a track's header. Members that encode `color` by a nominal field with `legend: true` contribute
- * their categories (once per field, in the order of `color.domain`, or of `categories` read from the data);
- * members with a constant color and `style.legendLabel` contribute one entry each. The title is the first
- * `color.title`, or the track's `style.legendTitle`.
+ * their categories: per field, the union over all members that encode it (e.g. one member per series), in the
+ * order of the members; members with a constant color and `style.legendLabel` contribute one entry each. The
+ * title is the first `color.title`, or the track's `style.legendTitle`.
  */
 export function headerLegend(specs: SingleTrack[], categories: (spec: SingleTrack) => string[]): HeaderLegend {
     const entries: HeaderLegendEntry[] = [];
-    const fields = new Set<string>();
+    const legendFields = new Set<string>();
+    specs.forEach(spec => {
+        const color = spec.color;
+        if (IsChannelDeep(color) && color.type === 'nominal' && color.legend && color.field)
+            legendFields.add(color.field);
+    });
+    const seen = new Set<string>();
     let title: string | undefined;
     specs.forEach(spec => {
         const color = spec.color;
-        if (IsChannelDeep(color) && color.type === 'nominal' && color.legend && color.field) {
+        if (IsChannelDeep(color) && color.type === 'nominal' && color.field && legendFields.has(color.field)) {
             title = title ?? color.title;
-            if (fields.has(color.field)) return;
-            fields.add(color.field);
-            categories(spec).forEach(category => entries.push({ label: category, spec, category }));
+            categories(spec).forEach(category => {
+                const key = `${color.field}\u0000${category}`;
+                if (seen.has(key)) return;
+                seen.add(key);
+                entries.push({ label: category, spec, category });
+            });
         } else if (spec.style?.legendLabel && IsChannelValue(color)) {
             entries.push({ label: spec.style.legendLabel, spec });
         }
@@ -61,13 +70,18 @@ export function headerLegend(specs: SingleTrack[], categories: (spec: SingleTrac
     return { title, entries };
 }
 
-/** Categories of a nominal color channel: its domain, or the values of its field in the order they appear. */
+/**
+ * Categories of a nominal color channel that a member draws: the values of its field in its rows, in the order
+ * of `color.domain` (or of the rows, without a domain).
+ */
 export function colorCategories(spec: SingleTrack, rows: Datum[]): string[] {
     const color = spec.color;
     if (!IsChannelDeep(color) || !color.field) return [];
-    if (Array.isArray(color.domain)) return (color.domain as (string | number)[]).map(String);
     const field = color.field;
-    return Array.from(new Set(rows.map(row => String(row[field]))));
+    const present = Array.from(new Set(rows.map(row => String(row[field]))));
+    if (!Array.isArray(color.domain)) return present;
+    const domain = (color.domain as (string | number)[]).map(String);
+    return rows.length === 0 ? domain : domain.filter(category => present.includes(category));
 }
 
 /** Width of a header legend, in px, with `measure(text, bold)` giving text widths. */
