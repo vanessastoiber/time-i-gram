@@ -1,15 +1,15 @@
 import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 
 export const EX_SPEC_TEMPORAL_SEATTLE_WEATHER: GoslingSpec = {
-    title: 'Temporal Data',
-    subtitle: 'Seattle weather',
+    title: "How does Seattle's weather change over the year?",
+    subtitle: 'Daily values, 2012 to 2015. The three views are linked: zoom or pan any of them.',
     description: '',
     views: [{
         alignment: "overlay",
         height: 100,
         tracks: [
             {
-                title: "precipitation",
+                title: "Daily precipitation",
                 data: {
                     url: "https://raw.githubusercontent.com/vega/vega/main/docs/data/seattle-weather.csv",
                     type: "csv-time",
@@ -22,10 +22,11 @@ export const EX_SPEC_TEMPORAL_SEATTLE_WEATHER: GoslingSpec = {
                 y: {
                     field: "precipitation",
                     type: "quantitative",
-                    domain: [0, 55]
+                    domain: [0, 55],
+                    title: "Precipitation (mm)"
                 },
                 width: 800,
-                height: 80
+                height: 110
             }
         ]
     },
@@ -33,7 +34,7 @@ export const EX_SPEC_TEMPORAL_SEATTLE_WEATHER: GoslingSpec = {
         alignment: "overlay",
         tracks: [
             {
-                title: "temperature",
+                title: "Daily temperature",
                 data: {
                     url: "https://raw.githubusercontent.com/vega/vega/main/docs/data/seattle-weather.csv",
                     type: "csv-time",
@@ -45,10 +46,12 @@ export const EX_SPEC_TEMPORAL_SEATTLE_WEATHER: GoslingSpec = {
                 y: {
                     field: "temp_max",
                     type: "quantitative",
-                    domain: [0, 40]
+                    domain: [-10, 40],
+                    title: "Temperature (°C)"
                 },
+                style: { legendTitle: "Temperature", legendLabel: "Maximum" },
                 width: 800,
-                height: 80
+                height: 110
             },
             {
                 data: {
@@ -62,42 +65,46 @@ export const EX_SPEC_TEMPORAL_SEATTLE_WEATHER: GoslingSpec = {
                 y: {
                     field: "temp_min",
                     type: "quantitative",
-                    domain: [0, 40]
+                    domain: [-10, 40]
                 },
+                style: { legendLabel: "Minimum" },
                 width: 800,
-                height: 80
+                height: 110
             }
         ]
     },{
         alignment: "overlay",
         tracks: [
             {
-                title: "weather",
+                title: "Weather of the day",
                 data: {
                     url: "https://raw.githubusercontent.com/vega/vega/main/docs/data/seattle-weather.csv",
                     type: "csv-time",
                     dateFields: ["date"],
                 },
                 mark: "rect",
+                // a band below the header
+                size: { value: 40 },
                 color: {
                     field: "weather",
                     type: "nominal",
                     domain: ["drizzle", "rain", "snow", "sun", "fog"],
                     range: ["#377750", "#002a33", "#74171f", "#cb4c47", "#35618f"],
-                    legend: true
+                    legend: true,
+                    title: "Weather"
                 },
                 x: { field: "date", type: "temporal", axis: "bottom", linkingId: "linked-views", domain: { interval: [1325376000, 1451606400] } },
                 visibility: [{
                     operation: "greater-than",
                     measure: "zoomLevel",
-                    threshold: 2000000,
+                    threshold: "3 weeks",
                     target: "track"
                 }],
                 width: 800,
                 height: 80
             },
             {
-                title: "weather",
+                title: "Weather of the day",
                 data: {
                     url: "https://raw.githubusercontent.com/vega/vega/main/docs/data/seattle-weather.csv",
                     type: "csv-time",
@@ -114,7 +121,7 @@ export const EX_SPEC_TEMPORAL_SEATTLE_WEATHER: GoslingSpec = {
                 visibility: [{
                     operation: "less-than",
                     measure: "zoomLevel",
-                    threshold: 2000000,
+                    threshold: "3 weeks",
                     target: "track"
                 }],
                 text: {field: "weather", "type": "nominal"},
