@@ -3,10 +3,13 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
     "Aggregate": {
+      "description": "How to aggregate a channel. With `x.timeUnit`, `count`, `sum`, `mean`, `median`, `min` and `max` reduce the rows of each time unit and group; without it, the experimental aggregation supports `min` and `max` by one nominal field.",
       "enum": [
         "max",
         "min",
         "mean",
+        "median",
+        "sum",
         "bin",
         "count"
       ],
@@ -742,9 +745,12 @@
             },
             {
               "$ref": "#/definitions/DomainChr"
+            },
+            {
+              "$ref": "#/definitions/TimeInterval"
             }
           ],
-          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -784,6 +790,12 @@
         },
         {
           "$ref": "#/definitions/IntervalTransform"
+        },
+        {
+          "$ref": "#/definitions/TimeUnitTransform"
+        },
+        {
+          "$ref": "#/definitions/SpanTransform"
         },
         {
           "$ref": "#/definitions/StrConcatTransform"
@@ -1058,6 +1070,11 @@
         }
       },
       "type": "object"
+    },
+    "Duration": {
+      "description": "A length of time: `<number> <unit>`, e.g. `\"90 minutes\"`, `\"2 weeks\"`, `\"3 months\"`, or with a short unit (`ms`, `s`, `min`, `h`, `d`, `wk`, `mo`, `q`, `y`, `dec`). Units up to a week are exact; a month is 30.436875 days (1/12 of a mean Gregorian year), a quarter 3 months, a year 365.2425 days, a decade 10 years.",
+      "pattern": "^\\s*[+-]?(\\d+(\\.\\d+)?|\\.\\d+)\\s*[a-zA-Z]+\\s*$",
+      "type": "string"
     },
     "EventStyle": {
       "additionalProperties": false,
@@ -1726,9 +1743,12 @@
                           },
                           {
                             "$ref": "#/definitions/DomainChr"
+                          },
+                          {
+                            "$ref": "#/definitions/TimeInterval"
                           }
                         ],
-                        "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+                        "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
                       },
                       "xOffset": {
                         "description": "Specify the x offset of views in the unit of pixels",
@@ -1959,9 +1979,12 @@
                 },
                 {
                   "$ref": "#/definitions/DomainChr"
+                },
+                {
+                  "$ref": "#/definitions/TimeInterval"
                 }
               ],
-              "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+              "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
             },
             "xOffset": {
               "description": "Specify the x offset of views in the unit of pixels",
@@ -2502,9 +2525,12 @@
                           },
                           {
                             "$ref": "#/definitions/DomainChr"
+                          },
+                          {
+                            "$ref": "#/definitions/TimeInterval"
                           }
                         ],
-                        "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+                        "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
                       },
                       "xOffset": {
                         "description": "Specify the x offset of views in the unit of pixels",
@@ -2742,9 +2768,12 @@
                 },
                 {
                   "$ref": "#/definitions/DomainChr"
+                },
+                {
+                  "$ref": "#/definitions/TimeInterval"
                 }
               ],
-              "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+              "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
             },
             "xOffset": {
               "description": "Specify the x offset of views in the unit of pixels",
@@ -3183,9 +3212,12 @@
                           },
                           {
                             "$ref": "#/definitions/DomainChr"
+                          },
+                          {
+                            "$ref": "#/definitions/TimeInterval"
                           }
                         ],
-                        "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+                        "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
                       },
                       "xOffset": {
                         "description": "Specify the x offset of views in the unit of pixels",
@@ -3312,9 +3344,12 @@
                 },
                 {
                   "$ref": "#/definitions/DomainChr"
+                },
+                {
+                  "$ref": "#/definitions/TimeInterval"
                 }
               ],
-              "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+              "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
             },
             "xOffset": {
               "description": "Specify the x offset of views in the unit of pixels",
@@ -3500,9 +3535,12 @@
                           },
                           {
                             "$ref": "#/definitions/DomainChr"
+                          },
+                          {
+                            "$ref": "#/definitions/TimeInterval"
                           }
                         ],
-                        "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+                        "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
                       },
                       "xOffset": {
                         "description": "Specify the x offset of views in the unit of pixels",
@@ -3587,9 +3625,12 @@
                 },
                 {
                   "$ref": "#/definitions/DomainChr"
+                },
+                {
+                  "$ref": "#/definitions/TimeInterval"
                 }
               ],
-              "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+              "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
             },
             "xOffset": {
               "description": "Specify the x offset of views in the unit of pixels",
@@ -4058,9 +4099,12 @@
             },
             {
               "$ref": "#/definitions/DomainChr"
+            },
+            {
+              "$ref": "#/definitions/TimeInterval"
             }
           ],
-          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -4592,9 +4636,12 @@
                   },
                   {
                     "$ref": "#/definitions/DomainChr"
+                  },
+                  {
+                    "$ref": "#/definitions/TimeInterval"
                   }
                 ],
-                "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+                "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
               },
               "xOffset": {
                 "description": "Specify the x offset of views in the unit of pixels",
@@ -4823,9 +4870,12 @@
             },
             {
               "$ref": "#/definitions/DomainChr"
+            },
+            {
+              "$ref": "#/definitions/TimeInterval"
             }
           ],
-          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -5189,9 +5239,12 @@
             },
             {
               "$ref": "#/definitions/DomainChr"
+            },
+            {
+              "$ref": "#/definitions/TimeInterval"
             }
           ],
-          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -5678,9 +5731,12 @@
                   },
                   {
                     "$ref": "#/definitions/DomainChr"
+                  },
+                  {
+                    "$ref": "#/definitions/TimeInterval"
                   }
                 ],
-                "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+                "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
               },
               "xOffset": {
                 "description": "Specify the x offset of views in the unit of pixels",
@@ -5936,9 +5992,12 @@
             },
             {
               "$ref": "#/definitions/DomainChr"
+            },
+            {
+              "$ref": "#/definitions/TimeInterval"
             }
           ],
-          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -6031,6 +6090,41 @@
       },
       "type": "object"
     },
+    "Period": {
+      "additionalProperties": false,
+      "properties": {
+        "newField": {
+          "description": "Field that receives each row's period, as a string that sorts chronologically: `\"2010\"` (year), `\"2010/11\"` (year with `start`), `\"2010-03\"` (month), `\"2010-W05\"` (week), `\"2010-03-01\"` (day).\n\n__Default:__ `\"<field>_<unit>\"`, e.g. `\"date_year\"`",
+          "type": "string"
+        },
+        "start": {
+          "description": "Where each period begins: a month (1-12) for calendar years (e.g. `8` for August-July seasons), an ISO week (1-52) for week-based years (e.g. `40` for flu seasons), a weekday (1 = Monday ... 7 = Sunday) for weeks, an hour (0-23) for days. Not supported for months.\n\n__Default:__ the first month, week, weekday (Monday) or hour (0)",
+          "type": "number"
+        },
+        "unit": {
+          "$ref": "#/definitions/PeriodUnit",
+          "description": "The calendar period."
+        },
+        "weekBased": {
+          "description": "Use years made of ISO weeks (only for `unit: \"year\"`): a time is placed by its ISO week and weekday, so ISO week 1 is always at the start of the period, even when it begins in late December, and the period of a row is its ISO week-year. Years without a week 53 leave the last week empty.\n\n__Default:__ `false`",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "unit"
+      ],
+      "type": "object"
+    },
+    "PeriodUnit": {
+      "description": "Calendar periods by which a temporal axis can be wrapped.",
+      "enum": [
+        "year",
+        "month",
+        "week",
+        "day"
+      ],
+      "type": "string"
+    },
     "PredefinedColors": {
       "enum": [
         "viridis",
@@ -6082,6 +6176,109 @@
         "field",
         "inRange",
         "type"
+      ],
+      "type": "object"
+    },
+    "Relative": {
+      "additionalProperties": false,
+      "description": "The reference event of a relative time axis (`x.relative`).",
+      "properties": {
+        "anchor": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TimeValue"
+            },
+            {
+              "const": "first",
+              "type": "string"
+            },
+            {
+              "const": "last",
+              "type": "string"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "argmax": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "argmax"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "argmin": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "argmin"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "field": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "field"
+              ],
+              "type": "object"
+            }
+          ],
+          "description": "The reference event (offset 0):\n- a date (`\"2008-09-15\"`) or Unix seconds: the same instant for all rows;\n- `\"first\"` | `\"last\"`: the earliest or latest time in the row's group;\n- `{ \"argmax\": field }` | `{ \"argmin\": field }`: the time of the group's largest or smallest value of `field`   (the earliest one if several rows tie);\n- `{ \"field\": name }`: a per-row reference time in a column (Unix seconds or an ISO date)."
+        },
+        "groupby": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "period": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/PeriodUnit"
+                    },
+                    {
+                      "$ref": "#/definitions/Period"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "period"
+              ],
+              "type": "object"
+            }
+          ],
+          "description": "The groups for `\"first\"`, `\"last\"`, `argmax` and `argmin`: field(s), or `{ \"period\": ... }` to group rows by the calendar period they fall in (e.g. flu seasons: `{ \"period\": { \"unit\": \"year\", \"weekBased\": true, \"start\": 40, \"newField\": \"season\" } }`); the period's `newField` receives each row's period.\n\n__Default:__ all rows form one group"
+        },
+        "label": {
+          "description": "Name of the reference event in the axis title, e.g. `\"the season's peak\"` gives \"weeks from the season's peak\". __Default:__ a description of the anchor (e.g. \"the maximum of INF_A\", or the date)",
+          "type": "string"
+        },
+        "unit": {
+          "$ref": "#/definitions/TimeUnit",
+          "description": "Unit of the axis labels (\"+3 wk\") and of `timeUnit` bins, which count whole units from the anchor. Units from `month` up are labeled with nominal lengths (a month is 30.44 days). __Default:__ chosen from the visible span"
+        }
+      },
+      "required": [
+        "anchor"
       ],
       "type": "object"
     },
@@ -6448,9 +6645,12 @@
             },
             {
               "$ref": "#/definitions/DomainChr"
+            },
+            {
+              "$ref": "#/definitions/TimeInterval"
             }
           ],
-          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -6986,9 +7186,12 @@
                           },
                           {
                             "$ref": "#/definitions/DomainChr"
+                          },
+                          {
+                            "$ref": "#/definitions/TimeInterval"
                           }
                         ],
-                        "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+                        "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
                       },
                       "xOffset": {
                         "description": "Specify the x offset of views in the unit of pixels",
@@ -7219,9 +7422,12 @@
                 },
                 {
                   "$ref": "#/definitions/DomainChr"
+                },
+                {
+                  "$ref": "#/definitions/TimeInterval"
                 }
               ],
-              "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+              "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
             },
             "xOffset": {
               "description": "Specify the x offset of views in the unit of pixels",
@@ -7755,9 +7961,12 @@
                           },
                           {
                             "$ref": "#/definitions/DomainChr"
+                          },
+                          {
+                            "$ref": "#/definitions/TimeInterval"
                           }
                         ],
-                        "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+                        "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
                       },
                       "xOffset": {
                         "description": "Specify the x offset of views in the unit of pixels",
@@ -7995,9 +8204,12 @@
                 },
                 {
                   "$ref": "#/definitions/DomainChr"
+                },
+                {
+                  "$ref": "#/definitions/TimeInterval"
                 }
               ],
-              "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+              "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
             },
             "xOffset": {
               "description": "Specify the x offset of views in the unit of pixels",
@@ -8429,9 +8641,12 @@
                           },
                           {
                             "$ref": "#/definitions/DomainChr"
+                          },
+                          {
+                            "$ref": "#/definitions/TimeInterval"
                           }
                         ],
-                        "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+                        "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
                       },
                       "xOffset": {
                         "description": "Specify the x offset of views in the unit of pixels",
@@ -8552,9 +8767,12 @@
                 },
                 {
                   "$ref": "#/definitions/DomainChr"
+                },
+                {
+                  "$ref": "#/definitions/TimeInterval"
                 }
               ],
-              "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+              "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
             },
             "xOffset": {
               "description": "Specify the x offset of views in the unit of pixels",
@@ -8668,6 +8886,39 @@
         "operation",
         "target",
         "threshold"
+      ],
+      "type": "object"
+    },
+    "SpanTransform": {
+      "additionalProperties": false,
+      "description": "Turn a span (a duration without a position in time) into an interval: the end of each row is its start (`field`) plus a duration, either a numeric field in `unit` or a fixed duration such as `\"2 weeks\"`. Units up to a week are added exactly; months, quarters, years and decades are added on the calendar (31 January + 1 month = the last day of February), with any fraction at the nominal length. Encode the start with `x` and the end with `xe`. Negative durations are not drawn.",
+      "properties": {
+        "duration": {
+          "description": "A numeric field with each row's duration in `unit`, or a fixed duration such as `\"15 minutes\"`.",
+          "type": "string"
+        },
+        "field": {
+          "description": "Field with the start times (Unix seconds).",
+          "type": "string"
+        },
+        "newField": {
+          "description": "Field that receives the end times (Unix seconds).",
+          "type": "string"
+        },
+        "type": {
+          "const": "span",
+          "type": "string"
+        },
+        "unit": {
+          "$ref": "#/definitions/TimeUnit",
+          "description": "Unit of a numeric duration field. __Default:__ `\"second\"`"
+        }
+      },
+      "required": [
+        "type",
+        "field",
+        "duration",
+        "newField"
       ],
       "type": "object"
     },
@@ -8886,6 +9137,10 @@
         "inlineLegend": {
           "description": "Specify whether to show legend in a single horizontal line?",
           "type": "boolean"
+        },
+        "legendLabel": {
+          "description": "Label of this track in the legend, for a track with a constant `color` (e.g. one of several overlaid lines, areas or bars): the legend shows the label next to a swatch of the track's mark and color. Drawn in the header legend of linear tracks on a temporal axis.",
+          "type": "string"
         },
         "legendTitle": {
           "description": "If defined, show legend title on the top or left",
@@ -9178,9 +9433,12 @@
             },
             {
               "$ref": "#/definitions/DomainChr"
+            },
+            {
+              "$ref": "#/definitions/TimeInterval"
             }
           ],
-          "description": "Specify the visible region of the x-axis: a genomic region, or `{ interval: [start, end] }` in Unix seconds on a temporal axis"
+          "description": "Specify the visible region of the x-axis: a genomic region, or a time interval on a temporal axis (`{ interval: [start, end] }` with Unix seconds or date strings, e.g. `[\"2000-01\", \"2010-12\"]`)"
         },
         "xOffset": {
           "description": "Specify the x offset of views in the unit of pixels",
@@ -9253,9 +9511,9 @@
       "additionalProperties": false,
       "properties": {
         "interval": {
-          "description": "Show a certain time interval, as `[start, end]` in Unix epoch seconds (e.g., `[946684800, 1262304000]` for 2000-2010)",
+          "description": "Show a certain time interval, as `[start, end]`. Each bound is Unix epoch seconds or a date string: a partial date (`\"2010\"`, `\"2010-12\"`, `\"2010-12-31\"`, `\"2010-Q4\"`, `\"2015-W53\"`) starts at the first instant of the unit it names and, as the end, includes the whole unit (`[\"2000-01\", \"2010-12\"]` covers January 2000 through December 2010); a date-time (`\"2010-01-03T23:00:00Z\"`) is that exact instant, read as UTC without a zone.",
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/TimeValue"
           },
           "maxItems": 2,
           "minItems": 2,
@@ -9266,6 +9524,94 @@
         "interval"
       ],
       "type": "object"
+    },
+    "TimeUnit": {
+      "description": "The calendar granularity hierarchy, all in UTC. `week` is the ISO week (Monday to Sunday); quarters start in January, April, July and October; decades start in years divisible by 10.",
+      "enum": [
+        "millisecond",
+        "second",
+        "minute",
+        "hour",
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year",
+        "decade"
+      ],
+      "type": "string"
+    },
+    "TimeUnitRule": {
+      "additionalProperties": false,
+      "description": "A granularity transition rule of `x.timeUnit`.",
+      "properties": {
+        "maxSpan": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/Duration"
+            }
+          ],
+          "description": "The rule applies while the visible span of the x-axis is below this duration (e.g. `\"3 months\"`) or number of seconds, and at or above the `maxSpan` of the previous rule. Omitted in the last rule."
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TimeUnit"
+            },
+            {
+              "const": "none",
+              "type": "string"
+            }
+          ],
+          "description": "The unit used by this rule; `\"none\"` draws the rows as they are (no truncation, no aggregation)."
+        }
+      },
+      "required": [
+        "unit"
+      ],
+      "type": "object"
+    },
+    "TimeUnitTransform": {
+      "additionalProperties": false,
+      "description": "Truncate a time field (Unix seconds) to the start of the calendar unit that contains it (UTC), e.g. the first instant of its month. Rows are kept; to aggregate by unit, use `x.timeUnit` with an `aggregate` channel.",
+      "properties": {
+        "endField": {
+          "description": "If specified, a field that receives the end of the unit (the start of the next one), e.g. for `xe`.",
+          "type": "string"
+        },
+        "field": {
+          "description": "Field with times in Unix seconds, e.g. a `dateFields` field of `csv-time` or `json-time` data.",
+          "type": "string"
+        },
+        "newField": {
+          "description": "Field that receives the start of the unit. __Default:__ `field` itself",
+          "type": "string"
+        },
+        "type": {
+          "const": "timeUnit",
+          "type": "string"
+        },
+        "unit": {
+          "$ref": "#/definitions/TimeUnit",
+          "description": "The calendar unit. `week` is the ISO week (Monday to Sunday)."
+        }
+      },
+      "required": [
+        "type",
+        "field",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "TimeValue": {
+      "description": "A time: Unix epoch seconds, or a date string such as `\"2010-12\"` or `\"2010-01-03T23:00:00Z\"` (UTC).",
+      "type": [
+        "number",
+        "string"
+      ]
     },
     "TimestampUnit": {
       "description": "Unit of Unix timestamps: seconds or milliseconds.",
@@ -9419,6 +9765,18 @@
     },
     "X": {
       "additionalProperties": false,
+      "if": {
+        "not": {
+          "properties": {
+            "type": {
+              "const": "temporal"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        }
+      },
       "properties": {
         "aggregate": {
           "$ref": "#/definitions/Aggregate",
@@ -9436,8 +9794,7 @@
             {
               "$ref": "#/definitions/TemporalDomain"
             }
-          ],
-          "description": "Values of the data"
+          ]
         },
         "field": {
           "description": "Name of the data field.",
@@ -9455,9 +9812,39 @@
           "description": "Users need to assign a unique linkingId for [linking views](/docs/user-interaction#linking-views) and [Brushing and Linking](/docs/user-interaction#brushing-and-linking)",
           "type": "string"
         },
+        "period": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PeriodUnit"
+            },
+            {
+              "$ref": "#/definitions/Period"
+            }
+          ],
+          "description": "Wrap a temporal axis by a calendar period, which sets the axis' time coordinate system to `period`: each time is placed at its position within its period (its month, day and time for a year; its weekday and time for a week; its time of day for a day), so all periods share one axis, or one revolution in a circular layout. The axis labels positions within the period (Jan...Dec, W1...W53, Mon...Sun, 00:00...23:00). Each row also gets the period it belongs to as a field (`newField`, e.g. `\"2010\"`), to be encoded with `color` (overlaid periods) or `row` (one ring per period).\n\nOnly for `type: \"temporal\"` on `x`. The domain is always the whole period: a `domain` is ignored."
+        },
         "range": {
           "$ref": "#/definitions/ValueExtent",
           "description": "Values of the visual channel."
+        },
+        "relative": {
+          "$ref": "#/definitions/Relative",
+          "description": "Re-express time as an offset from a reference event, which sets the axis' time coordinate system to `relative`: each row is placed at its signed offset from the anchor of its group (a fixed date, the group's first or last record, the time of the group's largest or smallest value of a field, or a date read from the row itself). The axis labels offsets in `unit` (\"-2 wk\", \"0\", \"+3 wk\"), with 0 at the anchor.\n\nSet the domain as offsets, e.g. `{ \"interval\": [\"-36 months\", \"24 months\"] }` (durations or seconds). Only for `type: \"temporal\"` on `x`; cannot be combined with `period`."
+        },
+        "timeUnit": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TimeUnit"
+            },
+            {
+              "items": {
+                "$ref": "#/definitions/TimeUnitRule"
+              },
+              "minItems": 1,
+              "type": "array"
+            }
+          ],
+          "description": "Show time by calendar unit (\"show by month\"): every row is placed at the start of the unit that contains its time (for `bar` and `rect` marks without `xe`, each mark spans its unit). If another channel of the track has an `aggregate`, rows are grouped by the unit and by the fields of the track's nominal channels (`color`, `row`, `stroke`, ...), and each aggregated channel is reduced with its operation: one mark per unit and group.\n\nWith `period`, units are taken in absolute time and must lie within the period (e.g. months of a year).\n\n__Granularity transition rules:__ a list of rules from fine to coarse, each with the largest visible span at which it applies (`maxSpan`), switches the unit with zoom: at any zoom level the track is drawn with the first rule whose `maxSpan` exceeds the visible time span; the last rule has no `maxSpan`. For example, `[{ \"unit\": \"day\", \"maxSpan\": \"3 months\" }, { \"unit\": \"month\" }]` shows days below 3 months of visible time and months above. This is shorthand for overlaid copies of the track, each with one unit and `visibility` conditions on the zoom level.\n\nOnly for `type: \"temporal\"` on `x`."
         },
         "type": {
           "description": "Specify the data type.",
@@ -9466,6 +9853,13 @@
             "temporal"
           ],
           "type": "string"
+        }
+      },
+      "then": {
+        "properties": {
+          "period": false,
+          "relative": false,
+          "timeUnit": false
         }
       },
       "type": "object"
@@ -9523,6 +9917,10 @@
           "$ref": "#/definitions/ValueExtent",
           "description": "Values of the visual channel."
         },
+        "title": {
+          "description": "Title of the y axis, with units, e.g. `\"Consumption (Wh)\"`. Drawn above the axis (\"↑ Consumption (Wh)\") in the header strip of linear tracks on a temporal axis, and in the center of a ring in circular layouts.",
+          "type": "string"
+        },
         "type": {
           "description": "Specify the data type. A `temporal` axis is only supported on `x`.",
           "enum": [
@@ -9564,8 +9962,15 @@
           "type": "string"
         },
         "threshold": {
-          "description": "Set a threshold in the unit of the x-axis: base pairs (bp) on a genomic axis, seconds on a temporal axis (e.g., `86400` is one day of visible time)",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/Duration"
+            }
+          ],
+          "description": "Set a threshold for the visible span of the x-axis, in its unit: base pairs (bp) on a genomic axis, seconds on a temporal axis (e.g., `86400` is one day of visible time). On a temporal axis the threshold can also be a duration such as `\"3 months\"`."
         },
         "transitionPadding": {
           "description": "Specify the buffer size (in pixel) of width or height for smooth transition.\n\n__Default__: `0`",
@@ -9581,10 +9986,18 @@
       "type": "object"
     },
     "ZoomLimits": {
+      "description": "The smallest and largest visible span of the x-axis, in x units (base pairs, or seconds on a temporal axis). On a temporal axis, a span can also be a duration such as `\"1 hour\"` or `\"20 years\"`.",
       "items": {
-        "type": [
-          "number",
-          "null"
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "$ref": "#/definitions/Duration"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "maxItems": 2,

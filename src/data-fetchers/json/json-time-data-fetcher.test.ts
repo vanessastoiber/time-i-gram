@@ -70,3 +70,19 @@ describe('json-time data fetcher: date parsing', () => {
         expect(rows[0].year).toEqual(utc(2000, 3, 1));
     });
 });
+
+describe('json-time data fetcher: time coordinate systems', () => {
+    it('adds period coordinates and keys to inline values', async () => {
+        const { rows } = await loadValues([{ date: '2012-03-01' }, { date: '2013-03-01T12:00:00Z' }], {
+            dateFields: ['date'],
+            timeCoordinates: {
+                system: { kind: 'period', unit: 'year', weekBased: false, start: 1 },
+                fields: [{ source: 'date', coord: '__period_date' }],
+                keyFields: ['year']
+            }
+        });
+        expect(rows.map(r => r.year)).toEqual(['2012', '2013']);
+        expect(rows.map(r => r.__period_date)).toEqual([utc(2000, 3, 1), utc(2000, 3, 1, 12)]);
+        expect(rows[0].date).toEqual(utc(2012, 3, 1));
+    });
+});

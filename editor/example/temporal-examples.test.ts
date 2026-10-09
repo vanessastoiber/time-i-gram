@@ -3,6 +3,7 @@ import path from 'path';
 import { compile } from '../../src/compiler/compile';
 import { getTheme } from '../../src/core/utils/theme';
 import { validateGoslingSpec, type GoslingSpec } from '@gosling-lang/gosling-schema';
+import { parseTimeValue } from '../../src/core/utils/time-units';
 import { EX_SPEC_TEMPORAL_OVERVIEW_DETAIL } from './json-spec/temporal-data_overview-detail';
 import { EX_SPEC_TEMPORAL_SEATTLE_WEATHER } from './spec/temporal-data_seattle-weather';
 import { EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR } from './spec/temporal-data_unemployment-circular-linear';
@@ -12,6 +13,11 @@ import { EX_SPEC_TEMPORAL_SUPP_SOLAR_WEATHER } from './spec/temporal-data_supp-s
 import { EX_SPEC_TEMPORAL_SUPP_NYC_TAXI } from './spec/temporal-data_supp-nyc-taxi';
 import { EX_SPEC_TEMPORAL_SUPP_WHO_FLU } from './spec/temporal-data_supp-who-flu';
 import { EX_SPEC_TEMPORAL_SUPP_FITBIT } from './spec/temporal-data_supp-fitbit';
+import { EX_SPEC_TEMPORAL_WHO_FLU_PERIOD } from './spec/temporal-data_who-flu-period';
+import { EX_SPEC_TEMPORAL_FITBIT_CYCLES } from './spec/temporal-data_fitbit-cycles';
+import { EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY } from './spec/temporal-data_unemployment-granularity';
+import { EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT } from './spec/temporal-data_relative-alignment';
+import { EX_SPEC_TEMPORAL_TAXI_SPANS } from './spec/temporal-data_taxi-spans';
 
 /** The JS code blocks of README.md that build a spec, evaluated to the spec object. */
 function readmeSpecs(): Record<string, GoslingSpec> {
@@ -34,6 +40,11 @@ const examples: Record<string, GoslingSpec> = {
     'supp S6 NYC taxi': EX_SPEC_TEMPORAL_SUPP_NYC_TAXI,
     'supp S7 WHO flu': EX_SPEC_TEMPORAL_SUPP_WHO_FLU,
     'supp S8 FitBit': EX_SPEC_TEMPORAL_SUPP_FITBIT,
+    'period: WHO flu': EX_SPEC_TEMPORAL_WHO_FLU_PERIOD,
+    'period: FitBit cycles': EX_SPEC_TEMPORAL_FITBIT_CYCLES,
+    'granularity: unemployment': EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY,
+    'relative: alignment': EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT,
+    'spans: taxi': EX_SPEC_TEMPORAL_TAXI_SPANS,
     ...readmeSpecs()
 };
 
@@ -93,10 +104,22 @@ describe('temporal example "supp S8 FitBit"', () => {
     const dailyActivity = spec.views[0].views[1];
 
     it('starts at the recording period of the heart-rate data (12 April to 12 May 2016)', () => {
-        expect(spec.xDomain.interval).toEqual([Date.UTC(2016, 3, 12) / 1000, Date.UTC(2016, 4, 13) / 1000]);
+        const [start, end] = spec.xDomain.interval;
+        expect([parseTimeValue(start, 'start'), parseTimeValue(end, 'end')]).toEqual([
+            Date.UTC(2016, 3, 12) / 1000,
+            Date.UTC(2016, 4, 13) / 1000
+        ]);
     });
 
-    it('colors calories as a quantitative field', () => {
-        expect(dailyActivity.tracks[0].color.type).toEqual('quantitative');
+    it('shows the activity of the participant whose heart rate it shows', () => {
+        const heartRate = spec.views[0].views[0].tracks[0];
+        expect(dailyActivity.dataTransform).toEqual(heartRate.dataTransform);
+    });
+
+    it('names the bars and the line in the legend and on their axes', () => {
+        expect(dailyActivity.tracks.map((t: any) => [t.mark, t.style.legendLabel, t.y.title])).toEqual([
+            ['bar', 'Steps (bars)', 'Steps'],
+            ['line', 'Very active minutes (line)', 'Very active minutes']
+        ]);
     });
 });

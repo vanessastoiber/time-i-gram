@@ -1,7 +1,7 @@
 import { getBoundingBox, type TrackInfo } from './bounding-box';
 import { goslingToHiGlass } from './gosling-to-higlass';
 import { HiGlassModel } from './higlass-model';
-import { getLinkingInfo } from '../core/utils/linking';
+import { filterLinksByCoordinates, getLinkingInfo } from '../core/utils/linking';
 import type {
     GoslingSpec,
     OverlaidTrack,
@@ -40,7 +40,7 @@ export function renderHiGlass(
     });
 
     /* Add linking information to the HiGlass model */
-    const linkingInfos = getLinkingInfo(hgModel);
+    const linkingInfos = filterLinksByCoordinates(getLinkingInfo(hgModel));
 
     // Brushing
     // (between a view with `brush` and a view having the same linking name)

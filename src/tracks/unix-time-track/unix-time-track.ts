@@ -1,39 +1,13 @@
 import type { PIXI } from '@higlass/libraries';
 import { scaleUtc } from 'd3-scale';
-import { utcFormat } from 'd3-time-format';
+import { crowdedEnds, timeAxisTicks, type TimeAxisTicks } from './time-axis-ticks';
 import { cartesianToPolar } from '../../core/utils/polar';
 import colorToHex from '../../core/utils/color-to-hex';
 import * as uuid from 'uuid';
 
-const durationSecond = 1000;
-const durationMinute = durationSecond * 60;
-const durationHour = durationMinute * 60;
-const durationDay = durationHour * 24;
-const durationWeek = durationDay * 7;
-const durationYear = durationDay * 365;
-
-const formatSecond = utcFormat('%Y %b %d (%I:%M:%S %p)');
-const formatMinute = utcFormat('%Y %b %d (%I:%M %p)');
-const formatHour = utcFormat('%Y %b %d (%I %p)');
-const formatDay = utcFormat('%Y %b %d');
-const formatWeek = utcFormat('%Y %b');
-const formatMonth = utcFormat('%Y');
-const formatYear = utcFormat('');
-
 const ZOOM_LEVEL_YEAR = 0;
 const ZOOM_LEVEL_WEEK = 1;
 const ZOOM_LEVEL_DAY = 2;
-
-function timeFormat(date: number | Date, timeDelta: number) {
-  const d = typeof date === 'number' ? new Date(date) : date;
-  return (timeDelta < durationSecond ? formatSecond
-    : timeDelta < durationMinute ? formatMinute
-      : timeDelta < durationHour ? formatHour
-        : timeDelta < durationDay ? formatDay
-          : timeDelta < durationWeek ? formatWeek
-            : timeDelta < durationYear ? formatMonth
-              : formatYear)(d);
-}
 
 const tickHeight = 10;
 const textHeight = 10;
@@ -107,22 +81,44 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       return timeScale;
     }
 
+    /** Ticks and labels in the axis' time coordinate system (absolute dates, positions in a period, offsets). */
+    updateAxisTicks(): TimeAxisTicks {
+      const domain = this._xScale.domain() as [number, number];
+      // as many ticks as fit along the axis: its width, or the circumference at the labels of a circular axis
+      const ticks = timeAxisTicks(domain, this.options.timeCoordinates, 10, this.axisLength(), this.axisTextFontSize * 0.6);
+      if (this.options.layout === 'circular') {
+        // on a ring, the end of the domain is drawn next to its start: drop a tick there
+        const keep = ticks.ticks.map(t => t < domain[1]);
+        ticks.ticks = ticks.ticks.filter((_, i) => keep[i]);
+        ticks.labels = ticks.labels.filter((_, i) => keep[i]);
+      }
+      this.axisTicks = ticks;
+      return this.axisTicks;
+    }
+
+    /** Length of the axis along which labels are placed, in px. */
+    axisLength(): number {
+      const [width, height] = this.dimensions ?? [0, 0];
+      if (this.options.layout !== 'circular') return width;
+      const { startAngle = 0, endAngle = 360 } = this.options;
+      const r = this.circularLabelRadius();
+      const length = (2 * Math.PI * Math.max(r, 1) * Math.abs(endAngle - startAngle)) / 360;
+      return isFinite(length) ? length : width;
+    }
+
     createAxisTexts() {
-      const ticks = this.timeScale.ticks();
-      const tickFormat = this.timeScale.tickFormat();
+      const { ticks, labels } = this.axisTicks as TimeAxisTicks;
 
       let i = 0;
 
       while (i < ticks.length) {
-        const tick = ticks[i];
-
         while (this.axisTexts.length <= i) {
-          const newText = new PIXI.Text(tick, this.axisTextStyle);
+          const newText = new PIXI.Text('', this.axisTextStyle);
           this.axisTexts.push(newText);
           this.pMain.addChild(newText);
         }
 
-        this.axisTexts[i].text = tickFormat(tick);
+        this.axisTexts[i].text = labels[i];
         this.axisTexts[i].anchor.y = this.options.layout === 'circular' ? 0.5 : this.options.reverseOrientation ? 0 : 0.5;
         this.axisTexts[i].anchor.x = 0.4;
         i++;
@@ -137,17 +133,24 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       }
     }
 
+    /**
+     * Radius of the labels of a circular axis: the middle of the axis' own band (`innerRadius` to `outerRadius`
+     * of the axis track), which the data ring leaves free, so that labels do not cover marks.
+     */
+    circularLabelRadius(): number {
+      const [width, height] = this.dimensions;
+      const factor = Math.min(width, height) / Math.min(this.options.width, this.options.height);
+      return ((this.options.innerRadius + this.options.outerRadius) / 2) * factor;
+    }
+
     addCurvedText(textObj: PIXI.Text, cx: number) {
       const [width, height] = this.dimensions;
       const { startAngle, endAngle } = this.options;
-      const factor = Math.min(width, height) / Math.min(this.options.width, this.options.height);
-      const innerRadius = this.options.innerRadius * factor -100;
-      const outerRadius = this.options.outerRadius * factor;
-
-      const r = (outerRadius + innerRadius) / 2.0;
+      const r = this.circularLabelRadius();
       const centerPos = cartesianToPolar(cx, width, r, width / 2.0, height / 2.0, startAngle, endAngle);
-      textObj.x = centerPos.x;
-      textObj.y = centerPos.y;
+      // around the ring's center: the polar position is relative to the track, which may be offset in its view
+      textObj.x = centerPos.x + this.position[0];
+      textObj.y = centerPos.y + this.position[1];
 
       textObj.resolution = 4;
       const txtStyle = new HGC.libraries.PIXI.TextStyle(this.pixiTextConfig);
@@ -185,36 +188,53 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       return rope;
   }
 
+    /** Move a label of a linear axis inward if it would extend past an end of the axis (e.g. a tick at the edge). */
+    keepLabelInside(text: PIXI.Text) {
+      const [start, end] = [this.position[0], this.position[0] + this.dimensions[0]];
+      const left = text.x - text.anchor.x * text.width;
+      if (left < start) text.x += start - left;
+      else if (left + text.width > end) text.x -= left + text.width - end;
+    }
+
+    /** Hide the labels at the ends of a linear axis that overlap their neighbor (see `crowdedEnds`). */
+    hideCrowdedEnds() {
+      const texts = this.axisTexts as PIXI.Text[];
+      texts.forEach(t => (t.visible = true));
+      const boxes = texts.map(t => ({ left: t.x - t.anchor.x * t.width, width: t.width }));
+      crowdedEnds(boxes).forEach(i => (texts[i].visible = false));
+    }
+
     drawTicks(tickStartY: number, tickEndY: number) {
-      this.timeScale.ticks().forEach((tick: any, i: string | number) => {
-        const xPos = this.position[0] + this.timeScale(tick);
+      (this.axisTicks as TimeAxisTicks).ticks.forEach((tick: number, i: number) => {
+        const xPos = this.position[0] + this.timeScale(tick * 1000);
 
         if (this.options.layout === 'circular') {
-          const rope = this.addCurvedText(this.axisTexts[i], xPos);
+          const rope = this.addCurvedText(this.axisTexts[i], xPos - this.position[0]);
+          // labels at the sides of a ring stay inside the view
+          this.keepLabelInside(this.axisTexts[i]);
           rope && this.pTicksCircular.addChild(rope);
         } else {
           this.axisTexts[i].x = xPos;
           this.axisTexts[i].y = this.position[1] + tickEndY + betweenTickAndText - 15;
+          this.keepLabelInside(this.axisTexts[i]);
           this.pMain.moveTo(xPos, this.position[1] + tickStartY - 10);
           this.pMain.lineTo(xPos, this.position[1] + tickEndY - 5);
         }
-        if (this.options.layout === 'circular') return;
       });
     }
 
+    /**
+     * The context label under a linear axis: the visible range at a coarser unit, the visible weeks, or what
+     * offsets count (see `timeAxisTicks`). Not drawn on circular axes, where the middle of the axis is the
+     * center of the ring.
+     */
     drawContext(tickStartY: number, tickEndY: number) {
-      const ticks = this.timeScale.ticks();
       const center = (+this.timeScale.domain()[1] + +this.timeScale.domain()[0]) / 2;
-      const tickDiff = +ticks[1] - +ticks[0];
 
       const xPos = this.position[0] + this.timeScale(center);
-      this.context.text = timeFormat(center, tickDiff);
+      this.context.text = this.options.layout === 'circular' ? '' : (this.axisTicks as TimeAxisTicks).context;
       this.context.x = xPos;
       this.context.y = this.position[1] + tickEndY + betweenCenterTickAndText;
-      if (this.context.text !== '') {
-        this.pMain.moveTo(xPos, this.position[1] + tickStartY - 10);
-        this.pMain.lineTo(xPos, this.position[1] + tickEndY - 5);
-      }
     }
 
     draw() {
@@ -229,8 +249,10 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       }
 
       this.updateTimeScale();
+      this.updateAxisTicks();
       this.createAxisTexts();
       this.drawTicks(tickStartY, tickEndY);
+      if (this.options.layout !== 'circular') this.hideCrowdedEnds();
       this.drawContext(tickStartY, tickEndY);
     }
 

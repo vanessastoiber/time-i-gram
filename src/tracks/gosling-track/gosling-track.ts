@@ -37,9 +37,30 @@ import {
     parseSubJSON,
     replaceString,
     splitExon,
-    inferSvType
+    inferSvType,
+    truncateTime,
+    addSpan,
+    binByTimeUnit
 } from '../../core/utils/data-transform';
+import {
+    ABSOLUTE_TIME,
+    applyDerivedTimeCoordinates,
+    getTrackTimeCoordinates,
+    getTrackTimeUnit,
+    getTrackTimeUnitTiling,
+    isRowInTile
+} from '../../core/utils/time-coordinate-system';
 import { publish } from '../../api/pubsub';
+import { combineTemporalTiles, combineTilesUpstream } from './combine-tiles';
+import { modelsCacheKey } from './model-cache';
+import {
+    colorCategories,
+    headerLayout,
+    headerLegend,
+    usesTemporalHeader,
+    yAxisTitles
+} from '../../core/mark/temporal-header';
+import { drawHeaderLegend } from '../../core/mark/legend';
 import { getRelativeGenomicPosition } from '../../core/utils/assembly';
 import { getTextStyle } from '../../core/utils/text-style';
 import {
@@ -71,6 +92,43 @@ export function publishGenomicLocation(
         GenomicPosition
     ];
     publish('location', { id: viewUid, genomicRange });
+}
+
+/**
+ * Whether resolved tracks draw lines or areas over time. Marks are drawn per tile, so such marks would break at
+ * tile boundaries; the tiles of these tracks are combined so that each line is drawn in one piece.
+ * Genomic tracks are never combined for this reason.
+ */
+export function drawsTemporalLines(resolvedTracks: SingleTrack[]): boolean {
+    return resolvedTracks.some(
+        spec => (spec.mark === 'line' || spec.mark === 'area') && IsChannelDeep(spec.x) && spec.x.type === 'temporal'
+    );
+}
+
+/**
+ * Rows of a circular track that draws lines or areas over time, limited to the visible x domain. When a ring is
+ * zoomed, rows outside the visible arc would map to angles beyond a revolution and be drawn across the ring;
+ * linear layouts mask them instead. Other tracks are returned unchanged.
+ */
+export function rowsInVisibleArc<T extends Datum>(spec: SingleTrack, rows: T[], [min, max]: [number, number]): T[] {
+    const x = spec.x;
+    if (spec.layout !== 'circular' || !drawsTemporalLines([spec]) || !IsChannelDeep(x) || !x.field) return rows;
+    const field = x.field;
+    return rows.filter(row => min <= +row[field] && +row[field] <= max);
+}
+
+/**
+ * The track models drawn in the visible tiles (not skipped, and visible at `zoomLevel`): a header legend lists the
+ * categories of all of them, since each tile holds only its own rows.
+ */
+export function modelsOfVisibleTiles(
+    tileInfos: (Pick<ProcessedTileInfo, 'goslingModels' | 'skipRendering'> | undefined)[],
+    zoomLevel: number
+): GoslingTrackModel[] {
+    return tileInfos
+        .filter(info => info && !info.skipRendering)
+        .flatMap(info => info!.goslingModels)
+        .filter(model => model.trackVisibility({ zoomLevel }));
 }
 
 export const PRINT_RENDERING_CYCLE = false;
@@ -117,8 +175,12 @@ interface ProcessedTileInfo {
     /** Single tile can contain multiple gosling models if multiple tracks are superposed */
     goslingModels: GoslingTrackModel[];
     tabularData: Datum[];
+    /** The tile's own rows, kept when the rows of all visible tiles are combined (see `combine-tiles.ts`) */
+    ownTabularData?: Datum[];
     /** Flag variable that indicate that rendering of this tile should be skipped */
     skipRendering: boolean;
+    /** Inputs of `goslingModels` (see `modelsCacheKey`); `undefined` if they are rebuilt on every draw */
+    modelsKey?: string;
 }
 
 /** Information about the rendered color legend */
@@ -174,6 +236,12 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
         mRangeBrush: LinearBrushModel;
         #assembly?: Assembly; // Used to get the relative genomic position
         #processedTileInfo: Record<string, ProcessedTileInfo>;
+        /** The x extent of the visible tiles when their rows are combined into the first tile */
+        #combinedTileBounds: [number, number] | undefined;
+        /** The tiles combined last (temporal lines): a combination is redone only when they change */
+        #lastCombination:
+            | { ids: string[]; infos: (ProcessedTileInfo | undefined)[]; bounds?: [number, number] }
+            | undefined;
         firstDraw = true; // False if draw has been called once already. Used with onNewTrack API. Public because used in draw()
         // Used in mark/legend.ts
         gLegend? = HGC.libraries.d3Selection.select(context.svgElement).append('g');
@@ -362,6 +430,12 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
             tile.graphics?.clear();
             tile.graphics?.removeChildren();
 
+            if (tileInfo.skipRendering && this.#combinedTileBounds) {
+                // temporal lines: the first visible tile draws the rows of all tiles, and its embellishments
+                // (axes, legends, outline) must not be cleared by the other tiles
+                return;
+            }
+
             // This is only to render embellishments only once.
             // TODO: Instead of rendering and removing for every tiles, render pBorder only once
             this.pBackground.clear();
@@ -372,6 +446,7 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
 
             // Because a single tile contains one track or multiple tracks overlaid, we draw marks and embellishments
             // for each GoslingTrackModel
+            const visibleModels: GoslingTrackModel[] = [];
             tileInfo.goslingModels.forEach((model: GoslingTrackModel) => {
                 // check visibility condition
                 const trackWidth = this.dimensions[0];
@@ -380,10 +455,19 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                 if (!model.trackVisibility({ zoomLevel })) {
                     return;
                 }
+                visibleModels.push(model);
                 drawPreEmbellishment(HGC, this, tile, model, this.options.theme);
                 drawMark(HGC, this, tile, model);
                 drawPostEmbellishment(HGC, this, tile, model, this.options.theme);
             });
+            // linear tracks on a temporal axis: one legend in the header strip for all overlaid tracks, with the
+            // categories of all visible tiles (each tile redraws the header)
+            if (usesTemporalHeader(visibleModels.map(model => model.spec()))) {
+                const trackWidth = this.dimensions[0];
+                const zoomLevel = this._xScale.invert(trackWidth) - this._xScale.invert(0);
+                const tileInfos = this.visibleAndFetchedTiles().map(t => this.#processedTileInfo[t.tileId]);
+                drawHeaderLegend(HGC, this, modelsOfVisibleTiles(tileInfos, zoomLevel), this.options.theme);
+            }
 
             this.forceDraw();
         }
@@ -762,38 +846,46 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
          * Called by this.processAllTiles() so this method needs to be public.
          */
         combineAllTilesIfNeeded() {
+            this.#combinedTileBounds = undefined;
             if (!this.shouldCombineTiles()) return;
 
             const tiles = this.visibleAndFetchedTiles();
 
-            if (!tiles || tiles.length <= 1) {
-                // Does not make sense to combine tiles
+            if (hasDataTransform(this.options.spec, 'displace')) {
+                // upstream Gosling's path, unchanged
+                if (!tiles || tiles.length <= 1) {
+                    // Does not make sense to combine tiles
+                    return;
+                }
+
+                // Increase the size of tiles by length
+                this.tileSize = (this.tilesetInfo?.tile_size ?? 1024) * tiles.length;
+
+                combineTilesUpstream(tiles.map(tile => this.#processedTileInfo[tile.tileId]));
                 return;
             }
 
-            // Increase the size of tiles by length
-            this.tileSize = (this.tilesetInfo?.tile_size ?? 1024) * tiles.length;
-
-            let merged: Datum[] = [];
-
-            tiles.forEach((tile, i) => {
-                const tileInfo = this.#processedTileInfo[tile.tileId];
-                if (tileInfo) {
-                    // Combine data
-                    merged = [...merged, ...tileInfo.tabularData];
-
-                    // Since we merge the data to the first one, skip rendering the rest
-                    tileInfo.skipRendering = i !== 0;
-                }
-            });
-
-            const firstTileInfo = this.#processedTileInfo[tiles[0].tileId];
-            firstTileInfo.tabularData = merged;
-
-            // Remove duplicated if any. Sparse tiles can have duplications.
-            if (firstTileInfo.tabularData[0]?.uid) {
-                firstTileInfo.tabularData = uniqBy(firstTileInfo.tabularData, 'uid');
+            // lines and areas on a temporal axis; nothing to redo while the same tiles stay visible
+            const ids = tiles.map(tile => tile.tileId);
+            const infos = tiles.map(tile => this.#processedTileInfo[tile.tileId]);
+            const last = this.#lastCombination;
+            if (last && isEqual(last.ids, ids) && last.infos.every((info, i) => info === infos[i]) && last.bounds) {
+                this.#combinedTileBounds = last.bounds;
+                return;
             }
+            this.#lastCombination = { ids, infos };
+            combineTemporalTiles(infos);
+            if (tiles.length <= 1 || !this.#processedTileInfo[tiles[0].tileId] || !this.tilesetInfo) return;
+
+            // the combined rows cover all visible tiles (see `#rowsOfTileForTimeUnit`)
+            const bounds = tiles
+                .filter(tile => tile.tileData.tilePos)
+                .map(tile => this.getTilePosAndDimensions(tile.tileData.zoomLevel, tile.tileData.tilePos!));
+            this.#combinedTileBounds = [
+                Math.min(...bounds.map(b => b.tileX)),
+                Math.max(...bounds.map(b => b.tileX + b.tileWidth))
+            ];
+            this.#lastCombination.bounds = this.#combinedTileBounds;
         }
         /**
          * Check whether tiles should be merged. Needs to be public since called by combineAllTilesIfNeeded()
@@ -807,8 +899,28 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
             };
             // BAM data fetcher already combines the datasets;
             const isBamDataFetcher = this.dataFetcher instanceof BamDataFetcher;
-            return includesDisplaceTransform && !hasDenseTiles() && !isBamDataFetcher;
+            return (includesDisplaceTransform || this.#drawsTemporalLines()) && !hasDenseTiles() && !isBamDataFetcher;
         }
+
+        /**
+         * Whether a resolved track draws lines or areas over time. Such marks are drawn per tile, so they would
+         * break at tile boundaries; their tiles are combined so that each line is drawn in one piece.
+         */
+        #drawsTemporalLines() {
+            return drawsTemporalLines(this.#getResolvedTracks());
+        }
+
+        /** Width of a text in the legend style, in px. */
+        #measureText = (text: string, bold: boolean) => {
+            const { legend } = this.options.theme;
+            const style = getTextStyle({
+                color: legend.labelColor,
+                size: legend.labelFontSize,
+                fontWeight: bold ? 'bold' : legend.labelFontWeight,
+                fontFamily: legend.labelFontFamily
+            });
+            return HGC.libraries.PIXI.TextMetrics.measureText(text, new HGC.libraries.PIXI.TextStyle(style)).width;
+        };
 
         /**
          * Creates an array of SingleTracks if there are overlaid tracks
@@ -876,6 +988,26 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
         }
 
         /**
+         * Rows of a tile for one resolved track of a track that aggregates by time unit. The time data fetchers
+         * return every row whose unit starts in the tile, for the units of all overlaid tracks (and, for
+         * overlaid tracks without a unit, every row in the tile). Each resolved track keeps the rows of its own
+         * units, or its raw rows, so that every unit is aggregated once, from all of its rows.
+         */
+        #rowsOfTileForTimeUnit(tile: Tile, resolvedSpec: SingleTrack, rows: Datum[]): Datum[] {
+            const tiling = getTrackTimeUnitTiling(resolvedSpec);
+            if (!tiling || !tile.tileData.tilePos || !this.tilesetInfo) return Array.from(rows);
+            // with combined tiles, the first tile holds the rows of all visible tiles
+            const { tileX, tileWidth } = this.#combinedTileBounds
+                ? { tileX: this.#combinedTileBounds[0], tileWidth: this.#combinedTileBounds[1] - this.#combinedTileBounds[0] }
+                : this.getTilePosAndDimensions(tile.tileData.zoomLevel, tile.tileData.tilePos);
+            const coordinates = getTrackTimeCoordinates(resolvedSpec);
+            const coordField = coordinates?.fields.find(f => f.source === tiling.source)?.coord ?? tiling.source;
+            const unit = getTrackTimeUnit(resolvedSpec)?.unit;
+            const system = coordinates?.system ?? ABSOLUTE_TIME;
+            return rows.filter(row => isRowInTile(row, [tileX, tileX + tileWidth], unit, tiling.source, coordField, system));
+        }
+
+        /**
          * Apply data transformation to each of the overlaid tracks and generate GoslingTrackModels.
          */
         transformDataAndCreateModels(tile: Tile) {
@@ -887,16 +1019,51 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                 return [];
             }
 
+            // temporal tracks reuse their models while zoomed or panned within the same tiles
+            const modelsKey = modelsCacheKey(resolveSuperposedTracks(this.options.spec), {
+                tileId: tile.tileId,
+                combinedTileIds:
+                    this.#combinedTileBounds && this.#lastCombination?.ids[0] === tile.tileId
+                        ? this.#lastCombination.ids
+                        : undefined,
+                dimensions: this.dimensions,
+                domain: this._xScale.domain() as [number, number]
+            });
+            if (modelsKey !== undefined && tileInfo.modelsKey === modelsKey && tileInfo.goslingModels.length > 0) {
+                return tileInfo.goslingModels;
+            }
+            tileInfo.modelsKey = modelsKey;
+
             // clear the array first
             tileInfo.goslingModels = [];
 
             const resolvedTracks = this.#getResolvedTracks();
+
+            // linear tracks on a temporal axis: a header strip at the top for the title and the legend, so that
+            // they cover neither the y axis nor the data (the y range starts below it, see `GoslingTrackModel`)
+            if (usesTemporalHeader(resolvedTracks)) {
+                const legend = headerLegend(resolvedTracks, spec => colorCategories(spec, tileInfo.tabularData));
+                const layout = headerLayout(
+                    resolvedTracks[0].title,
+                    yAxisTitles(resolvedTracks),
+                    legend,
+                    this.dimensions[0],
+                    this.#measureText
+                );
+                resolvedTracks.forEach(spec => Object.assign(spec, { _headerHeight: layout.height, _header: layout }));
+            }
             resolvedTracks.forEach(resolvedSpec => {
-                let tabularDataTransformed = Array.from(tileInfo.tabularData);
+                let tabularDataTransformed = this.#rowsOfTileForTimeUnit(tile, resolvedSpec, tileInfo.tabularData);
                 resolvedSpec.dataTransform?.forEach(t => {
                     switch (t.type) {
                         case 'filter':
                             tabularDataTransformed = filterData(t, tabularDataTransformed);
+                            break;
+                        case 'timeUnit':
+                            tabularDataTransformed = truncateTime(t, tabularDataTransformed);
+                            break;
+                        case 'span':
+                            tabularDataTransformed = addSpan(t, tabularDataTransformed);
                             break;
                         case 'interval':
                             tabularDataTransformed = enableInterval(t, tabularDataTransformed);
@@ -930,6 +1097,25 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                             break;
                     }
                 });
+
+                // time fields computed by the transforms (span ends) in a period or relative coordinate system
+                const timeCoordinates = getTrackTimeCoordinates(resolvedSpec);
+                if (timeCoordinates?.derived) {
+                    tabularDataTransformed = applyDerivedTimeCoordinates(tabularDataTransformed, timeCoordinates);
+                }
+
+                // `x.timeUnit`: place rows at their unit and aggregate (after the data transforms, e.g. filters)
+                const timeUnit = getTrackTimeUnit(resolvedSpec);
+                if (timeUnit) {
+                    const system = getTrackTimeCoordinates(resolvedSpec)?.system ?? ABSOLUTE_TIME;
+                    tabularDataTransformed = binByTimeUnit(timeUnit, tabularDataTransformed, system);
+                }
+
+                tabularDataTransformed = rowsInVisibleArc(
+                    resolvedSpec,
+                    tabularDataTransformed,
+                    this._xScale.domain() as [number, number]
+                );
 
                 // TODO: Remove the following block entirely and use the `rawData` API in the Editor (June-02-2022)
                 // Send data preview to the editor so that it can be shown to users.

@@ -19,22 +19,22 @@ const timeDomain = { interval: [946713600, 1293782400] };
 const industries = ['Government', 'Manufacturing', 'Construction', 'Information', 'Finance'];
 
 const spec = {
-    title: 'U.S. Unemployment Across Industries (2000 to 2010)',
-    subtitle: 'Monthly number of unemployed persons by industry sector - Source: U.S. Bureau of Labor Statistics (BLS)',
+    title: 'Which industries were hit hardest by the 2008 recession?',
+    subtitle:
+        'Unemployed persons (thousands) by industry and month, 2000 to 2010. Source: U.S. Bureau of Labor Statistics',
     arrangement: 'horizontal',
     views: [
         // -- LEFT: CIRCULAR OVERVIEW with BRUSH --
         {
             layout: 'circular',
-            title: 'Cyclical Unemployment Patterns',
-            subtitle:
-                'Each ring shows the monthly unemployment count for one industry - drag the brush to zoom into a period',
-            centerRadius: 0.35,
+            title: 'All industries (drag the brush)',
+            // room for the axis title and the legend in the center
+            centerRadius: 0.5,
             alignment: 'overlay',
             width: 450,
             height: 450,
             tracks: [
-                ...industries.map(s => ({
+                ...industries.map((s, i) => ({
                     data: { ...baseData },
                     dataTransform: [{ type: 'filter', field: 'series', oneOf: [s] }],
                     x: {
@@ -46,13 +46,17 @@ const spec = {
                     y: {
                         field: 'count',
                         type: 'quantitative',
-                        axis: 'right'
+                        axis: 'right',
+                        // the radial axis is shared: one title, in the center
+                        ...(i === 0 ? { title: 'Unemployed (thousands)' } : {})
                     },
                     color: {
                         field: 'series',
                         type: 'nominal',
                         domain: industries,
-                        legend: true
+                        // one legend for the five overlaid rings, in the center of the ring
+                        legend: i === 0,
+                        title: 'Industry'
                     },
                     mark: 'line',
                     width: 450,
@@ -72,11 +76,10 @@ const spec = {
             views: [
                 // Detail panel 1: Public & Industrial
                 {
-                    title: 'Public & Industrial Sectors',
-                    subtitle: 'Monthly unemployed persons (thousands) in Government, Manufacturing, and Construction',
+                    title: 'Public and industrial sectors',
                     alignment: 'overlay',
                     width: 500,
-                    height: 130,
+                    height: 170,
                     tracks: ['Government', 'Manufacturing', 'Construction'].flatMap(s => [
                         {
                             data: { ...baseData },
@@ -101,7 +104,7 @@ const spec = {
                             mark: 'area',
                             opacity: { value: 0.3 },
                             width: 500,
-                            height: 130,
+                            height: 170,
                             style: { outline: 'none' }
                         },
                         {
@@ -117,28 +120,30 @@ const spec = {
                             y: {
                                 field: 'count',
                                 type: 'quantitative',
-                                axis: 'left'
+                                axis: 'left',
+                                title: 'Unemployed (thousands)'
                             },
                             color: {
                                 field: 'series',
                                 type: 'nominal',
-                                domain: industries
+                                domain: industries,
+                                legend: true,
+                                title: 'Industry'
                             },
                             mark: 'line',
                             size: { value: 1.5 },
                             width: 500,
-                            height: 130,
+                            height: 170,
                             style: { outline: 'none' }
                         }
                     ])
                 },
                 // Detail panel 2: Service & Knowledge
                 {
-                    title: 'Service & Knowledge Sectors',
-                    subtitle: 'Monthly unemployed persons (thousands) in Information and Finance',
+                    title: 'Service and knowledge sectors',
                     alignment: 'overlay',
                     width: 500,
-                    height: 130,
+                    height: 170,
                     tracks: ['Information', 'Finance'].flatMap(s => [
                         {
                             data: { ...baseData },
@@ -163,7 +168,7 @@ const spec = {
                             mark: 'area',
                             opacity: { value: 0.3 },
                             width: 500,
-                            height: 130,
+                            height: 170,
                             style: { outline: 'none' }
                         },
                         {
@@ -179,25 +184,27 @@ const spec = {
                             y: {
                                 field: 'count',
                                 type: 'quantitative',
-                                axis: 'left'
+                                axis: 'left',
+                                title: 'Unemployed (thousands)'
                             },
                             color: {
                                 field: 'series',
                                 type: 'nominal',
-                                domain: industries
+                                domain: industries,
+                                legend: true,
+                                title: 'Industry'
                             },
                             mark: 'line',
                             size: { value: 1.5 },
                             width: 500,
-                            height: 130,
+                            height: 170,
                             style: { outline: 'none' }
                         }
                     ])
                 },
                 // Timeline overview with brush
                 {
-                    title: 'Timeline Overview',
-                    subtitle: 'Aggregate unemployment count - drag to select a time window',
+                    title: 'All industries (drag to select a period)',
                     alignment: 'overlay',
                     width: 500,
                     height: 60,

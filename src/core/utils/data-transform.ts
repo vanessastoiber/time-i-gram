@@ -13,7 +13,9 @@ import type {
     SvTypeTransform,
     CoverageTransform,
     DisplaceTransform,
-    JsonParseTransform
+    JsonParseTransform,
+    TimeUnitTransform,
+    SpanTransform
 } from '@gosling-lang/gosling-schema';
 import {
     getChannelKeysByAggregateFnc,
@@ -24,6 +26,16 @@ import {
     IsRangeFilter
 } from '@gosling-lang/gosling-schema';
 import { computeChromSizes } from './assembly';
+import { median as d3median } from 'd3-array';
+import { addDuration, floorTime, offsetTime, parseDurationParts } from './time-units';
+import {
+    unitEndCoordinate,
+    unitStartCoordinate,
+    type TimeAggregateOp,
+    type TimeCoordinateSystem,
+    type TimeUnitBinning
+} from './time-coordinate-system';
+import { warnOnce } from './temporal-warnings';
 // import Logging from './log';
 
 /**
@@ -77,6 +89,84 @@ export function enableInterval(filter: IntervalTransform, data: Datum[]): any {
         return transformedRow;
     });
     return transformedData;
+}
+
+/**
+ * Truncate a time field (Unix seconds) to the start of its calendar unit, and optionally store the unit's end.
+ */
+export function truncateTime(t: TimeUnitTransform, data: Datum[]): Datum[] {
+    const { field, unit, newField, endField } = t;
+    return data.map(d => {
+        const value = +d[field];
+        const start = floorTime(value, unit);
+        const row: Datum = { ...d, [newField ?? field]: start };
+        if (endField) row[endField] = offsetTime(start, unit, 1);
+        return row;
+    });
+}
+
+/**
+ * Turn spans into intervals: `newField` = `field` + a duration (a numeric field in `unit`, or a duration literal).
+ */
+export function addSpan(t: SpanTransform, data: Datum[]): Datum[] {
+    const literal = parseDurationParts(t.duration);
+    return data.map(d => {
+        const start = +d[t.field];
+        const [n, unit] = literal ? [literal.value, literal.unit] : [+d[t.duration], t.unit ?? 'second'];
+        let end = isFinite(start) && isFinite(n) && n >= 0 ? addDuration(start, unit, n) : NaN;
+        if (n < 0) {
+            warnOnce(`span: negative durations in "${t.duration}" are not drawn.`);
+            end = NaN;
+        }
+        return { ...d, [t.newField]: end };
+    });
+}
+
+const reducers: Record<TimeAggregateOp, (values: number[], count: number) => number> = {
+    count: (_, count) => count,
+    sum: values => values.reduce((a, b) => a + b, 0),
+    mean: values => (values.length ? values.reduce((a, b) => a + b, 0) / values.length : NaN),
+    median: values => d3median(values) ?? NaN,
+    min: values => (values.length ? Math.min(...values) : NaN),
+    max: values => (values.length ? Math.max(...values) : NaN)
+};
+
+/**
+ * `x.timeUnit`: place every row at the start of its time unit (coordinates in the axis' time coordinate system)
+ * and, if channels are aggregated, reduce the rows of each unit and group (the fields of nominal channels)
+ * to one row. Rows without a valid time are dropped.
+ */
+export function binByTimeUnit(binning: TimeUnitBinning, data: Datum[], cs: TimeCoordinateSystem): Datum[] {
+    const { unit, source, field, endField, groupby, aggregates } = binning;
+    const placed: Datum[] = [];
+    data.forEach(d => {
+        const t = +d[source];
+        if (!isFinite(t)) return;
+        placed.push({ ...d, [field]: unitStartCoordinate(t, unit, cs), [endField]: unitEndCoordinate(t, unit, cs) });
+    });
+    if (aggregates.length === 0) return placed;
+
+    const groups = new Map<string, Datum[]>();
+    placed.forEach(d => {
+        const key = JSON.stringify([d[field], ...groupby.map(g => d[g])]);
+        const group = groups.get(key);
+        if (group) group.push(d);
+        else groups.set(key, [d]);
+    });
+    return Array.from(groups.values()).map(rows => {
+        const first = rows[0];
+        const row: Datum = {
+            [source]: cs.kind === 'relative' ? first[field] : floorTime(+first[source], unit),
+            [field]: first[field],
+            [endField]: first[endField]
+        };
+        groupby.forEach(g => (row[g] = first[g]));
+        aggregates.forEach(({ field: f, op }) => {
+            const values = rows.map(r => +r[f]).filter(v => isFinite(v));
+            row[f] = reducers[op](values, rows.length);
+        });
+        return row;
+    });
 }
 
 /**

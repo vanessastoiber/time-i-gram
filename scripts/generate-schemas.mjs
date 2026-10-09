@@ -25,8 +25,22 @@ const generator = tsj.createGenerator({
   encodeRefs: false,
 });
 
+/**
+ * Properties of `X` that only apply to `type: "temporal"`. TypeScript cannot express this on one interface,
+ * so the schema gets a condition: on any other x channel, these properties are a validation error.
+ */
+const TEMPORAL_ONLY_X_PROPERTIES = ["period", "timeUnit", "relative"];
+
+function restrictTemporalOnlyProperties(schema) {
+  const x = schema.definitions?.X;
+  if (!x) return;
+  x.if = { not: { properties: { type: { const: "temporal" } }, required: ["type"] } };
+  x.then = { properties: Object.fromEntries(TEMPORAL_ONLY_X_PROPERTIES.map(p => [p, false])) };
+}
+
 for (const [type, filename, dir] of SCHEMAS) {
   const schema = generator.createSchema(type);
+  restrictTemporalOnlyProperties(schema);
   fs.promises.writeFile(
       path.resolve(__dirname, `${dir}/${filename}`),
       stableStringify(schema, null, 2) + "\n",

@@ -1,16 +1,18 @@
 import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 
 // Supplementary material, Fig. S4 (Seattle Weather).
-// Copied verbatim from the supplementary PDF. The printed spec is a fragment
-// starting at `views: [...]`; it is wrapped in a root object here and the
-// trailing `];` became `]`. Not yet fixed: see docs/grammar-audit.md §7.
+// Copied from the supplementary PDF (a fragment starting at `views: [...]`, wrapped in a root object).
+// Since fixed: the domain is the data's (2012 to 2015), thresholds are durations, and every view has
+// titles, axis titles and legends.
 
 const spec = {
+    title: 'Is it always raining in Seattle?',
+    subtitle: 'Daily precipitation, temperature and weather in Seattle, 2012 to 2015',
     views: [
         {
             // --- Precipitation over time ---
             alignment: 'overlay',
-            xDomain: { interval: [1293840000, 1483228800] },
+            xDomain: { interval: ['2012', '2015'] },
 
             data: {
                 url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/1_seattle-weather/seattle-weather.csv',
@@ -20,7 +22,7 @@ const spec = {
             },
 
             width: 600,
-            height: 80,
+            height: 110,
 
             x: {
                 field: 'date',
@@ -31,14 +33,15 @@ const spec = {
 
             tracks: [
                 {
-                    title: 'precipitation',
+                    title: 'Daily precipitation',
                     mark: 'bar',
                     size: { value: 5 },
                     color: { value: '#002a33' },
                     y: {
                         field: 'precipitation',
                         type: 'quantitative',
-                        domain: [0, 55]
+                        domain: [0, 55],
+                        title: 'Precipitation (mm)'
                     }
                 }
             ]
@@ -47,8 +50,8 @@ const spec = {
         {
             // --- Maximum and minimum temperature ---
             alignment: 'overlay',
-            title: 'temperature',
-            xDomain: { interval: [1293840000, 1483228800] },
+            title: 'Daily temperature',
+            xDomain: { interval: ['2012', '2015'] },
 
             data: {
                 url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/1_seattle-weather/seattle-weather.csv',
@@ -68,7 +71,7 @@ const spec = {
             },
 
             width: 600,
-            height: 80,
+            height: 110,
 
             tracks: [
                 {
@@ -76,16 +79,19 @@ const spec = {
                     y: {
                         field: 'temp_max',
                         type: 'quantitative',
-                        domain: [0, 40]
-                    }
+                        domain: [-10, 40],
+                        title: 'Temperature (°C)'
+                    },
+                    style: { legendTitle: 'Temperature', legendLabel: 'Maximum' }
                 },
                 {
                     color: { value: '#0f767a' },
                     y: {
                         field: 'temp_min',
                         type: 'quantitative',
-                        domain: [0, 40]
-                    }
+                        domain: [-10, 40]
+                    },
+                    style: { legendLabel: 'Minimum' }
                 }
             ]
         },
@@ -93,8 +99,8 @@ const spec = {
         {
             // --- Categorical weather conditions with zoom-dependent representation ---
             alignment: 'overlay',
-            title: 'weather condition',
-            xDomain: { interval: [1293840000, 1483228800] },
+            title: 'Weather of the day',
+            xDomain: { interval: ['2012', '2015'] },
 
             data: {
                 url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/1_seattle-weather/seattle-weather.csv',
@@ -111,7 +117,7 @@ const spec = {
             },
 
             width: 600,
-            height: 80,
+            height: 110,
 
             tracks: [
                 {
@@ -122,13 +128,14 @@ const spec = {
                         type: 'nominal',
                         domain: ['drizzle', 'rain', 'snow', 'sun', 'fog'],
                         range: ['#377750', '#002a33', '#74171f', '#cb4c47', '#35618f'],
-                        legend: true
+                        legend: true,
+                        title: 'Weather'
                     },
                     visibility: [
                         {
                             operation: 'greater-than',
                             measure: 'zoomLevel',
-                            threshold: 2000000,
+                            threshold: '3 weeks',
                             target: 'track'
                         }
                     ],
@@ -147,7 +154,7 @@ const spec = {
                         {
                             operation: 'less-than',
                             measure: 'zoomLevel',
-                            threshold: 2000000,
+                            threshold: '3 weeks',
                             target: 'track'
                         }
                     ],

@@ -3,6 +3,7 @@ import type { HiGlassSpec, Track } from '@gosling-lang/higlass-schema';
 import { HiGlassSchema } from '@gosling-lang/higlass-schema';
 import type { Assembly, AxisPosition, Domain, DummyTrack, Orientation, ZoomLimits } from '@gosling-lang/gosling-schema';
 import { getNumericDomain } from '../core/utils/scales';
+import type { TimeCoordinateSystem } from '../core/utils/time-coordinate-system';
 import type { RelativePosition } from './bounding-box';
 import { validateSpec } from '@gosling-lang/gosling-schema';
 import { getAutoCompleteId, computeChromSizes } from '../core/utils/assembly';
@@ -265,7 +266,8 @@ export class HiGlassModel {
      * Set limits of zoom levels in base pairs.
      */
     public setZoomLimits(zoomLimits: ZoomLimits) {
-        this.getLastView().zoomLimits = zoomLimits;
+        // durations on temporal axes are already seconds (`resolveTemporalSugar`)
+        this.getLastView().zoomLimits = zoomLimits as [number | null, number | null];
         return this;
     }
 
@@ -327,6 +329,8 @@ export class HiGlassModel {
             height?: number;
             startAngle?: number;
             endAngle?: number;
+            /** The time coordinate system that the axis labels (absolute dates, positions in a period, offsets) */
+            timeCoordinates?: TimeCoordinateSystem;
             theme: Required<CompleteThemeDeep>;
         }
     ) {
@@ -398,6 +402,8 @@ export class HiGlassModel {
             height?: number;
             startAngle?: number;
             endAngle?: number;
+            /** The time coordinate system that the axis labels (absolute dates, positions in a period, offsets) */
+            timeCoordinates?: TimeCoordinateSystem;
             theme: Required<CompleteThemeDeep>;
         }
     ) {

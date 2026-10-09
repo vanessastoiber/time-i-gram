@@ -20,7 +20,7 @@ With time-i-gram, users can declaratively specify rich, interactive time-series 
 ## Key Features
 
 ### Temporal Data Type
-A new `"temporal"` field type for encoding time on axes (`x` or `y`), alongside the existing `"genomic"`, `"quantitative"`, and `"nominal"` types.
+A new `"temporal"` field type for encoding time on the `x` axis (also `xe`, `x1`, `x1e`), alongside the existing `"genomic"`, `"quantitative"`, and `"nominal"` types. Temporal `y` axes are not supported.
 
 ```jsonc
 {
@@ -50,6 +50,90 @@ Both support `dateFields` (for human-readable dates), `timestampField` (for Unix
 
 ### Unix Time Axis Track
 A dedicated axis track that renders human-readable time labels (years, months, days, hours, etc.) with automatic tick formatting that adapts to the current zoom level.
+
+### Time Coordinate Systems
+
+Every temporal x axis has a **time coordinate system**, which decides where a time is placed, how the axis is labeled, and which views can be linked:
+
+| System | Syntax (on `x`) | A time is placed at | Axis labels |
+|---|---|---|---|
+| absolute (default) | — | its instant (Unix seconds) | dates |
+| period | `period: "year" \| "month" \| "week" \| "day"` or `{ unit, weekBased?, start?, newField? }` | its position within its calendar period, so all periods share one axis (or one revolution in a circular layout) | `Jan`…`Dec`, `W1`…`W53`, `Mon`…`Sun`, `00:00`…`23:00` |
+| relative | `relative: { anchor, groupby?, unit? }` | its signed offset from a reference event | `−2 wk`, `0`, `+3 wk` |
+
+```jsonc
+// every year on one ring, ISO week 1 at 12 o'clock; each row's year goes to the field "year"
+"x": { "field": "date", "type": "temporal", "period": { "unit": "year", "weekBased": true, "newField": "year" } },
+"color": { "field": "year", "type": "nominal" }   // or "row" for one concentric ring per year
+
+// flu seasons (ISO week 40 to 39) aligned to their own peak
+"x": { "field": "date", "type": "temporal",
+       "relative": { "anchor": { "argmax": "cases" },
+                     "groupby": { "period": { "unit": "year", "weekBased": true, "start": 40, "newField": "season" } },
+                     "unit": "week" },
+       "domain": { "interval": ["-16 weeks", "16 weeks"] } }
+```
+
+- **Period.** Years align by calendar date in a leap reference year; `weekBased` uses ISO week-years; `start` begins each period at another month, ISO week, weekday, or hour (e.g. August–July seasons). Intervals (`x`/`xe`) that cross a period boundary are split. A `domain` on a period axis is ignored (the whole period is shown).
+- **Relative.** `anchor` is a date, `"first"`, `"last"`, `{ "argmax": field }`, `{ "argmin": field }` (per `groupby` group), or `{ "field": name }` (per row). Set the domain as offsets (durations or seconds). `label` names the event in the axis title (e.g. `"the season's peak"` gives "weeks from the season's peak").
+- **Linking.** Views are linked (`linkingId`, brushes) only within one coordinate system: a position within a period stands for many absolute instants. A `linkingId` that joins views in different systems is split into one link per system, whatever the order of the views, with a warning; a view alone in its system is not linked.
+
+### Calendar Granularity
+
+```jsonc
+// date strings in domains (a partial date as the end includes the whole unit) and durations
+"xDomain": { "interval": ["2000-01", "2010-12"] },
+"zoomLimits": ["1 hour", "20 years"],
+"visibility": [{ "measure": "zoomLevel", "operation": "lt", "threshold": "3 months", "target": "track" }],
+
+// "show by month": truncate to the unit and aggregate per unit and nominal channel field
+"x": { "field": "date", "type": "temporal", "timeUnit": "month" },
+"y": { "field": "rate", "type": "quantitative", "aggregate": "mean" },   // count, sum, mean, median, min, max
+"color": { "field": "series", "type": "nominal" },
+
+// granularity transition rules: daily below 3 months of visible time, monthly above
+"x": { "field": "date", "type": "temporal",
+       "timeUnit": [{ "unit": "day", "maxSpan": "3 months" }, { "unit": "month" }] }
+```
+
+- **Units:** `millisecond`, `second`, `minute`, `hour`, `day`, `week` (ISO, Monday–Sunday), `month`, `quarter`, `year`, `decade`, all in UTC.
+- **Durations:** `"<number> <unit>"`, e.g. `"90 minutes"`, `"2 weeks"`, `"-36 mo"`; a month is 30.44 days, a year 365.2425 days.
+- **Aggregation is exact under tiling:** the time data fetchers give each unit to the tile that contains its start.
+- **Granularity rules** are shorthand for overlaid copies of the track, one per unit, with `visibility` conditions on the zoom level.
+- **Edge units:** a unit at the edge of the data is aggregated from the rows present (e.g. a yearly mean of January and February only), so end a domain on whole units where that matters.
+
+### Time Transforms
+
+| Transform | Does |
+|---|---|
+| `{ "type": "timeUnit", "field", "unit", "newField"?, "endField"? }` | truncates a time field to the start (and end) of its unit |
+| `{ "type": "span", "field", "duration", "unit"?, "newField" }` | adds a duration (a numeric field in `unit`, or a literal such as `"15 minutes"`) to a start time: an interval for `x`/`xe` |
+
+### Titles, Axes and Legends of Temporal Tracks
+
+Linear tracks on a temporal axis keep a header strip at the top for the track title, the y-axis title and a one-line legend, so that none of them covers the axis or the data. On rings, the y-axis title and the legend go in the center when they fit.
+
+```jsonc
+"y": { "field": "INF_A", "type": "quantitative", "title": "Cases per week" },          // drawn as "↑ Cases per week"
+"color": { "field": "year", "type": "nominal", "legend": true, "title": "Year" },
+// a track with a constant color in the legend (e.g. bars vs line in an overlay)
+"tracks": [
+  { "mark": "bar", "color": { "value": "#f28e2b" }, "style": { "legendTitle": "Daily", "legendLabel": "Steps (bars)" } },
+  { "mark": "line", "color": { "value": "black" }, "style": { "legendLabel": "Very active minutes (line)" } }
+]
+```
+
+Time axes use 24-hour times and short month names, choose the number of ticks from their length, and name the visible range under the ticks (e.g. "2016 Feb 3, 12:35–13:35").
+
+### Compiled Specs
+
+The compiled spec (the editor's compiled view, and the track specs of the JavaScript API) contains internal names that the temporal grammar adds:
+- **Coordinate fields:** `x.field` is rewritten to the coordinate field that a period or relative axis is drawn on (`__period_date`, `__relative_date`), or to a time unit's start (`__month_date`).
+- **Internal properties:** tracks carry `_timeCoordinates`, `_timeUnit`, `_timeUnitTiling`, `_temporalResolved` and, on linear temporal tracks, `_headerHeight` / `_header`.
+
+Read the fields of your data (e.g. in tooltips) from your spec, not from the compiled one.
+
+Editor examples under **Temporal Data**: *Period: WHO Flu by Week of the Year*, *Period: FitBit Weekly and Daily Cycles*, *Granularity: Unemployment by Month or Year (zoom)*, *Relative: Flu Seasons and Unemployment Aligned to Events*, *Spans: NYC Taxi Trips and the Daily Cycle*.
 
 ### All Gosling.js Features
 time-i-gram inherits the full power of Gosling.js, including:
