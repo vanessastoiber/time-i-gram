@@ -57,3 +57,16 @@ describe('unix time axis track: time coordinate systems', () => {
         expect(track.axisTexts.map((t: any) => t.text).slice(0, 2)).toEqual(['Jan', 'Feb']);
     });
 });
+
+describe('unix time axis track: label spacing', () => {
+    const DAY = 86400;
+    it('draws fewer ticks on a narrow track so that labels do not overlap (M7)', () => {
+        const track = createTrack({ timeCoordinates: { kind: 'relative', unit: 'day' } });
+        track._xScale = scaleLinear().domain([-3 * DAY, 3 * DAY]).range([0, 380]);
+        track.dimensions = [380, 45];
+        track.draw();
+        const xs = track.axisTexts.map((t: any) => t.x);
+        const gaps = xs.slice(1).map((x: number, i: number) => x - xs[i]);
+        expect(Math.min(...gaps)).toBeGreaterThan(40); // "+2.5 d" is about 40 px at 12 px
+    });
+});

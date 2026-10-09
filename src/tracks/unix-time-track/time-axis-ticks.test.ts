@@ -33,11 +33,13 @@ describe('time axis ticks', () => {
         expect(labels.slice(0, 4)).toEqual(['W41', 'W49', 'W1', 'W9']);
     });
 
-    it('label weekdays when zoomed into a few weeks of a week-based year', () => {
+    it('label weeks at their start and weekdays otherwise when zoomed into a few weeks of a week-based year', () => {
         const iso = periodCoordinates({ unit: 'year', weekBased: true });
         const [start] = periodReference(iso);
         const { labels } = timeAxisTicks([start, start + 14 * 86400], iso);
-        expect(labels[0]).toEqual('W1 Mon');
+        expect(labels[0]).toEqual('W1');
+        expect(labels).toContain('W2');
+        expect(labels).toContain('Wed');
     });
 
     it('label weeks by weekday and days by time of day', () => {
@@ -104,5 +106,51 @@ describe('week-based seasons', () => {
         expect(at(13)).toEqual('W1');
         expect(at(51)).toEqual('W39');
         expect(ticks.indexOf(refStart + 52 * WEEK)).toEqual(-1);
+    });
+});
+
+describe('tick count from the axis width', () => {
+    const DAY = 86400;
+    const CHAR = 7; // px per character at the axis font size
+    /** Whether neighboring labels, centered on their ticks, leave at least `gap` px between them. */
+    const fits = (
+        { ticks, labels }: { ticks: number[]; labels: string[] },
+        domain: [number, number],
+        width: number,
+        gap = 6
+    ) =>
+        ticks.every((t, i) => {
+            if (i === 0) return true;
+            const dx = ((t - ticks[i - 1]) / (domain[1] - domain[0])) * width;
+            return dx >= ((labels[i].length + labels[i - 1].length) / 2) * CHAR + gap;
+        });
+
+    it('keeps relative labels apart on a narrow track (M7)', () => {
+        const relative = { kind: 'relative' as const, unit: 'day' as const };
+        const domain: [number, number] = [-3 * DAY, 3 * DAY];
+        expect(fits(timeAxisTicks(domain, relative), domain, 380)).toBe(false); // ten ticks, as before
+        const fitted = timeAxisTicks(domain, relative, 10, 380);
+        expect(fitted.ticks.length).toBeGreaterThan(2);
+        expect(fits(fitted, domain, 380)).toBe(true);
+    });
+
+    it('keeps week-based labels apart when zoomed in to a few weeks, with short labels (S4)', () => {
+        const iso = periodCoordinates({ unit: 'year', weekBased: true });
+        const [refStart] = periodReference(iso);
+        const domain: [number, number] = [refStart + 25 * 7 * DAY, refStart + 29 * 7 * DAY];
+        const fitted = timeAxisTicks(domain, iso, 10, 420);
+        expect(fits(fitted, domain, 420)).toBe(true);
+        expect(fitted.labels.every(l => l.length <= 5)).toBe(true); // "W27", "Tue", "12:00"
+        expect(fitted.labels.some(l => /^W\d+$/.test(l))).toBe(true);
+        // the context names the visible weeks
+        expect(fitted.context).toEqual('W26\u2013W29');
+        expect(timeAxisTicks([refStart + 25 * 7 * DAY, refStart + 25.5 * 7 * DAY], iso, 10, 420).context).toEqual(
+            'W26'
+        );
+    });
+
+    it('keeps absolute labels apart', () => {
+        const domain: [number, number] = [Date.UTC(1918, 0, 1) / 1000, Date.UTC(1922, 0, 1) / 1000];
+        expect(fits(timeAxisTicks(domain, undefined, 10, 380), domain, 380)).toBe(true);
     });
 });

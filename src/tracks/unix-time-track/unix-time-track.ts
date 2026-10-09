@@ -84,8 +84,21 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
     /** Ticks and labels in the axis' time coordinate system (absolute dates, positions in a period, offsets). */
     updateAxisTicks(): TimeAxisTicks {
       const domain = this._xScale.domain() as [number, number];
-      this.axisTicks = timeAxisTicks(domain, this.options.timeCoordinates);
+      // as many ticks as fit along the axis: its width, or the circumference at the labels of a circular axis
+      this.axisTicks = timeAxisTicks(domain, this.options.timeCoordinates, 10, this.axisLength(), this.axisTextFontSize * 0.6);
       return this.axisTicks;
+    }
+
+    /** Length of the axis along which labels are placed, in px. */
+    axisLength(): number {
+      const [width, height] = this.dimensions ?? [0, 0];
+      if (this.options.layout !== 'circular') return width;
+      const { startAngle = 0, endAngle = 360 } = this.options;
+      const factor = Math.min(width, height) / Math.min(this.options.width, this.options.height);
+      // the radius at which `addCurvedText` places the labels
+      const r = (this.options.outerRadius * factor + this.options.innerRadius * factor - 100) / 2.0;
+      const length = (2 * Math.PI * Math.max(r, 1) * Math.abs(endAngle - startAngle)) / 360;
+      return isFinite(length) ? length : width;
     }
 
     createAxisTexts() {

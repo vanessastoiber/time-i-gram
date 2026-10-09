@@ -50,20 +50,44 @@ function absoluteContext(date: Date, tickDelta: number) {
 /**
  * Ticks and labels of a time axis with the visible `domain` (seconds) in the time coordinate system `cs`:
  * absolute dates, positions within a period (Jan...Dec, W1...W53, Mon...Sun, 00:00...23:00), or offsets.
+ *
+ * With the axis length `width` (px), the number of ticks is reduced from `count` until neighboring labels do
+ * not overlap, assuming `charWidth` px per character (about 0.6 of the font size).
  */
 export function timeAxisTicks(
     domain: [number, number],
     cs: TimeCoordinateSystem = ABSOLUTE_TIME,
-    count = 10
+    count = 10,
+    width?: number,
+    charWidth = 7
 ): TimeAxisTicks {
-    switch (cs.kind) {
-        case 'absolute':
-            return absoluteTicks(domain, count);
-        case 'period':
-            return periodTicks(domain, cs, count);
-        case 'relative':
-            return relativeTicks(domain, cs, count);
-    }
+    const ticksFor = (n: number): TimeAxisTicks => {
+        switch (cs.kind) {
+            case 'absolute':
+                return absoluteTicks(domain, n);
+            case 'period':
+                return periodTicks(domain, cs, n);
+            case 'relative':
+                return relativeTicks(domain, cs, n);
+        }
+    };
+    if (width === undefined) return ticksFor(count);
+    let ticks = ticksFor(count);
+    for (let n = count - 1; n >= 1 && !labelsFit(ticks, domain, width, charWidth); n--) ticks = ticksFor(n);
+    return ticks;
+}
+
+/** Minimum space between two labels, in px. */
+const LABEL_GAP = 6;
+
+/** Whether neighboring labels, centered on their ticks, leave at least `LABEL_GAP` px between them. */
+function labelsFit({ ticks, labels }: TimeAxisTicks, [min, max]: [number, number], width: number, charWidth: number) {
+    const px = (t: number) => ((t - min) / (max - min)) * width;
+    return ticks.every(
+        (t, i) =>
+            i === 0 ||
+            px(t) - px(ticks[i - 1]) >= ((labels[i].length + labels[i - 1].length) / 2) * charWidth + LABEL_GAP
+    );
 }
 
 /** Short unit names of offset labels ("+3 wk"). */
@@ -197,12 +221,17 @@ function weekBasedTicks(domain: [number, number], cs: PeriodTime, count: number)
         const dates = scaleUtc()
             .domain(domain.map(d => d * 1000))
             .ticks(count);
+        // short labels: the week at its start, the weekday at other midnights, otherwise the time
+        const isWeekStart = (t: number) => (t - refStart) % WEEK === 0;
         return {
             ticks: dates.map(d => +d / 1000),
             labels: dates.map(d =>
-                isDayStart(d) ? `${weekLabel(+d / 1000)} ${formatWeekday(d)}` : formatWeekdayTime(d)
+                isWeekStart(+d / 1000) ? weekLabel(+d / 1000) : isDayStart(d) ? formatWeekday(d) : formatTime(d)
             ),
-            context: ''
+            // the visible weeks, since most labels are weekdays
+            context: [weekLabel(domain[0]), weekLabel(domain[1] - 1)]
+                .filter((label, i, labels) => labels.indexOf(label) === i)
+                .join('\u2013')
         };
     }
 
