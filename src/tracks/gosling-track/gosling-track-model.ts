@@ -168,8 +168,9 @@ export class GoslingTrackModel {
             spec.height = width;
         }
 
-        // If axis presents, reserve a space to show axis
-        const xOrY = this.getGenomicChannelKey();
+        // If axis presents, reserve a space to show axis (a temporal x axis as well: its labels go in that space)
+        const xOrY =
+            this.getGenomicChannelKey() ?? (IsChannelDeep(spec.x) && spec.x.type === 'temporal' ? 'x' : undefined);
         let isAxisShown = false;
         if (xOrY === 'x') {
             isAxisShown = IsChannelDeep(spec.x) && spec.x.axis !== undefined && spec.x.axis !== 'none';

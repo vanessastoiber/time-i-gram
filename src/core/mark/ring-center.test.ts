@@ -22,3 +22,29 @@ describe('the center of a temporal ring (G2, G6)', () => {
         expect(small.height).toEqual(15);
     });
 });
+
+describe('rings on a temporal axis', () => {
+    it('leave the band of their x axis free for its labels', async () => {
+        const { GoslingTrackModel } = await import('../../tracks/gosling-track/gosling-track-model');
+        const { getTheme } = await import('../utils/theme');
+        const ring = (x: object) =>
+            new GoslingTrackModel(
+                {
+                    data: { type: 'csv', url: '' },
+                    mark: 'line',
+                    layout: 'circular',
+                    x,
+                    y: { field: 'v', type: 'quantitative' },
+                    innerRadius: 60,
+                    outerRadius: 200,
+                    width: 400,
+                    height: 400
+                } as any,
+                [],
+                getTheme()
+            ).spec().outerRadius;
+        expect(ring({ field: 't', type: 'temporal', axis: 'top' })).toEqual(200 - 45);
+        expect(ring({ field: 't', type: 'temporal' })).toEqual(200);
+        expect(ring({ field: 'p', type: 'genomic', axis: 'top' })).toEqual(200 - 30);
+    });
+});

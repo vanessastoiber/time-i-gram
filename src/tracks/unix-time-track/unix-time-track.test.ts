@@ -100,3 +100,22 @@ describe('unix time axis track: labels at the ends (M9)', () => {
         });
     });
 });
+
+describe('unix time axis track: labels of circular axes (M9)', () => {
+    it('are placed in the band reserved for the axis, outside the data ring', () => {
+        // the compiler gives a circular axis track its own band: 45 px outside the data ring
+        const options = { layout: 'circular', width: 400, height: 400, innerRadius: 155, outerRadius: 200, startAngle: 0, endAngle: 360 };
+        const track = createTrack(options);
+        track._xScale = scaleLinear().domain([Date.UTC(2010, 0, 1) / 1000, Date.UTC(2011, 0, 1) / 1000]).range([0, 400]);
+        track.dimensions = [400, 400];
+        // the track is placed below a view title: labels are centered on the ring, not on the canvas origin
+        track.position = [10, 50];
+        track.draw();
+        track.axisTexts.forEach((t: any) => {
+            const r = Math.hypot(t.x - (10 + 200), t.y - (50 + 200));
+            // the data ring ends 45 px (the axis size) inside the outer radius
+            expect(r).toBeGreaterThan(200 - 45);
+            expect(r).toBeLessThanOrEqual(200);
+        });
+    });
+});

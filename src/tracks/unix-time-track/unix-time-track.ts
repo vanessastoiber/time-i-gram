@@ -94,9 +94,7 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       const [width, height] = this.dimensions ?? [0, 0];
       if (this.options.layout !== 'circular') return width;
       const { startAngle = 0, endAngle = 360 } = this.options;
-      const factor = Math.min(width, height) / Math.min(this.options.width, this.options.height);
-      // the radius at which `addCurvedText` places the labels
-      const r = (this.options.outerRadius * factor + this.options.innerRadius * factor - 100) / 2.0;
+      const r = this.circularLabelRadius();
       const length = (2 * Math.PI * Math.max(r, 1) * Math.abs(endAngle - startAngle)) / 360;
       return isFinite(length) ? length : width;
     }
@@ -128,17 +126,24 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       }
     }
 
+    /**
+     * Radius of the labels of a circular axis: the middle of the axis' own band (`innerRadius` to `outerRadius`
+     * of the axis track), which the data ring leaves free, so that labels do not cover marks.
+     */
+    circularLabelRadius(): number {
+      const [width, height] = this.dimensions;
+      const factor = Math.min(width, height) / Math.min(this.options.width, this.options.height);
+      return ((this.options.innerRadius + this.options.outerRadius) / 2) * factor;
+    }
+
     addCurvedText(textObj: PIXI.Text, cx: number) {
       const [width, height] = this.dimensions;
       const { startAngle, endAngle } = this.options;
-      const factor = Math.min(width, height) / Math.min(this.options.width, this.options.height);
-      const innerRadius = this.options.innerRadius * factor -100;
-      const outerRadius = this.options.outerRadius * factor;
-
-      const r = (outerRadius + innerRadius) / 2.0;
+      const r = this.circularLabelRadius();
       const centerPos = cartesianToPolar(cx, width, r, width / 2.0, height / 2.0, startAngle, endAngle);
-      textObj.x = centerPos.x;
-      textObj.y = centerPos.y;
+      // around the ring's center: the polar position is relative to the track, which may be offset in its view
+      textObj.x = centerPos.x + this.position[0];
+      textObj.y = centerPos.y + this.position[1];
 
       textObj.resolution = 4;
       const txtStyle = new HGC.libraries.PIXI.TextStyle(this.pixiTextConfig);
@@ -189,7 +194,7 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
         const xPos = this.position[0] + this.timeScale(tick * 1000);
 
         if (this.options.layout === 'circular') {
-          const rope = this.addCurvedText(this.axisTexts[i], xPos);
+          const rope = this.addCurvedText(this.axisTexts[i], xPos - this.position[0]);
           rope && this.pTicksCircular.addChild(rope);
         } else {
           this.axisTexts[i].x = xPos;
