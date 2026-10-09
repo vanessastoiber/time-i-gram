@@ -27,13 +27,15 @@ const YEAR_COLOR = {
     field: 'year',
     type: 'nominal',
     domain: ['2010', '2011', '2012', '2013', '2014'],
-    range: ['#C635BB', '#E5C011', '#12C340', '#1279C3', '#CC2F06']
+    range: ['#C635BB', '#E5C011', '#12C340', '#1279C3', '#CC2F06'],
+    title: 'Year'
 } as const;
 
+const CASES = { field: 'INF_A', type: 'quantitative', domain: [0, 14000], title: 'Cases per week' } as const;
+
 const spec = {
-    title: 'WHO Flu (USA): Influenza A by Week of the Year',
-    subtitle:
-        'One ring for all years (period: year, ISO weeks), brushed into a linear comparison; absolute timeline below',
+    title: 'When in the year does influenza A peak?',
+    subtitle: 'Weekly influenza A cases in the USA, 2010 to 2014. Brush the ring to compare weeks across years.',
     arrangement: 'vertical',
     views: [
         {
@@ -42,13 +44,13 @@ const spec = {
                 {
                     // --- Ring: every year on one revolution, week 1 at 12 o'clock ---
                     layout: 'circular',
-                    centerRadius: 0.35,
+                    centerRadius: 0.45,
                     tracks: [
                         {
                             alignment: 'overlay',
                             data: FLU,
                             x: { field: 'ISO_YEAR', type: 'temporal', period: PERIOD, axis: 'top' },
-                            y: { field: 'INF_A', type: 'quantitative', domain: [0, 14000] },
+                            y: CASES,
                             tracks: [
                                 { mark: 'line', color: { ...YEAR_COLOR, legend: true }, size: { value: 2 } },
                                 // a brush in the period coordinate system: it selects weeks of every year at once
@@ -68,6 +70,7 @@ const spec = {
                     // --- Season comparison: the same period system on a linear axis, driven by the brush ---
                     tracks: [
                         {
+                            title: 'Selected weeks, every year',
                             data: FLU,
                             mark: 'line',
                             x: {
@@ -77,8 +80,8 @@ const spec = {
                                 axis: 'bottom',
                                 linkingId: 'weeks'
                             },
-                            y: { field: 'INF_A', type: 'quantitative', domain: [0, 14000], axis: 'left' },
-                            color: YEAR_COLOR,
+                            y: { ...CASES, axis: 'left' },
+                            color: { ...YEAR_COLOR, legend: true },
                             size: { value: 2 },
                             width: 420,
                             height: 380
@@ -91,11 +94,11 @@ const spec = {
             // --- Timeline: absolute time, a separate coordinate system (not linked to the period views) ---
             tracks: [
                 {
-                    title: 'Influenza A, absolute time',
+                    title: 'All weeks, 2010 to 2014',
                     data: FLU,
                     mark: 'bar',
                     x: { field: 'ISO_YEAR', type: 'temporal', axis: 'bottom', domain: { interval: ['2010', '2014'] } },
-                    y: { field: 'INF_A', type: 'quantitative', domain: [0, 14000] },
+                    y: CASES,
                     color: { value: 'black' },
                     size: { value: 2 },
                     width: 820,
