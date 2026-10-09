@@ -40,7 +40,7 @@ const spec = {
             xDomain: { interval: ['2000', '2009-12'] },
             tracks: [
                 {
-                    title: 'Overview: 10 years visible, yearly means',
+                    title: 'Overview (yearly means; monthly when zoomed in)',
                     alignment: 'overlay',
                     data: UNEMPLOYMENT,
                     dataTransform: SERIES_FILTER,
@@ -62,7 +62,7 @@ const spec = {
             linkingId: 'detail',
             tracks: [
                 {
-                    title: 'Detail: 2 years visible, monthly means',
+                    title: 'Detail (monthly means; yearly when zoomed out)',
                     alignment: 'overlay',
                     data: UNEMPLOYMENT,
                     dataTransform: SERIES_FILTER,

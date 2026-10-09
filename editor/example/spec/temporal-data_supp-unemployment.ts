@@ -20,14 +20,16 @@ const industries = ['Government', 'Manufacturing', 'Construction', 'Information'
 
 const spec = {
     title: 'Which industries were hit hardest by the 2008 recession?',
-    subtitle: 'Unemployed persons (thousands) by industry and month, 2000 to 2010. Source: U.S. Bureau of Labor Statistics',
+    subtitle:
+        'Unemployed persons (thousands) by industry and month, 2000 to 2010. Source: U.S. Bureau of Labor Statistics',
     arrangement: 'horizontal',
     views: [
         // -- LEFT: CIRCULAR OVERVIEW with BRUSH --
         {
             layout: 'circular',
             title: 'All industries (drag the brush)',
-            centerRadius: 0.35,
+            // room for the axis title and the legend in the center
+            centerRadius: 0.5,
             alignment: 'overlay',
             width: 450,
             height: 450,
