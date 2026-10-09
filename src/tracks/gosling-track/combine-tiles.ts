@@ -8,6 +8,8 @@ export interface CombinableTile {
     ownTabularData?: Datum[];
     /** Flag variable that indicate that rendering of this tile should be skipped */
     skipRendering: boolean;
+    /** Track models of the tile's last draw */
+    goslingModels?: unknown[];
 }
 
 /**
@@ -54,7 +56,7 @@ export function resetTemporalCombination(tiles: (CombinableTile | undefined)[]) 
 /**
  * Combination for lines and areas on a temporal axis: the first tile gets the rows of all visible tiles, each
  * tile's own rows only (never a previous combination), without duplicates (the time data fetchers return the
- * same row objects in every tile that needs them); the other tiles are skipped.
+ * same row objects in every tile that needs them); the other tiles are skipped and lose their earlier models.
  */
 export function combineTemporalTiles(tiles: (CombinableTile | undefined)[]) {
     resetTemporalCombination(tiles);
@@ -65,6 +67,9 @@ export function combineTemporalTiles(tiles: (CombinableTile | undefined)[]) {
         tileInfo.ownTabularData = tileInfo.ownTabularData ?? tileInfo.tabularData;
         tileInfo.ownTabularData.forEach(row => merged.add(row));
         tileInfo.skipRendering = i !== 0;
+        // a skipped tile is not transformed again, so drop the models of its earlier draws (partial aggregates
+        // of its own rows), which mouse events would otherwise still read
+        if (tileInfo.skipRendering && tileInfo.goslingModels) tileInfo.goslingModels = [];
     });
     const first = tiles[0];
     first.tabularData = first.tabularData[0]?.uid ? uniqBy(Array.from(merged), 'uid') : Array.from(merged);

@@ -37,3 +37,12 @@ describe('combining tiles for temporal lines', () => {
         expect(tiles[1].skipRendering).toBe(false);
     });
 });
+
+describe('skipped tiles of temporal lines', () => {
+    it('drop the models of earlier draws, which hold partial aggregates of their own rows', () => {
+        const tiles = [tile([{ t: 1 }]), tile([{ t: 2 }])].map(t => ({ ...t, goslingModels: ['stale'] }));
+        combineTemporalTiles(tiles);
+        expect(tiles[1].goslingModels).toEqual([]);
+        expect(tiles[0].goslingModels).toEqual(['stale']); // rebuilt by the track right after
+    });
+});
