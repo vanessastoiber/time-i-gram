@@ -133,7 +133,7 @@ The compiled spec (the editor's compiled view, and the track specs of the JavaSc
 
 Read the fields of your data (e.g. in tooltips) from your spec, not from the compiled one.
 
-Editor examples under **Temporal Data**: *Period: WHO Flu by Week of the Year*, *Period: FitBit Weekly and Daily Cycles*, *Granularity: Unemployment by Month or Year (zoom)*, *Relative: Flu Seasons and Unemployment Aligned to Events*, *Spans: NYC Taxi Trips and the Daily Cycle*. Design and comparison with Vega-Lite: [docs/temporal-grammar-design.md](docs/temporal-grammar-design.md), [docs/temporal-grammar-report.md](docs/temporal-grammar-report.md).
+Editor examples under **Temporal Data**: *Period: WHO Flu by Week of the Year*, *Period: FitBit Weekly and Daily Cycles*, *Granularity: Unemployment by Month or Year (zoom)*, *Relative: Flu Seasons and Unemployment Aligned to Events*, *Spans: NYC Taxi Trips and the Daily Cycle*.
 
 ### All Gosling.js Features
 time-i-gram inherits the full power of Gosling.js, including:

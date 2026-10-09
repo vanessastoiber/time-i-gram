@@ -5,6 +5,8 @@
 /.pnp
 /lib
 /bin
+/docs
+/paper
 .vscode
 .idea
 .pnp.js
