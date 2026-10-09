@@ -86,3 +86,17 @@ describe('unix time axis track: context label (G5)', () => {
         expect(linear.context.text).toEqual('2010');
     });
 });
+
+describe('unix time axis track: labels at the ends (M9)', () => {
+    it('keeps the first and last labels inside the axis', () => {
+        const track = createTrack();
+        // ticks at both ends of the domain: 2000 and 2010
+        track._xScale = scaleLinear().domain([946684800, 1262304000]).range([0, 500]);
+        track.draw();
+        track.axisTexts.forEach((t: any) => {
+            const left = t.x - t.anchor.x * t.width;
+            expect(left).toBeGreaterThanOrEqual(0);
+            expect(left + t.width).toBeLessThanOrEqual(500);
+        });
+    });
+});

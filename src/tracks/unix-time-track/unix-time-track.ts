@@ -176,6 +176,14 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       return rope;
   }
 
+    /** Move a label of a linear axis inward if it would extend past an end of the axis (e.g. a tick at the edge). */
+    keepLabelInside(text: PIXI.Text) {
+      const [start, end] = [this.position[0], this.position[0] + this.dimensions[0]];
+      const left = text.x - text.anchor.x * text.width;
+      if (left < start) text.x += start - left;
+      else if (left + text.width > end) text.x -= left + text.width - end;
+    }
+
     drawTicks(tickStartY: number, tickEndY: number) {
       (this.axisTicks as TimeAxisTicks).ticks.forEach((tick: number, i: number) => {
         const xPos = this.position[0] + this.timeScale(tick * 1000);
@@ -186,6 +194,7 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
         } else {
           this.axisTexts[i].x = xPos;
           this.axisTexts[i].y = this.position[1] + tickEndY + betweenTickAndText - 15;
+          this.keepLabelInside(this.axisTexts[i]);
           this.pMain.moveTo(xPos, this.position[1] + tickStartY - 10);
           this.pMain.lineTo(xPos, this.position[1] + tickEndY - 5);
         }
