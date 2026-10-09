@@ -166,7 +166,11 @@ function resolveTrack(track: Track, warn: Warn) {
     if ((track as Record<string, unknown>)[RESOLVED]) return;
     removeTemporalOnlyProperties(track, warn);
     checkDomainKinds(track, warn);
-    const isTemporal = !!getTemporalChannelFromTrack(track as SingleTrack);
+    // temporal if the track's x is, or (overlaid tracks) any member's x is: members may define their own x
+    const isTemporal =
+        !!getTemporalChannelFromTrack(track as SingleTrack) ||
+        (IsOverlaidTrack(track) &&
+            track.overlay.some(member => !!getTemporalChannelFromTrack({ ...track, ...member } as SingleTrack)));
     if (isTemporal) (track as Record<string, unknown>)[RESOLVED] = true;
     if (isTemporal) expandGranularityRules(track, warn);
     const members: Partial<SingleTrack>[] = IsOverlaidTrack(track) ? [track, ...track.overlay] : [track as SingleTrack];

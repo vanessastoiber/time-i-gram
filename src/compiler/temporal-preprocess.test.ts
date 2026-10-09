@@ -155,6 +155,31 @@ describe('durations', () => {
         expect(track.visibility[0].threshold).toBeCloseTo(3 * 30.436875 * 86400, 3);
     });
 
+    it('apply to overlaid tracks whose temporal x is only in the members', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const member = (operation: string) => ({
+            mark: 'line',
+            x: { field: 'date', type: 'temporal' },
+            y: { field: 'v', type: 'quantitative' },
+            visibility: [{ operation, measure: 'zoomLevel', threshold: '3 weeks', target: 'track' }]
+        });
+        const { gs } = compiled({
+            tracks: [
+                {
+                    data: { type: 'csv-time', url: '', dateFields: ['date'] },
+                    alignment: 'overlay',
+                    tracks: [member('greater-than'), member('less-than')],
+                    width: 400,
+                    height: 100
+                }
+            ]
+        } as unknown as GoslingSpec);
+        const thresholds = (gs as any).tracks[0].overlay.map((o: any) => o.visibility.map((c: any) => c.threshold));
+        expect(thresholds).toEqual([[21 * 86400], [21 * 86400]]);
+        expect(warn).not.toHaveBeenCalled();
+        warn.mockRestore();
+    });
+
     it('compile zoomLimits to seconds, and numbers keep working', () => {
         const a = compiled({ zoomLimits: ['1 hour', '20 years'], tracks: [timeTrack()] } as GoslingSpec);
         expect(a.hg.views[0].zoomLimits).toEqual([3600, 20 * 365.2425 * 86400]);
