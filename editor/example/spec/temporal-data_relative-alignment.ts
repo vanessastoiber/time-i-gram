@@ -27,14 +27,14 @@ const UNEMPLOYMENT = {
 const SERIES = ['Construction', 'Manufacturing', 'Finance', 'Information', 'Education and Health'];
 
 const spec = {
-    title: 'Relative Time: Aligned to Reference Events',
-    subtitle: 'Flu seasons aligned to their peak (top) and industries aligned to 15 September 2008 (bottom)',
+    title: 'Do flu seasons, and industries after the 2008 crash, follow the same course?',
+    subtitle: 'Top: each flu season aligned to its peak week. Bottom: unemployment aligned to 15 September 2008.',
     arrangement: 'vertical',
     views: [
         {
             tracks: [
                 {
-                    title: 'Influenza A: weeks from the peak of each season',
+                    title: 'Influenza A, aligned to the peak of each season',
                     alignment: 'overlay',
                     data: FLU,
                     x: {
@@ -43,17 +43,25 @@ const spec = {
                         relative: {
                             anchor: { argmax: 'INF_A' },
                             groupby: { period: { unit: 'year', weekBased: true, start: 40, newField: 'season' } },
-                            unit: 'week'
+                            unit: 'week',
+                            label: "the season's peak"
                         },
                         domain: { interval: ['-16 weeks', '16 weeks'] },
                         axis: 'bottom'
                     },
-                    y: { field: 'INF_A', type: 'quantitative', domain: [0, 14000], axis: 'left' },
+                    y: {
+                        field: 'INF_A',
+                        type: 'quantitative',
+                        domain: [0, 14000],
+                        axis: 'left',
+                        title: 'Cases per week'
+                    },
                     color: {
                         field: 'season',
                         type: 'nominal',
                         domain: ['2009/10', '2010/11', '2011/12', '2012/13', '2013/14', '2014/15'],
-                        legend: true
+                        legend: true,
+                        title: 'Season'
                     },
                     tracks: [
                         { mark: 'line', size: { value: 2 } },
@@ -67,22 +75,28 @@ const spec = {
         {
             tracks: [
                 {
-                    title: 'Unemployment rate: months from the collapse of Lehman Brothers (2008-09-15)',
+                    title: 'Unemployment rate, aligned to the collapse of Lehman Brothers',
                     alignment: 'overlay',
                     data: UNEMPLOYMENT,
                     dataTransform: [{ type: 'filter', field: 'series', oneOf: SERIES }],
                     x: {
                         field: 'date',
                         type: 'temporal',
-                        relative: { anchor: '2008-09-15', unit: 'month' },
+                        relative: { anchor: '2008-09-15', unit: 'month', label: 'the collapse of Lehman Brothers' },
                         domain: { interval: ['-36 months', '18 months'] },
                         axis: 'bottom'
                     },
-                    y: { field: 'rate', type: 'quantitative', domain: [0, 25], axis: 'left' },
-                    color: { field: 'series', type: 'nominal', domain: SERIES, legend: true },
+                    y: {
+                        field: 'rate',
+                        type: 'quantitative',
+                        domain: [0, 30],
+                        axis: 'left',
+                        title: 'Unemployment rate (%)'
+                    },
+                    color: { field: 'series', type: 'nominal', domain: SERIES, legend: true, title: 'Industry' },
                     tracks: [{ mark: 'line', size: { value: 2 } }],
                     width: 800,
-                    height: 180
+                    height: 200
                 }
             ]
         }
