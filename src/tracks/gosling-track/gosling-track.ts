@@ -96,6 +96,18 @@ export function drawsTemporalLines(resolvedTracks: SingleTrack[]): boolean {
     );
 }
 
+/**
+ * Rows of a circular track that draws lines or areas over time, limited to the visible x domain. When a ring is
+ * zoomed, rows outside the visible arc would map to angles beyond a revolution and be drawn across the ring;
+ * linear layouts mask them instead. Other tracks are returned unchanged.
+ */
+export function rowsInVisibleArc<T extends Datum>(spec: SingleTrack, rows: T[], [min, max]: [number, number]): T[] {
+    const x = spec.x;
+    if (spec.layout !== 'circular' || !drawsTemporalLines([spec]) || !IsChannelDeep(x) || !x.field) return rows;
+    const field = x.field;
+    return rows.filter(row => min <= +row[field] && +row[field] <= max);
+}
+
 export const PRINT_RENDERING_CYCLE = false;
 
 // For using libraries, refer to https://github.com/higlass/higlass/blob/f82c0a4f7b2ab1c145091166b0457638934b15f3/app/scripts/configs/available-for-plugins.js
@@ -1009,6 +1021,12 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                     const system = getTrackTimeCoordinates(resolvedSpec)?.system ?? ABSOLUTE_TIME;
                     tabularDataTransformed = binByTimeUnit(timeUnit, tabularDataTransformed, system);
                 }
+
+                tabularDataTransformed = rowsInVisibleArc(
+                    resolvedSpec,
+                    tabularDataTransformed,
+                    this._xScale.domain() as [number, number]
+                );
 
                 // TODO: Remove the following block entirely and use the `rawData` API in the Editor (June-02-2022)
                 // Send data preview to the editor so that it can be shown to users.
