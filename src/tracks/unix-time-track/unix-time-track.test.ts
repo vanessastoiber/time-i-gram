@@ -119,3 +119,16 @@ describe('unix time axis track: labels of circular axes (M9)', () => {
         });
     });
 });
+
+describe('unix time axis track: the end of a ring (M9)', () => {
+    it('drops a tick at the end of the domain, which is drawn at the start', () => {
+        const options = { layout: 'circular', width: 400, height: 400, innerRadius: 155, outerRadius: 200, startAngle: 0, endAngle: 360 };
+        const track = createTrack(options);
+        track._xScale = scaleLinear().domain([Date.UTC(2010, 0, 1) / 1000, Date.UTC(2011, 0, 1) / 1000]).range([0, 400]);
+        track.dimensions = [400, 400];
+        track.draw();
+        const labels = track.axisTexts.map((t: any) => t.text);
+        expect(labels[0]).toEqual('2010');
+        expect(labels).not.toContain('2011');
+    });
+});

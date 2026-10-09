@@ -85,7 +85,14 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
     updateAxisTicks(): TimeAxisTicks {
       const domain = this._xScale.domain() as [number, number];
       // as many ticks as fit along the axis: its width, or the circumference at the labels of a circular axis
-      this.axisTicks = timeAxisTicks(domain, this.options.timeCoordinates, 10, this.axisLength(), this.axisTextFontSize * 0.6);
+      const ticks = timeAxisTicks(domain, this.options.timeCoordinates, 10, this.axisLength(), this.axisTextFontSize * 0.6);
+      if (this.options.layout === 'circular') {
+        // on a ring, the end of the domain is drawn next to its start: drop a tick there
+        const keep = ticks.ticks.map(t => t < domain[1]);
+        ticks.ticks = ticks.ticks.filter((_, i) => keep[i]);
+        ticks.labels = ticks.labels.filter((_, i) => keep[i]);
+      }
+      this.axisTicks = ticks;
       return this.axisTicks;
     }
 
