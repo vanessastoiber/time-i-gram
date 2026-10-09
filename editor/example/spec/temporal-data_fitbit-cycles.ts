@@ -1,6 +1,7 @@
 import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 
-// FitBit heart rate (one participant, 12 April to 12 May 2016) in two period coordinate systems:
+// FitBit heart rate (one participant, 12 April to 12 May 2016) in two period coordinate systems, as hourly means
+// (`timeUnit: "hour"` with `aggregate: "mean"`):
 // - a weekly clock: `period: "week"` wraps the time axis by ISO week (Monday at 12 o'clock), and the row
 //   channel on each row's week (`newField: "week"`) draws one concentric ring per week;
 // - a daily cycle: `period: "day"` superposes all days on one 24-hour axis.
@@ -15,9 +16,9 @@ const HEART_RATE = {
 const ONE_PARTICIPANT = [{ type: 'filter', field: 'Id', oneOf: ['2022484408'] }] as const;
 
 const spec = {
-    title: 'FitBit Heart Rate: Weekly and Daily Cycles',
+    title: 'FitBit heart rate: is it higher at weekends, and at what time of day?',
     subtitle:
-        'Left: period "week", one ring per week (Monday at the top). Right: period "day", all days on one 24-hour axis.',
+        'Hourly means, one participant, April to May 2016. Left: a ring per week (Monday at the top). Right: all days.',
     arrangement: 'horizontal',
     views: [
         {
@@ -27,13 +28,20 @@ const spec = {
                 {
                     data: HEART_RATE,
                     dataTransform: ONE_PARTICIPANT,
-                    mark: 'point',
-                    x: { field: 'Time', type: 'temporal', period: { unit: 'week', newField: 'week' }, axis: 'top' },
-                    y: { field: 'Value', type: 'quantitative', domain: [50, 180], axis: 'none' },
+                    // the raw data has a value every few seconds (154,000 for this participant): drawing hourly
+                    // means keeps the views readable and interactive
+                    mark: 'line',
+                    x: {
+                        field: 'Time',
+                        type: 'temporal',
+                        period: { unit: 'week', newField: 'week' },
+                        timeUnit: 'hour',
+                        axis: 'top'
+                    },
+                    y: { field: 'Value', type: 'quantitative', aggregate: 'mean', domain: [50, 130], axis: 'none' },
                     row: { field: 'week', type: 'nominal' },
                     color: { field: 'week', type: 'nominal', legend: true },
-                    size: { value: 1 },
-                    opacity: { value: 0.4 },
+                    size: { value: 1.5 },
                     width: 420,
                     height: 160
                 }
@@ -42,15 +50,15 @@ const spec = {
         {
             tracks: [
                 {
-                    title: 'Heart rate by time of day (all days)',
+                    title: 'Mean heart rate by hour of the day (all days)',
                     data: HEART_RATE,
                     dataTransform: ONE_PARTICIPANT,
-                    mark: 'point',
-                    x: { field: 'Time', type: 'temporal', period: 'day', axis: 'bottom' },
-                    y: { field: 'Value', type: 'quantitative', domain: [50, 180], axis: 'left' },
+                    mark: 'bar',
+                    x: { field: 'Time', type: 'temporal', period: 'day', timeUnit: 'hour', axis: 'bottom' },
+                    y: { field: 'Value', type: 'quantitative', aggregate: 'mean', domain: [0, 130], axis: 'left' },
                     color: { value: '#d62728' },
-                    size: { value: 1 },
-                    opacity: { value: 0.08 },
+                    stroke: { value: 'white' },
+                    strokeWidth: { value: 1 },
                     width: 480,
                     height: 300
                 }
