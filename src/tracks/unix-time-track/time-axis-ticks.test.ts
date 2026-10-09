@@ -154,3 +154,23 @@ describe('tick count from the axis width', () => {
         expect(fits(timeAxisTicks(domain, undefined, 10, 380), domain, 380)).toBe(true);
     });
 });
+
+describe('context label of absolute axes (G5)', () => {
+    const t = (iso: string) => Date.parse(`${iso}Z`) / 1000;
+
+    it('names the visible range, not the date at the center', () => {
+        // monthly ticks over two years: the years
+        expect(timeAxisTicks([t('2021-06-15T00:00:00'), t('2022-03-01T00:00:00')]).context).toEqual('2021–2022');
+        expect(timeAxisTicks([t('2022-02-01T00:00:00'), t('2022-11-01T00:00:00')]).context).toEqual('2022');
+        // daily ticks: the months
+        expect(timeAxisTicks([t('2022-05-10T00:00:00'), t('2022-07-20T00:00:00')], undefined, 30).context).toEqual(
+            '2022 May–Jul'
+        );
+        expect(timeAxisTicks([t('2021-12-20T00:00:00'), t('2022-01-10T00:00:00')]).context).toEqual(
+            '2021 Dec – 2022 Jan'
+        );
+        // hourly ticks: the day
+        expect(timeAxisTicks([t('2016-02-03T06:00:00'), t('2016-02-03T18:00:00')]).context).toEqual('2016 Feb 3');
+        expect(timeAxisTicks([t('2016-02-03T18:00:00'), t('2016-02-04T06:00:00')]).context).toEqual('2016 Feb 3–4');
+    });
+});

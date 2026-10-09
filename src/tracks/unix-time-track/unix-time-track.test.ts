@@ -70,3 +70,19 @@ describe('unix time axis track: label spacing', () => {
         expect(Math.min(...gaps)).toBeGreaterThan(40); // "+2.5 d" is about 40 px at 12 px
     });
 });
+
+describe('unix time axis track: context label (G5)', () => {
+    it('is not drawn on circular axes, whose middle is the center of the ring', () => {
+        const options = { layout: 'circular', width: 400, height: 400, innerRadius: 100, outerRadius: 180, startAngle: 0, endAngle: 360 };
+        const track = createTrack(options);
+        track._xScale = scaleLinear().domain([Date.UTC(2010, 0, 1) / 1000, Date.UTC(2010, 11, 31) / 1000]).range([0, 400]);
+        track.dimensions = [400, 400];
+        track.draw();
+        expect(track.context.text).toEqual('');
+        // the same axis drawn linearly names the year
+        const linear = createTrack();
+        linear._xScale = track._xScale;
+        linear.draw();
+        expect(linear.context.text).toEqual('2010');
+    });
+});

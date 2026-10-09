@@ -17,33 +17,52 @@ import { DAY, UNIT_SECONDS, WEEK } from '../../core/utils/time-units';
 export interface TimeAxisTicks {
     ticks: number[];
     labels: string[];
-    /** Label shown in the middle of the axis, under the ticks (e.g. the year when months are labeled). */
+    /** Label shown in the middle of the axis, under the ticks: the visible range at a coarser unit (e.g. the
+     * years when months are labeled), the visible weeks, or what offsets count. */
     context: string;
-    /** Whether to mark the middle of the axis with a tick: the context of absolute dates applies there. */
-    contextTick?: boolean;
 }
 
 /** The shortest calendar year, in seconds (yearly ticks are 365 or 366 days apart). */
 const SHORTEST_YEAR = 365 * DAY;
 
-const formatContextSecond = utcFormat('%Y %b %d (%I:%M:%S %p)');
-const formatContextMinute = utcFormat('%Y %b %d (%I:%M %p)');
-const formatContextHour = utcFormat('%Y %b %d (%I %p)');
-const formatContextDay = utcFormat('%Y %b %d');
-const formatContextWeek = utcFormat('%Y %b');
-const formatContextMonth = utcFormat('%Y');
+const formatYear = utcFormat('%Y');
+const formatYearMonth = utcFormat('%Y %b');
+const formatDate = utcFormat('%Y %b %-d');
+const formatDayOfMonthOnly = utcFormat('%-d');
+const formatMonthDayOnly = utcFormat('%b %-d');
+const formatMonthOnly = utcFormat('%b');
+const formatContextHour = utcFormat('%Y %b %-d, %H:00');
+const formatContextMinute = utcFormat('%Y %b %-d, %H:%M');
+const formatContextSecond = utcFormat('%Y %b %-d, %H:%M:%S');
+
+const EN_DASH = '\u2013';
 
 /**
- * Context of absolute ticks: the coarser calendar unit around the tick unit (e.g. the year for month ticks).
- * `tickDelta` is in seconds.
+ * Context of absolute ticks: the coarser calendar unit around the tick unit (e.g. the years for month ticks),
+ * for the whole visible range `[start, end]` (seconds), e.g. "2022", "2021\u20132022", "2022 May\u2013Jul",
+ * "2016 Feb 3\u20134". Empty when the ticks are years. `tickDelta` is in seconds.
  */
-function absoluteContext(date: Date, tickDelta: number) {
-    if (tickDelta < UNIT_SECONDS.second) return formatContextSecond(date);
-    if (tickDelta < UNIT_SECONDS.minute) return formatContextMinute(date);
-    if (tickDelta < UNIT_SECONDS.hour) return formatContextHour(date);
-    if (tickDelta < DAY) return formatContextDay(date);
-    if (tickDelta < WEEK) return formatContextWeek(date);
-    if (tickDelta < SHORTEST_YEAR) return formatContextMonth(date);
+function absoluteContext([start, end]: [number, number], tickDelta: number): string {
+    const [a, b] = [new Date(start * 1000), new Date(Math.max(start, end - 0.001) * 1000)];
+    const sameYear = a.getUTCFullYear() === b.getUTCFullYear();
+    const sameMonth = sameYear && a.getUTCMonth() === b.getUTCMonth();
+    const range = (format: (d: Date) => string) =>
+        format(a) === format(b) ? format(a) : `${format(a)} ${EN_DASH} ${format(b)}`;
+    if (tickDelta < UNIT_SECONDS.second) return range(formatContextSecond);
+    if (tickDelta < UNIT_SECONDS.minute) return range(formatContextMinute);
+    if (tickDelta < UNIT_SECONDS.hour) return range(formatContextHour);
+    if (tickDelta < DAY) {
+        if (sameMonth)
+            return formatDate(a) === formatDate(b)
+                ? formatDate(a)
+                : `${formatDate(a)}${EN_DASH}${formatDayOfMonthOnly(b)}`;
+        return sameYear ? `${formatDate(a)} ${EN_DASH} ${formatMonthDayOnly(b)}` : range(formatDate);
+    }
+    if (tickDelta < WEEK * 4) {
+        if (sameMonth) return formatYearMonth(a);
+        return sameYear ? `${formatYearMonth(a)}${EN_DASH}${formatMonthOnly(b)}` : range(formatYearMonth);
+    }
+    if (tickDelta < SHORTEST_YEAR) return sameYear ? formatYear(a) : `${formatYear(a)}${EN_DASH}${formatYear(b)}`;
     return '';
 }
 
@@ -147,13 +166,11 @@ function absoluteTicks(domain: [number, number], count: number): TimeAxisTicks {
     const scale = scaleUtc().domain(domain.map(d => d * 1000));
     const dates = scale.ticks(count);
     const format = scale.tickFormat(count);
-    const center = new Date(((domain[0] + domain[1]) / 2) * 1000);
     const delta = dates.length > 1 ? (+dates[1] - +dates[0]) / 1000 : Infinity;
     return {
         ticks: dates.map(d => +d / 1000),
         labels: dates.map(d => format(d)),
-        context: absoluteContext(center, delta),
-        contextTick: true
+        context: absoluteContext(domain, delta)
     };
 }
 

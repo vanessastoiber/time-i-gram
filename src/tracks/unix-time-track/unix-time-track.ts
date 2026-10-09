@@ -192,17 +192,18 @@ function UnixTimeTrack(HGC: any, ...args: any[]): any {
       });
     }
 
+    /**
+     * The context label under a linear axis: the visible range at a coarser unit, the visible weeks, or what
+     * offsets count (see `timeAxisTicks`). Not drawn on circular axes, where the middle of the axis is the
+     * center of the ring.
+     */
     drawContext(tickStartY: number, tickEndY: number) {
       const center = (+this.timeScale.domain()[1] + +this.timeScale.domain()[0]) / 2;
 
       const xPos = this.position[0] + this.timeScale(center);
-      this.context.text = (this.axisTicks as TimeAxisTicks).context;
+      this.context.text = this.options.layout === 'circular' ? '' : (this.axisTicks as TimeAxisTicks).context;
       this.context.x = xPos;
       this.context.y = this.position[1] + tickEndY + betweenCenterTickAndText;
-      if (this.context.text !== '' && (this.axisTicks as TimeAxisTicks).contextTick) {
-        this.pMain.moveTo(xPos, this.position[1] + tickStartY - 10);
-        this.pMain.lineTo(xPos, this.position[1] + tickEndY - 5);
-      }
     }
 
     draw() {
