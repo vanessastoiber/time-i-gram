@@ -851,6 +851,11 @@ export interface Relative {
      * __Default:__ chosen from the visible span
      */
     unit?: TimeUnit;
+    /**
+     * Name of the reference event in the axis title, e.g. `"the season's peak"` gives "weeks from the season's
+     * peak". __Default:__ a description of the anchor (e.g. "the maximum of INF_A", or the date)
+     */
+    label?: string;
 }
 
 /** A granularity transition rule of `x.timeUnit`. */

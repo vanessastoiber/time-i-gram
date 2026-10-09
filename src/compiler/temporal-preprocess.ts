@@ -565,7 +565,7 @@ function resolveRelative(x: X, warn: Warn): ({ system: RelativeTime } & Relative
         warn(`relative.unit "${relative.unit}" is not a time unit, so the unit is chosen from the visible span.`);
     }
     const unit = relative.unit && TIME_UNITS.includes(relative.unit) ? relative.unit : undefined;
-    const system: RelativeTime = { kind: 'relative', unit, anchorLabel: describeAnchor(resolved) };
+    const system: RelativeTime = { kind: 'relative', unit, anchorLabel: relative.label ?? describeAnchor(resolved) };
     const { groupby } = relative;
     if (groupby && typeof groupby === 'object' && !Array.isArray(groupby)) {
         const period = groupby.period;

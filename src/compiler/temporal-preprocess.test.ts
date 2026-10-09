@@ -312,7 +312,8 @@ describe('period (time coordinate system)', () => {
                 layout: 'circular',
                 tracks: [timeTrack({ x: { field: 'date', type: 'temporal', ...x } })]
             } as GoslingSpec).gs as any;
-        const angles = (gs: any) => [gs.tracks[0].startAngle, gs.tracks[0].endAngle].sort((a: number, b: number) => a - b);
+        const angles = (gs: any) =>
+            [gs.tracks[0].startAngle, gs.tracks[0].endAngle].sort((a: number, b: number) => a - b);
         expect(angles(ring({ period: 'year' }))).toEqual([0, 360]);
         // absolute time and genomic rings keep the gap
         expect(angles(ring({}))[0]).toBeGreaterThan(0);
@@ -788,6 +789,13 @@ describe('relative (time coordinate system)', () => {
         expect(options.spec.x.field).toEqual('__relative_date');
         expect(hg.views[0].initialXDomain).toEqual([-4 * WEEK, 30 * WEEK]);
         expect(timeAxis(hg).options.timeCoordinates.kind).toEqual('relative');
+    });
+
+    it('names the reference event in the axis with relative.label', () => {
+        const spec = { tracks: [relativeTrack({ anchor: { argmax: 'v' }, unit: 'week', label: "the season's peak" })] };
+        expect(validateGoslingSpec(spec).state).toEqual('success');
+        const { hg } = compiled(spec as GoslingSpec);
+        expect(timeAxis(hg).options.timeCoordinates.anchorLabel).toEqual("the season's peak");
     });
 
     it('resolves a fixed date anchor', () => {

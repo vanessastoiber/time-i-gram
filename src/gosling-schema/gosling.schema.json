@@ -6268,6 +6268,10 @@
           ],
           "description": "The groups for `\"first\"`, `\"last\"`, `argmax` and `argmin`: field(s), or `{ \"period\": ... }` to group rows by the calendar period they fall in (e.g. flu seasons: `{ \"period\": { \"unit\": \"year\", \"weekBased\": true, \"start\": 40, \"newField\": \"season\" } }`); the period's `newField` receives each row's period.\n\n__Default:__ all rows form one group"
         },
+        "label": {
+          "description": "Name of the reference event in the axis title, e.g. `\"the season's peak\"` gives \"weeks from the season's peak\". __Default:__ a description of the anchor (e.g. \"the maximum of INF_A\", or the date)",
+          "type": "string"
+        },
         "unit": {
           "$ref": "#/definitions/TimeUnit",
           "description": "Unit of the axis labels (\"+3 wk\") and of `timeUnit` bins, which count whole units from the anchor. Units from `month` up are labeled with nominal lengths (a month is 30.44 days). __Default:__ chosen from the visible span"
