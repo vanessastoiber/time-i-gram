@@ -67,6 +67,8 @@ import { EX_SPEC_TEMPORAL_FITBIT_CYCLES } from './spec/temporal-data_fitbit-cycl
 import { EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY } from './spec/temporal-data_unemployment-granularity';
 import { EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT } from './spec/temporal-data_relative-alignment';
 import { EX_SPEC_TEMPORAL_TAXI_SPANS } from './spec/temporal-data_taxi-spans';
+import { EX_SPEC_TEMPORAL_CMAPSS_ALIGNMENT } from './spec/temporal-data_cmapss-alignment';
+import { EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS } from './spec/temporal-data_cmapss-prognosis';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -616,6 +618,20 @@ const editorExampleObj: {
         spec: EX_SPEC_TEMPORAL_TAXI_SPANS,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_TAXI_SPANS
+    },
+    TEMPORAL_DATA_CMAPSS_ALIGNMENT: {
+        group: 'Temporal Data',
+        name: 'Relative: Jet Engines Aligned to Entry into Service or to Failure',
+        spec: EX_SPEC_TEMPORAL_CMAPSS_ALIGNMENT,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_ALIGNMENT
+    },
+    TEMPORAL_DATA_CMAPSS_PROGNOSIS: {
+        group: 'Temporal Data',
+        name: 'Relative: Jet Engine Prognosis, Aligned to an Unobserved Failure',
+        spec: EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_PROGNOSIS
     }
 };
 

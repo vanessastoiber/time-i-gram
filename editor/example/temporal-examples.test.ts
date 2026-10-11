@@ -18,6 +18,8 @@ import { EX_SPEC_TEMPORAL_FITBIT_CYCLES } from './spec/temporal-data_fitbit-cycl
 import { EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY } from './spec/temporal-data_unemployment-granularity';
 import { EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT } from './spec/temporal-data_relative-alignment';
 import { EX_SPEC_TEMPORAL_TAXI_SPANS } from './spec/temporal-data_taxi-spans';
+import { EX_SPEC_TEMPORAL_CMAPSS_ALIGNMENT } from './spec/temporal-data_cmapss-alignment';
+import { EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS } from './spec/temporal-data_cmapss-prognosis';
 
 /** The JS code blocks of README.md that build a spec, evaluated to the spec object. */
 function readmeSpecs(): Record<string, GoslingSpec> {
@@ -45,6 +47,8 @@ const examples: Record<string, GoslingSpec> = {
     'granularity: unemployment': EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY,
     'relative: alignment': EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT,
     'spans: taxi': EX_SPEC_TEMPORAL_TAXI_SPANS,
+    'relative: C-MAPSS alignment': EX_SPEC_TEMPORAL_CMAPSS_ALIGNMENT,
+    'relative: C-MAPSS prognosis': EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS,
     ...readmeSpecs()
 };
 
