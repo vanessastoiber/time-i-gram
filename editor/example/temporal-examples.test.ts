@@ -20,6 +20,9 @@ import { EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT } from './spec/temporal-data_relati
 import { EX_SPEC_TEMPORAL_TAXI_SPANS } from './spec/temporal-data_taxi-spans';
 import { EX_SPEC_TEMPORAL_CMAPSS_ALIGNMENT } from './spec/temporal-data_cmapss-alignment';
 import { EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS } from './spec/temporal-data_cmapss-prognosis';
+import { EX_SPEC_TEMPORAL_CMAPSS_FAULT_MODES } from './spec/temporal-data_cmapss-fault-modes';
+import { EX_SPEC_TEMPORAL_CMAPSS_SENSORS } from './spec/temporal-data_cmapss-sensors';
+import { EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS } from './spec/temporal-data_cmapss-conditions';
 
 /** The JS code blocks of README.md that build a spec, evaluated to the spec object. */
 function readmeSpecs(): Record<string, GoslingSpec> {
@@ -49,6 +52,9 @@ const examples: Record<string, GoslingSpec> = {
     'spans: taxi': EX_SPEC_TEMPORAL_TAXI_SPANS,
     'relative: C-MAPSS alignment': EX_SPEC_TEMPORAL_CMAPSS_ALIGNMENT,
     'relative: C-MAPSS prognosis': EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS,
+    'relative: C-MAPSS fault modes': EX_SPEC_TEMPORAL_CMAPSS_FAULT_MODES,
+    'granularity: C-MAPSS sensors': EX_SPEC_TEMPORAL_CMAPSS_SENSORS,
+    'relative: C-MAPSS conditions': EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS,
     ...readmeSpecs()
 };
 

@@ -69,6 +69,9 @@ import { EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT } from './spec/temporal-data_relati
 import { EX_SPEC_TEMPORAL_TAXI_SPANS } from './spec/temporal-data_taxi-spans';
 import { EX_SPEC_TEMPORAL_CMAPSS_ALIGNMENT } from './spec/temporal-data_cmapss-alignment';
 import { EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS } from './spec/temporal-data_cmapss-prognosis';
+import { EX_SPEC_TEMPORAL_CMAPSS_FAULT_MODES } from './spec/temporal-data_cmapss-fault-modes';
+import { EX_SPEC_TEMPORAL_CMAPSS_SENSORS } from './spec/temporal-data_cmapss-sensors';
+import { EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS } from './spec/temporal-data_cmapss-conditions';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -632,6 +635,27 @@ const editorExampleObj: {
         spec: EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_PROGNOSIS
+    },
+    TEMPORAL_DATA_CMAPSS_FAULT_MODES: {
+        group: 'Temporal Data',
+        name: 'Relative: Jet Engine Fault Modes, Aligned to Failure',
+        spec: EX_SPEC_TEMPORAL_CMAPSS_FAULT_MODES,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_FAULT_MODES
+    },
+    TEMPORAL_DATA_CMAPSS_SENSORS: {
+        group: 'Temporal Data',
+        name: 'Granularity: Jet Engine Sensors before Failure (zoom)',
+        spec: EX_SPEC_TEMPORAL_CMAPSS_SENSORS,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_SENSORS
+    },
+    TEMPORAL_DATA_CMAPSS_CONDITIONS: {
+        group: 'Temporal Data',
+        name: 'Relative: Jet Engine Sensor Normalized by Flight Condition',
+        spec: EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_CONDITIONS
     }
 };
 
