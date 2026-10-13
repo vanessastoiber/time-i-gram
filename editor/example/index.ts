@@ -72,6 +72,7 @@ import { EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS } from './spec/temporal-data_cmapss-p
 import { EX_SPEC_TEMPORAL_CMAPSS_FAULT_MODES } from './spec/temporal-data_cmapss-fault-modes';
 import { EX_SPEC_TEMPORAL_CMAPSS_SENSORS } from './spec/temporal-data_cmapss-sensors';
 import { EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS } from './spec/temporal-data_cmapss-conditions';
+import { EX_SPEC_TEMPORAL_CHRO_RING } from './spec/temporal-data_chro-ring';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -656,6 +657,13 @@ const editorExampleObj: {
         spec: EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_CONDITIONS
+    },
+    TEMPORAL_DATA_CHRO_RING: {
+        group: 'Temporal Data',
+        name: 'Chro-Ring: the Life of Su Shi (simulated)',
+        spec: EX_SPEC_TEMPORAL_CHRO_RING,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_CHRO_RING
     }
 };
 
