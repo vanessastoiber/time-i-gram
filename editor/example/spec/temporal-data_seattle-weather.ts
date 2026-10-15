@@ -2,7 +2,7 @@ import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 
 export const EX_SPEC_TEMPORAL_SEATTLE_WEATHER: GoslingSpec = {
     title: "How does Seattle's weather change over the year?",
-    subtitle: 'Daily values, 2012 to 2015. The three views are linked: zoom or pan any of them.',
+    subtitle: 'Daily values, 2012 to 2015; the three views are linked. Source: NOAA, via vega-datasets',
     description: '',
     views: [{
         alignment: "overlay",

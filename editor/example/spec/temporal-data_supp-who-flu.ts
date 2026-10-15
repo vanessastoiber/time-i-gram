@@ -30,7 +30,7 @@ const YEARS = {
 
 const spec = {
     title: 'Does the flu season peak at the same time every year?',
-    subtitle: 'Weekly influenza A cases in the USA, 2010 to 2014, with every year drawn over 2010',
+    subtitle: 'Influenza A per week, USA, 2010 to 2014, all drawn over 2010. Source: WHO FluNet',
     xDomain: { interval: [1251763200, 1333238400] },
 
     arrangement: 'vertical',
