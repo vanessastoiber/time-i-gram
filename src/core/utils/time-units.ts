@@ -4,6 +4,7 @@
  */
 
 import type { TimeUnit, TimeValue } from '@gosling-lang/gosling-schema';
+import { utcFormat } from 'd3-time-format';
 
 export type { TimeUnit, TimeValue };
 
@@ -225,6 +226,21 @@ export function parseTimeValue(value: TimeValue, bound: 'start' | 'end' = 'start
 /** Whether a string is a date string accepted by `parseTimeValue`. */
 export function isTimeString(value: unknown): value is string {
     return typeof value === 'string' && !isNaN(parseTimeValue(value));
+}
+
+/**
+ * Format Unix seconds as a UTC date for display (e.g. in tooltips), with a d3-time-format specifier.
+ * The default shows the date, and the time of day when it is not midnight. A value that is not a time is
+ * returned as it is.
+ */
+export function formatTimeValue(value: unknown, format?: string): string {
+    const t = Number(value);
+    if (value === '' || value === null || value === undefined || !isFinite(t)) return String(value);
+    const date = new Date(t * 1000);
+    if (format) return utcFormat(format)(date);
+    const secondsOfDay = ((t % DAY) + DAY) % DAY;
+    if (secondsOfDay === 0) return utcFormat('%Y-%m-%d')(date);
+    return utcFormat(secondsOfDay % 60 === 0 ? '%Y-%m-%d %H:%M' : '%Y-%m-%d %H:%M:%S')(date);
 }
 
 /* ----------------------------- Durations ----------------------------- */

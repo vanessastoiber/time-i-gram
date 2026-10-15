@@ -488,7 +488,9 @@ export interface Tooltip {
     type: FieldType;
     /** Name of the data field for showing in the tooltip. Will use the field name if not specified. */
     alt?: string;
-    /** format of the data value. */
+    /** Format of the data value: a d3-format specifier for `quantitative` fields, and a d3-time-format specifier
+     * (in UTC) for `temporal` fields, whose values are shown as dates. __Default__ for `temporal`: the date, and
+     * the time of day when it is not midnight (e.g. `2015-12-08 14:00`). */
     format?: string;
 }
 
