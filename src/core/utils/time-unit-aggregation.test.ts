@@ -41,6 +41,21 @@ describe('timeUnit transform', () => {
         ]);
         expect(weeks[0].date).toEqual(utc(2010, 8, 18, 13));
     });
+
+    it('names each unit in labelField', () => {
+        const rows = [{ date: utc(1963, 8, 18, 13) }];
+        const label = (unit: 'decade' | 'year' | 'quarter' | 'month' | 'week' | 'day' | 'hour') =>
+            truncateTime({ type: 'timeUnit', field: 'date', unit, newField: 'u', labelField: 'name' }, rows)[0].name;
+        expect(['decade', 'year', 'quarter', 'month', 'week', 'day', 'hour'].map(u => label(u as 'year'))).toEqual([
+            '1960s',
+            '1963',
+            '1963-Q3',
+            '1963-08',
+            '1963-W33',
+            '1963-08-18',
+            '1963-08-18 13:00'
+        ]);
+    });
 });
 
 describe('binByTimeUnit', () => {

@@ -27,7 +27,7 @@ import {
 } from '@gosling-lang/gosling-schema';
 import { computeChromSizes } from './assembly';
 import { median as d3median } from 'd3-array';
-import { addDuration, floorTime, offsetTime, parseDurationParts } from './time-units';
+import { addDuration, floorTime, offsetTime, parseDurationParts, unitLabel } from './time-units';
 import {
     unitEndCoordinate,
     unitStartCoordinate,
@@ -95,12 +95,13 @@ export function enableInterval(filter: IntervalTransform, data: Datum[]): any {
  * Truncate a time field (Unix seconds) to the start of its calendar unit, and optionally store the unit's end.
  */
 export function truncateTime(t: TimeUnitTransform, data: Datum[]): Datum[] {
-    const { field, unit, newField, endField } = t;
+    const { field, unit, newField, endField, labelField } = t;
     return data.map(d => {
         const value = +d[field];
         const start = floorTime(value, unit);
         const row: Datum = { ...d, [newField ?? field]: start };
         if (endField) row[endField] = offsetTime(start, unit, 1);
+        if (labelField) row[labelField] = unitLabel(start, unit);
         return row;
     });
 }

@@ -214,3 +214,24 @@ describe('labels at the ends of an axis (M9)', () => {
         ).toEqual([]);
     });
 });
+
+describe('decade and unit-name ticks', () => {
+    it('label a decade period by the last digit of the year', () => {
+        const decade = periodCoordinates('decade');
+        const { labels, context } = timeAxisTicks(periodReference(decade), decade);
+        expect(labels).toEqual(['’0', '’1', '’2', '’3', '’4', '’5', '’6', '’7', '’8', '’9']);
+        expect(context).toEqual('');
+    });
+
+    it('name the unit of a relative axis with relative.unitName', () => {
+        const DAY = 86400;
+        const { labels, context } = timeAxisTicks([-100 * DAY, 0], {
+            kind: 'relative',
+            unit: 'day',
+            anchorLabel: 'failure',
+            unitName: { short: 'cycles', plural: 'cycles' }
+        });
+        expect(labels).toContain('−50 cycles');
+        expect(context).toEqual('cycles from failure');
+    });
+});

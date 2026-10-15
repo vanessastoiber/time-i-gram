@@ -840,6 +840,16 @@ describe('relative (time coordinate system)', () => {
         expect(options.spec.overlay[0].xe.field).toEqual('__relative_death');
     });
 
+    it('names the unit of the axis with relative.unitName, which needs relative.unit', () => {
+        const named = compiled({
+            tracks: [relativeTrack({ anchor: 'last', unit: 'day', unitName: 'cycle' })]
+        } as GoslingSpec);
+        expect(timeAxis(named.hg).options.timeCoordinates.unitName).toEqual({ short: 'cycles', plural: 'cycles' });
+        const spec = { tracks: [relativeTrack({ anchor: 'last', unitName: 'cycle' })] };
+        expect(validateGoslingSpec(spec).state).toEqual('success');
+        expect(resolveTemporalSugar(JSON.parse(JSON.stringify(spec))).join(' ')).toMatch(/unitName/);
+    });
+
     it('names the reference event in the axis with relative.label', () => {
         const spec = { tracks: [relativeTrack({ anchor: { argmax: 'v' }, unit: 'week', label: "the season's peak" })] };
         expect(validateGoslingSpec(spec).state).toEqual('success');

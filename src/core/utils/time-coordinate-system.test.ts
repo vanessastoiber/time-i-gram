@@ -277,3 +277,31 @@ describe('relative time grouped by period', () => {
         expect(mapped.map(r => (r.__relative_t as number) / (7 * 86400))).toEqual([-9, 0, 8, 0, 5]);
     });
 });
+
+describe('decades', () => {
+    const DECADE = periodCoordinates('decade');
+    const FROM_1 = periodCoordinates({ unit: 'decade', start: 1 });
+
+    it('place a time by its year of the decade, month and day in 2000-2009', () => {
+        expect(periodReference(DECADE).map(iso)).toEqual(['2000-01-01T00:00:00.000Z', '2010-01-01T00:00:00.000Z']);
+        expect(iso(toPeriodCoordinate(s('1958-03-01T06:00:00Z'), DECADE))).toEqual('2008-03-01T06:00:00.000Z');
+        expect(toPeriodCoordinate(s('1960-07-01'), DECADE)).toEqual(toPeriodCoordinate(s('2020-07-01'), DECADE));
+        // 1964 and 2004 are both the 5th year: 29 February keeps its place; 1972 is the 3rd, which is not a leap
+        // year in the reference decade
+        expect(iso(toPeriodCoordinate(s('1964-02-29'), DECADE))).toEqual('2004-02-29T00:00:00.000Z');
+        expect(iso(toPeriodCoordinate(s('1972-02-29'), DECADE))).toEqual('2002-03-01T00:00:00.000Z');
+    });
+
+    it('start at a year ending in `start`, before 1970 too', () => {
+        expect(iso(periodStartOf(s('1969-12-31'), DECADE))).toEqual('1960-01-01T00:00:00.000Z');
+        expect(iso(periodEndOf(s('1969-12-31'), DECADE))).toEqual('1970-01-01T00:00:00.000Z');
+        expect(iso(periodStartOf(s('1970-06-01'), FROM_1))).toEqual('1961-01-01T00:00:00.000Z');
+        expect(periodReference(FROM_1).map(iso)).toEqual(['2001-01-01T00:00:00.000Z', '2011-01-01T00:00:00.000Z']);
+        expect(iso(toPeriodCoordinate(s('1970-06-01'), FROM_1))).toEqual('2010-06-01T00:00:00.000Z');
+    });
+
+    it('name each decade', () => {
+        expect(periodKey(s('1958-03-01'), DECADE)).toEqual('1950s');
+        expect(periodKey(s('1970-06-01'), FROM_1)).toEqual('1961–1970');
+    });
+});

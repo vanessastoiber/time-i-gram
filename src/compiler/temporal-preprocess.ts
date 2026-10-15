@@ -587,6 +587,13 @@ function resolveRelative(x: X, warn: Warn): ({ system: RelativeTime } & Relative
     }
     const unit = relative.unit && TIME_UNITS.includes(relative.unit) ? relative.unit : undefined;
     const system: RelativeTime = { kind: 'relative', unit, anchorLabel: relative.label ?? describeAnchor(resolved) };
+    if (relative.unitName !== undefined) {
+        const name = relative.unitName;
+        if (!unit) warn('relative.unitName names `relative.unit`, which is not set, so it is ignored.');
+        else if (typeof name === 'string' && name.trim()) system.unitName = { short: `${name}s`, plural: `${name}s` };
+        else if (typeof name === 'object' && name?.short && name?.plural) system.unitName = { ...name };
+        else warn('relative.unitName is a name or { short, plural }, so it is ignored.');
+    }
     const { groupby } = relative;
     if (groupby && typeof groupby === 'object' && !Array.isArray(groupby)) {
         const period = groupby.period;

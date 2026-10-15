@@ -58,7 +58,7 @@ Every temporal x axis has a **time coordinate system**, which decides where a ti
 | System | Syntax (on `x`) | A time is placed at | Axis labels |
 |---|---|---|---|
 | absolute (default) | — | its instant (Unix seconds) | dates |
-| period | `period: "year" \| "month" \| "week" \| "day"` or `{ unit, weekBased?, start?, newField? }` | its position within its calendar period, so all periods share one axis (or one revolution in a circular layout) | `Jan`…`Dec`, `W1`…`W53`, `Mon`…`Sun`, `00:00`…`23:00` |
+| period | `period: "decade" \| "year" \| "month" \| "week" \| "day"` or `{ unit, weekBased?, start?, newField? }` | its position within its calendar period, so all periods share one axis (or one revolution in a circular layout) | `’0`…`’9`, `Jan`…`Dec`, `W1`…`W53`, `Mon`…`Sun`, `00:00`…`23:00` |
 | relative | `relative: { anchor, groupby?, unit? }` | its signed offset from a reference event | `−2 wk`, `0`, `+3 wk` |
 
 ```jsonc
@@ -74,8 +74,8 @@ Every temporal x axis has a **time coordinate system**, which decides where a ti
        "domain": { "interval": ["-16 weeks", "16 weeks"] } }
 ```
 
-- **Period.** Years align by calendar date in a leap reference year; `weekBased` uses ISO week-years; `start` begins each period at another month, ISO week, weekday, or hour (e.g. August–July seasons). Intervals (`x`/`xe`) that cross a period boundary are split. A `domain` on a period axis is ignored (the whole period is shown).
-- **Relative.** `anchor` is a date, `"first"`, `"last"`, `{ "argmax": field }`, `{ "argmin": field }` (per `groupby` group), or `{ "field": name }` (per row). Set the domain as offsets (durations or seconds). `label` names the event in the axis title (e.g. `"the season's peak"` gives "weeks from the season's peak").
+- **Period.** Decades align by year of the decade, month and day (29 February of a decade's 3rd, 7th... year falls on 1 March); years align by calendar date in a leap reference year; `weekBased` uses ISO week-years; `start` begins each period at another year digit, month, ISO week, weekday, or hour (e.g. 1961–1970 decades, August–July seasons). Intervals (`x`/`xe`) that cross a period boundary are split. A `domain` on a period axis is ignored (the whole period is shown).
+- **Relative.** `anchor` is a date, `"first"`, `"last"`, `{ "argmax": field }`, `{ "argmin": field }` (per `groupby` group), or `{ "field": name }` (per row). Set the domain as offsets (durations or seconds). `unitName` renames `unit` on the axis for offsets that count something else, e.g. `"cycle"` for operating cycles stored one per day. `label` names the event in the axis title (e.g. `"the season's peak"` gives "weeks from the season's peak").
 - **Linking.** Views are linked (`linkingId`, brushes) only within one coordinate system: a position within a period stands for many absolute instants. A `linkingId` that joins views in different systems is split into one link per system, whatever the order of the views, with a warning; a view alone in its system is not linked.
 
 ### Calendar Granularity
@@ -106,7 +106,7 @@ Every temporal x axis has a **time coordinate system**, which decides where a ti
 
 | Transform | Does |
 |---|---|
-| `{ "type": "timeUnit", "field", "unit", "newField"?, "endField"? }` | truncates a time field to the start (and end) of its unit |
+| `{ "type": "timeUnit", "field", "unit", "newField"?, "endField"?, "labelField"? }` | truncates a time field to the start (and end) of its unit; `labelField` receives a readable name (`1960s`, `2010-Q4`, `2015-W53`) |
 | `{ "type": "span", "field", "duration", "unit"?, "newField" }` | adds a duration (a numeric field in `unit`, or a literal such as `"15 minutes"`) to a start time: an interval for `x`/`xe` |
 
 ### Titles, Axes and Legends of Temporal Tracks
