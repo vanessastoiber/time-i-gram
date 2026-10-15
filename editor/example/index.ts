@@ -544,6 +544,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_OVERVIEW_DETAIL: {
         group: 'Temporal Data',
         name: 'Unemployment - Overview + Detail',
+        description:
+            'json-time from a URL; overview + detail with a brush (linkingId); one track per industry (faceted)',
         spec: EX_SPEC_TEMPORAL_OVERVIEW_DETAIL,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_OVERVIEW_DETAIL
@@ -551,6 +553,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_SEATTLE_WEATHER: {
         group: 'Temporal Data',
         name: 'Seattle Weather',
+        description:
+            'csv-time; three views linked by linkingId; semantic zoom (visibility with a duration threshold: color bands or text labels)',
         spec: EX_SPEC_TEMPORAL_SEATTLE_WEATHER,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_SEATTLE_WEATHER
@@ -558,6 +562,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_UNEMPLOYMENT_CIRCULAR_LINEAR: {
         group: 'Temporal Data',
         name: 'Unemployment: Circular Overview + Linear Detail',
+        description:
+            'json-time; a circular overview whose brush drives a linear detail (absolute time); overlaid series with a titled legend',
         spec: EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_UNEMPLOYMENT_CIRCULAR_LINEAR
@@ -565,6 +571,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_SUPP_UNEMPLOYMENT: {
         group: 'Temporal Data',
         name: 'Supp. S3: U.S. Unemployment Across Industries',
+        description:
+            'Supplementary Fig. S3: circular overview, linear detail panels and a timeline brush (linkingId); overlaid areas and lines',
         spec: EX_SPEC_TEMPORAL_SUPP_UNEMPLOYMENT,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_SUPP_UNEMPLOYMENT
@@ -572,6 +580,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_SUPP_SEATTLE_WEATHER: {
         group: 'Temporal Data',
         name: 'Supp. S4: Seattle Weather',
+        description:
+            'Supplementary Fig. S4: date-string domains; three linked views; semantic zoom with a duration threshold; yearFirstDate',
         spec: EX_SPEC_TEMPORAL_SUPP_SEATTLE_WEATHER,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_SUPP_SEATTLE_WEATHER
@@ -579,6 +589,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_SUPP_SOLAR_WEATHER: {
         group: 'Temporal Data',
         name: 'Supp. S5: Solar Power and Local Weather',
+        description:
+            'Supplementary Fig. S5: an overview brush over five linked views; day-first dates (dayFirstDate); tooltips. Data source to be confirmed',
         spec: EX_SPEC_TEMPORAL_SUPP_SOLAR_WEATHER,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_SUPP_SOLAR_WEATHER
@@ -586,13 +598,17 @@ const editorExampleObj: {
     TEMPORAL_DATA_SUPP_NYC_TAXI: {
         group: 'Temporal Data',
         name: 'Supp. S6: NYC Taxi Trip Duration',
+        description:
+            'Supplementary Fig. S6: arcs (withinLink) from pickup to drop-off interval columns; semantic zoom (arcs below 2 hours); linked views',
         spec: EX_SPEC_TEMPORAL_SUPP_NYC_TAXI,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_SUPP_NYC_TAXI
     },
     TEMPORAL_DATA_SUPP_WHO_FLU: {
         group: 'Temporal Data',
-        name: 'Supp. S7: WHO Flu Data',
+        name: 'Supp. S7 (original, hand-preprocessed): WHO Flu Data',
+        description:
+            'Supplementary Fig. S7 as published: every year moved into 2010 by hand before plotting. The same chart without that step: "Period: WHO Flu by Week of the Year"',
         spec: EX_SPEC_TEMPORAL_SUPP_WHO_FLU,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_SUPP_WHO_FLU
@@ -600,6 +616,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_SUPP_FITBIT: {
         group: 'Temporal Data',
         name: 'Supp. S8: FitBit Activity and Heart Rate',
+        description:
+            'Supplementary Fig. S8: granularity rules (mean by minute, by hour above 2 days); linked linear and circular views; two y axes',
         spec: EX_SPEC_TEMPORAL_SUPP_FITBIT,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_SUPP_FITBIT
@@ -607,6 +625,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_WHO_FLU_PERIOD: {
         group: 'Temporal Data',
         name: 'Period: WHO Flu by Week of the Year',
+        description:
+            'period year with ISO weeks (weekBased) on a ring and a linear view; color on the period field; a brush in the period system; ISO year + week columns',
         spec: EX_SPEC_TEMPORAL_WHO_FLU_PERIOD,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_WHO_FLU_PERIOD
@@ -614,6 +634,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_FITBIT_CYCLES: {
         group: 'Temporal Data',
         name: 'Period: FitBit Weekly and Daily Cycles',
+        description:
+            'period week with one ring per week (row on the period field); period day; timeUnit hour with mean',
         spec: EX_SPEC_TEMPORAL_FITBIT_CYCLES,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_FITBIT_CYCLES
@@ -621,6 +643,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_UNEMPLOYMENT_GRANULARITY: {
         group: 'Temporal Data',
         name: 'Granularity: Unemployment by Month or Year (zoom)',
+        description:
+            'granularity transition rules (month, year above 4 years) with mean; date-string domains; zoomLimits as durations; brush',
         spec: EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_UNEMPLOYMENT_GRANULARITY
@@ -628,6 +652,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_RELATIVE_ALIGNMENT: {
         group: 'Temporal Data',
         name: 'Relative: Flu Seasons and Unemployment Aligned to Events',
+        description:
+            'relative: an argmax anchor per season (groupby period, seasons from ISO week 40) and a fixed-date anchor; relative.label',
         spec: EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_RELATIVE_ALIGNMENT
@@ -635,6 +661,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_TAXI_SPANS: {
         group: 'Temporal Data',
         name: 'Spans: NYC Taxi Trips and the Daily Cycle',
+        description:
+            'span transform (pickup + trip duration) drawn as arcs; period day with timeUnit hour and count; one row per vendor',
         spec: EX_SPEC_TEMPORAL_TAXI_SPANS,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_TAXI_SPANS
@@ -642,6 +670,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_CMAPSS_ALIGNMENT: {
         group: 'Temporal Data',
         name: 'Relative: Jet Engines Aligned to Entry into Service or to Failure',
+        description:
+            'relative: anchors first and last per engine (groupby); timeUnit week with mean on offsets (simulated data)',
         spec: EX_SPEC_TEMPORAL_CMAPSS_ALIGNMENT,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_ALIGNMENT
@@ -649,6 +679,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_CMAPSS_PROGNOSIS: {
         group: 'Temporal Data',
         name: 'Relative: Jet Engine Prognosis, Aligned to an Unobserved Failure',
+        description:
+            'relative: an anchor per row (field); two linked relative views; intervals (x + xe) and a span transform; one row per engine (simulated data)',
         spec: EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_PROGNOSIS
@@ -656,6 +688,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_CMAPSS_FAULT_MODES: {
         group: 'Temporal Data',
         name: 'Relative: Jet Engine Fault Modes, Aligned to Failure',
+        description:
+            'relative: anchor last per engine; timeUnit week with mean per fault mode (simulated data)',
         spec: EX_SPEC_TEMPORAL_CMAPSS_FAULT_MODES,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_FAULT_MODES
@@ -663,6 +697,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_CMAPSS_SENSORS: {
         group: 'Temporal Data',
         name: 'Granularity: Jet Engine Sensors before Failure (zoom)',
+        description:
+            'relative: anchor last per engine; granularity rules on offsets (day, week above 60 days) (simulated data)',
         spec: EX_SPEC_TEMPORAL_CMAPSS_SENSORS,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_SENSORS
@@ -670,6 +706,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_CMAPSS_CONDITIONS: {
         group: 'Temporal Data',
         name: 'Relative: Jet Engine Sensor Normalized by Flight Condition',
+        description:
+            'relative: anchor last per engine; timeUnit week with mean per flight condition (simulated data)',
         spec: EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_CONDITIONS
@@ -677,6 +715,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_CHRO_RING: {
         group: 'Temporal Data',
         name: 'Chro-Ring: the Life of Su Shi (simulated)',
+        description:
+            'Chro-Ring with simulated data: intervals (x + xe) on concentric rings; dates before 1970; inline JSON values; span transform; timeUnit year',
         spec: EX_SPEC_TEMPORAL_CHRO_RING,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_CHRO_RING

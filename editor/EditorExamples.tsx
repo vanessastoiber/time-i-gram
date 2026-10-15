@@ -52,7 +52,7 @@ export default function EditorExamples({
                                         return (
                                             <button
                                                 id={`${d[1].group}_${d[1].name}`}
-                                                title={d[1].name}
+                                                title={d[1].description ? `${d[1].name}\n${d[1].description}` : d[1].name}
                                                 key={d[0]}
                                                 className="example-card"
                                                 onClick={() => {
@@ -66,6 +66,9 @@ export default function EditorExamples({
                                                     <img src={`${d[1].image}`} alt={d[1].name} loading="lazy" />
                                                 </div>
                                                 <div className="example-card-name">{d[1].name}</div>
+                                                {d[1].description && (
+                                                    <div className="example-card-description">{d[1].description}</div>
+                                                )}
                                             </button>
                                         );
                                     })}
