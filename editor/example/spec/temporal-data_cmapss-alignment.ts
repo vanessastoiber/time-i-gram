@@ -29,7 +29,8 @@ const HIGHLIGHT_COLOR = {
     type: 'nominal',
     domain: HIGHLIGHT.map(h => h.to),
     range: ['#e15759', '#f28e2b', '#4e79a7'],
-    legend: true
+    legend: true,
+    title: 'Engine'
 } as const;
 
 const Y = {

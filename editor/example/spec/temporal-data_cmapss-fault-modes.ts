@@ -54,7 +54,8 @@ function sensorTrack(field: string, title: string, yTitle: string, domain: [numb
                     type: 'nominal',
                     domain: MODES.map(m => m.mode),
                     range: MODES.map(m => m.mean),
-                    legend: true
+                    legend: true,
+                    title: 'Fault mode'
                 },
                 size: { value: 3 }
             }

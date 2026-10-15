@@ -70,7 +70,7 @@ function sensorTrack(s: (typeof SENSORS)[number], last: boolean) {
 }
 
 const spec = {
-    title: 'The signature of a compressor fault, sensor by sensor',
+    title: 'Which sensors signal a compressor fault, and how long before failure?',
     subtitle: 'C-MAPSS FD001, 100 engines aligned to failure. z-score against each engine’s healthy start, up = worse.',
     arrangement: 'vertical',
     views: [{ spacing: 6, tracks: SENSORS.map((s, i) => sensorTrack(s, i === SENSORS.length - 1)) }]

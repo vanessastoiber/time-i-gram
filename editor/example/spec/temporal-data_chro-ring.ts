@@ -145,13 +145,17 @@ const posts = () => ({
         start,
         end: toSeconds(end),
         rank,
-        side: i % 2 ? 'above' : 'below'
+        // labels above and below in turn; posts shorter than nine months are not labeled (their tooltip names
+        // them), since seven posts of 1084-1093 leave no room for their names
+        // the last post above, clear of the label of the post before it
+        side: i % 2 || i === POSTS.length - 1 ? 'above' : 'below',
+        labeled: toSeconds(end) - toSeconds(start) >= 0.75 * 365.25 * 86400 ? 'yes' : 'no'
     }))
 });
 const phases = () => ({
     type: 'json-time' as const,
     dateFields: ['start'],
-    values: PHASES.map(([phase, start, end, outcome]) => ({ phase, start, end: toSeconds(end), outcome }))
+    values: PHASES.map(([phase, start, end, outcome]) => ({ phase, start, end: toSeconds(end), outcome, band: 'phases' }))
 });
 const json = (values: object[]) => ({
     type: 'json-time' as const,
@@ -159,7 +163,8 @@ const json = (values: object[]) => ({
     values: values.map(v => ({ ...v }))
 });
 
-const LIFE = { interval: ['1036-07', '1102-06'] };
+// a year of room after his death for the last labels
+const LIFE = { interval: ['1036-07', '1103-06'] };
 const x = (field: string, axis: 'top' | 'bottom' | 'none' = 'none') =>
     ({ field, type: 'temporal', domain: LIFE, axis } as const);
 const xe = (field: string) => ({ field, type: 'temporal' } as const);
@@ -171,16 +176,25 @@ const fitLabel = [
 ];
 
 const WIDTH = 900;
+/** The ring's diameter: it fits a screen below the life bar. */
+const RING = 620;
 
-/** Career phases: colored intervals labeled in white. */
-function phaseTrack(axis: 'top' | 'none', height: number) {
+/** Career phases: colored intervals labeled in white; with a legend, under an empty row that the header covers. */
+function phaseTrack(axis: 'top' | 'none', height: number, width: number, legend = false) {
+    const row = legend ? { row: { field: 'band', type: 'nominal', domain: ['', 'phases'] } } : {};
     return {
         alignment: 'overlay',
         data: phases(),
         x: x('start', axis),
         xe: xe('end'),
+        ...row,
         tracks: [
-            { mark: 'rect', color: outcomeColor, stroke: { value: 'white' }, strokeWidth: { value: 1 } },
+            {
+                mark: 'rect',
+                color: { ...outcomeColor, legend, title: 'Career phase' },
+                stroke: { value: 'white' },
+                strokeWidth: { value: 1 }
+            },
             {
                 mark: 'text',
                 text: { field: 'phase', type: 'nominal' },
@@ -189,13 +203,13 @@ function phaseTrack(axis: 'top' | 'none', height: number) {
                 style: { textFontSize: 10, textFontWeight: 'bold' }
             }
         ],
-        width: WIDTH,
+        width,
         height
     };
 }
 
 const spec = {
-    title: 'Chro-Ring: the life of Su Shi (1037-1101)',
+    title: "How did Su Shi's career rise and fall, and when did he write most? (Chro-Ring, 1037-1101)",
     subtitle: 'After Zhu et al. (2016), with simulated data. Red: successful periods and promotions; blue: setbacks.',
     arrangement: 'vertical',
     spacing: 30,
@@ -204,7 +218,7 @@ const spec = {
             static: true,
             spacing: 0,
             tracks: [
-                phaseTrack('none', 22),
+                { title: 'Career phases', ...phaseTrack('none', 44, WIDTH, true) },
                 {
                     title: 'Posts by rank',
                     alignment: 'overlay',
@@ -223,14 +237,27 @@ const spec = {
                             color: { field: 'id', type: 'nominal', domain: MOVE_IDS, range: MOVE_COLORS },
                             size: { value: 1.5 }
                         },
-                        { mark: 'rect', y: rankY, color: { value: '#9a9a9a' }, size: { value: 9 } },
+                        {
+                            mark: 'rect',
+                            y: rankY,
+                            color: { value: '#9a9a9a' },
+                            size: { value: 9 },
+                            tooltip: [
+                                { field: 'place', type: 'nominal', alt: 'Post' },
+                                { field: 'start', type: 'temporal', alt: 'From', format: '%Y-%m' },
+                                { field: 'end', type: 'temporal', alt: 'To', format: '%Y-%m' }
+                            ]
+                        },
                         // labels alternate below and above the bars, so that the short posts do not overlap
                         ...[
                             ['below', -12],
                             ['above', 12]
                         ].map(([side, dy]) => ({
                             mark: 'text',
-                            dataTransform: [{ type: 'filter', field: 'side', oneOf: [side] }],
+                            dataTransform: [
+                                { type: 'filter', field: 'side', oneOf: [side] },
+                                { type: 'filter', field: 'labeled', oneOf: ['yes'] }
+                            ],
                             y: rankY,
                             text: { field: 'place', type: 'nominal' },
                             color: { value: '#333333' },
@@ -277,7 +304,7 @@ const spec = {
                             opacity: { value: 0.75 }
                         }
                     ],
-                    width: WIDTH,
+                    width: RING,
                     height: 120
                 },
                 {
@@ -287,7 +314,7 @@ const spec = {
                     x: { ...x('date'), timeUnit: 'year' },
                     y: { field: 'poems', type: 'quantitative', domain: [0, 130], axis: 'none' },
                     color: { value: '#555555' },
-                    width: WIDTH,
+                    width: RING,
                     height: 40
                 },
                 {
@@ -297,10 +324,10 @@ const spec = {
                     x: { ...x('date'), timeUnit: 'year' },
                     y: { field: 'prose', type: 'quantitative', domain: [0, 70], axis: 'none', flip: true },
                     color: { value: '#999999' },
-                    width: WIDTH,
+                    width: RING,
                     height: 30
                 },
-                { title: 'Career phases', ...phaseTrack('none', 22) },
+                { title: 'Career phases', ...phaseTrack('none', 22, RING) },
                 {
                     title: 'Rank',
                     data: posts(),
@@ -309,7 +336,7 @@ const spec = {
                     xe: xe('end'),
                     y: { field: 'rank', type: 'quantitative', domain: [0, 4], axis: 'none', flip: true },
                     color: { value: RANK_COLOR },
-                    width: WIDTH,
+                    width: RING,
                     height: 60
                 }
             ]

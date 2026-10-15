@@ -53,7 +53,7 @@ const NORMALIZED = {
 } as const;
 
 const spec = {
-    title: 'Six flight conditions hide the wear. Normalizing by condition reveals it',
+    title: 'Does the wear show through six flight conditions, or only after normalizing by condition?',
     subtitle: 'C-MAPSS FD002, 260 engines aligned to failure: HPC outlet static pressure (Ps30).',
     arrangement: 'vertical',
     views: [
@@ -70,7 +70,7 @@ const spec = {
                     tracks: [
                         {
                             mark: 'point',
-                            color: { field: 'flight', type: 'nominal', domain: CONDITIONS, legend: true },
+                            color: { field: 'flight', type: 'nominal', domain: CONDITIONS, legend: true, title: 'Flight condition' },
                             opacity: { value: 0.15 },
                             size: { value: 1.5 }
                         },

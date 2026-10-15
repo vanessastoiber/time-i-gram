@@ -125,7 +125,8 @@ const fitbitSpec = {
                                 timeUnit: MINUTE_THEN_HOUR,
                                 linkingId: 'linking-with-brush'
                             },
-                            y: HEART_RATE_Y,
+                            // no room for ticks on the thin ring (they overlapped at its gap): the linear view has the scale
+                            y: { ...HEART_RATE_Y, axis: 'none' },
                             width: 300,
                             height: 40
                         }

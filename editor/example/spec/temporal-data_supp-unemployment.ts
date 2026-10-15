@@ -102,7 +102,8 @@ const spec = {
                                 domain: industries
                             },
                             mark: 'area',
-                            opacity: { value: 0.3 },
+                            // faint: overlaid areas mix their colors, which then differ from the legend
+                            opacity: { value: 0.12 },
                             width: 500,
                             height: 170,
                             style: { outline: 'none' }
@@ -166,7 +167,8 @@ const spec = {
                                 domain: industries
                             },
                             mark: 'area',
-                            opacity: { value: 0.3 },
+                            // faint: overlaid areas mix their colors, which then differ from the legend
+                            opacity: { value: 0.12 },
                             width: 500,
                             height: 170,
                             style: { outline: 'none' }
