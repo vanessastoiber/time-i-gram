@@ -20,9 +20,6 @@ import { EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT } from './spec/temporal-data_relati
 import { EX_SPEC_TEMPORAL_TAXI_SPANS } from './spec/temporal-data_taxi-spans';
 import { EX_SPEC_TEMPORAL_CMAPSS_ALIGNMENT } from './spec/temporal-data_cmapss-alignment';
 import { EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS } from './spec/temporal-data_cmapss-prognosis';
-import { EX_SPEC_TEMPORAL_CMAPSS_FAULT_MODES } from './spec/temporal-data_cmapss-fault-modes';
-import { EX_SPEC_TEMPORAL_CMAPSS_SENSORS } from './spec/temporal-data_cmapss-sensors';
-import { EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS } from './spec/temporal-data_cmapss-conditions';
 import { EX_SPEC_TEMPORAL_CHRO_RING } from './spec/temporal-data_chro-ring';
 import { EX_SPEC_TEMPORAL_BEIJING_AIR } from './spec/temporal-data_beijing-air';
 import { EX_SPEC_TEMPORAL_NOVELISTS } from './spec/temporal-data_novelists';
@@ -56,9 +53,6 @@ const examples: Record<string, GoslingSpec> = {
     'spans: taxi': EX_SPEC_TEMPORAL_TAXI_SPANS,
     'relative: C-MAPSS alignment': EX_SPEC_TEMPORAL_CMAPSS_ALIGNMENT,
     'relative: C-MAPSS prognosis': EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS,
-    'relative: C-MAPSS fault modes': EX_SPEC_TEMPORAL_CMAPSS_FAULT_MODES,
-    'granularity: C-MAPSS sensors': EX_SPEC_TEMPORAL_CMAPSS_SENSORS,
-    'relative: C-MAPSS conditions': EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS,
     'Chro-Ring': EX_SPEC_TEMPORAL_CHRO_RING,
     'calendar: Beijing air': EX_SPEC_TEMPORAL_BEIJING_AIR,
     'relative: novelists': EX_SPEC_TEMPORAL_NOVELISTS,

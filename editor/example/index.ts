@@ -69,9 +69,6 @@ import { EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT } from './spec/temporal-data_relati
 import { EX_SPEC_TEMPORAL_TAXI_SPANS } from './spec/temporal-data_taxi-spans';
 import { EX_SPEC_TEMPORAL_CMAPSS_ALIGNMENT } from './spec/temporal-data_cmapss-alignment';
 import { EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS } from './spec/temporal-data_cmapss-prognosis';
-import { EX_SPEC_TEMPORAL_CMAPSS_FAULT_MODES } from './spec/temporal-data_cmapss-fault-modes';
-import { EX_SPEC_TEMPORAL_CMAPSS_SENSORS } from './spec/temporal-data_cmapss-sensors';
-import { EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS } from './spec/temporal-data_cmapss-conditions';
 import { EX_SPEC_TEMPORAL_CHRO_RING } from './spec/temporal-data_chro-ring';
 import { EX_SPEC_TEMPORAL_BEIJING_AIR } from './spec/temporal-data_beijing-air';
 import { EX_SPEC_TEMPORAL_NOVELISTS } from './spec/temporal-data_novelists';
@@ -671,7 +668,7 @@ const editorExampleObj: {
         group: 'Temporal Data',
         name: 'Relative: Jet Engines Aligned to Entry into Service or to Failure',
         description:
-            'relative: anchors first and last per engine (groupby); timeUnit week with mean on offsets (simulated data)',
+            'relative: anchors first and last per engine (groupby); timeUnit week with mean on offsets; relative.unitName (cycles)',
         spec: EX_SPEC_TEMPORAL_CMAPSS_ALIGNMENT,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_ALIGNMENT
@@ -680,37 +677,10 @@ const editorExampleObj: {
         group: 'Temporal Data',
         name: 'Relative: Jet Engine Prognosis, Aligned to an Unobserved Failure',
         description:
-            'relative: an anchor per row (field); two linked relative views; intervals (x + xe) and a span transform; one row per engine (simulated data)',
+            'relative: an anchor per row (field); two linked relative views; intervals (x + xe) and a span transform; one row per engine; relative.unitName (cycles)',
         spec: EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_PROGNOSIS
-    },
-    TEMPORAL_DATA_CMAPSS_FAULT_MODES: {
-        group: 'Temporal Data',
-        name: 'Relative: Jet Engine Fault Modes, Aligned to Failure',
-        description:
-            'relative: anchor last per engine; timeUnit week with mean per fault mode (simulated data)',
-        spec: EX_SPEC_TEMPORAL_CMAPSS_FAULT_MODES,
-        underDevelopment: true,
-        image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_FAULT_MODES
-    },
-    TEMPORAL_DATA_CMAPSS_SENSORS: {
-        group: 'Temporal Data',
-        name: 'Granularity: Jet Engine Sensors before Failure (zoom)',
-        description:
-            'relative: anchor last per engine; granularity rules on offsets (day, week above 60 days) (simulated data)',
-        spec: EX_SPEC_TEMPORAL_CMAPSS_SENSORS,
-        underDevelopment: true,
-        image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_SENSORS
-    },
-    TEMPORAL_DATA_CMAPSS_CONDITIONS: {
-        group: 'Temporal Data',
-        name: 'Relative: Jet Engine Sensor Normalized by Flight Condition',
-        description:
-            'relative: anchor last per engine; timeUnit week with mean per flight condition (simulated data)',
-        spec: EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS,
-        underDevelopment: true,
-        image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_CONDITIONS
     },
     TEMPORAL_DATA_CHRO_RING: {
         group: 'Temporal Data',

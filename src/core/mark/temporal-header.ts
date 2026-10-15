@@ -79,6 +79,10 @@ export function headerLegend(specs: SingleTrack[], categories: (spec: SingleTrac
                 entries.push({ label: category, spec, category });
             });
         } else if (spec.style?.legendLabel && IsChannelValue(spec.color)) {
+            // once per member, also when several visible tiles each hold a copy of it
+            const key = `\u0001${spec.style.legendLabel}\u0000${spec.color.value}`;
+            if (seen.has(key)) return;
+            seen.add(key);
             entries.push({ label: spec.style.legendLabel, spec });
         }
     });

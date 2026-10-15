@@ -2,7 +2,7 @@ import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 
 // NASA C-MAPSS FD001: 100 simulated turbofan engines run from a healthy state to failure (Saxena et al., PHM08).
 // The data count operational cycles, not dates: the preprocessed CSV gives every engine a synthetic clock
-// (2000-01-01 + 1 day per cycle), so offsets in days read as cycles and dates are never shown.
+// (2000-01-01 + 1 day per cycle), so offsets in days are cycles, and the axis says so (`relative.unitName`).
 // `hi_smooth` is a health index (mean z-score of 12 sensors against the engine's first 30 cycles, up = worse).
 //
 // The two views differ only in the anchor of `x.relative`. Top: each engine from its own first cycle
@@ -45,7 +45,7 @@ function view(anchor: 'first' | 'last', title: string, label: string, interval: 
     const x = {
         field: 'date',
         type: 'temporal',
-        relative: { anchor, groupby: 'unit', unit: 'day', label },
+        relative: { anchor, groupby: 'unit', unit: 'day', unitName: 'cycle', label },
         domain: { interval },
         axis: 'bottom'
     } as const;
@@ -92,7 +92,7 @@ function view(anchor: 'first' | 'last', title: string, label: string, interval: 
 
 const spec = {
     title: 'When do jet engines wear out? It depends on what you align them to',
-    subtitle: 'NASA C-MAPSS FD001: 100 simulated engines run to failure. 1 day = 1 operating cycle.',
+    subtitle: 'NASA C-MAPSS FD001 (Saxena et al. 2008): 100 simulated engines run to failure',
     arrangement: 'vertical',
     views: [
         view('first', 'Aligned to the first cycle: the engines fail at different ages', 'entry into service', [

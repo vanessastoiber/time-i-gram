@@ -2,13 +2,14 @@ import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 
 // NASA C-MAPSS FD001 test set: 100 engines whose records stop some time before failure; the true remaining
 // useful life (RUL) at the last record is given separately. The preprocessed CSVs store each engine's failure
-// as a date column (`failure_date` = last cycle + RUL, on the synthetic clock of 1 day per cycle).
+// as a date column (`failure_date` = last cycle + RUL, on the synthetic clock of 1 day per cycle); the axes name
+// the offsets cycles (`relative.unitName`).
 //
 // `anchor: { field: "failure_date" }` reads the reference event from each row, so every engine is aligned to a
 // failure that is not in its records. Top: the health index of every engine ends short of 0. Bottom: one row per
 // engine, sorted by RUL; the blue bar is what was observed, and the orange bar, from the last record to the
-// failure (`span`: last record + RUL in days), is what a prognosis has to predict. The rows have no title and
-// no legend: the header strip of a temporal track is repeated in every row, which 100 rows cannot hold. Both views measure from the
+// failure (`span`: last record + RUL in days), is what a prognosis has to predict. The rows' title and legend are in
+// a track of their own above them: 100 rows leave no room for a header. Both views measure from the
 // same event in the same unit, so they are in one coordinate system and linked: zoom one and the other follows.
 
 const TEST = {
@@ -33,7 +34,7 @@ const BY_RUL = (
 
 const X = {
     type: 'temporal',
-    relative: { anchor: { field: 'failure_date' }, unit: 'day', label: 'the true failure' },
+    relative: { anchor: { field: 'failure_date' }, unit: 'day', unitName: 'cycle', label: 'the true failure' },
     domain: { interval: ['-345 days', '0 days'] },
     axis: 'bottom',
     linkingId: 'failure'
@@ -41,13 +42,13 @@ const X = {
 
 const spec = {
     title: 'How far from failure is each engine when its records stop?',
-    subtitle: 'C-MAPSS FD001 test set. Rows: observed cycles (blue), remaining useful life (orange).',
+    subtitle: 'NASA C-MAPSS FD001 test set (Saxena et al. 2008): 100 simulated engines, each stopped before failure',
     arrangement: 'vertical',
     views: [
         {
             tracks: [
                 {
-                    title: 'Health index of each engine up to its last record (1 day = 1 operating cycle)',
+                    title: 'Health index of each engine up to its last record',
                     data: TEST,
                     mark: 'line',
                     x: { ...X, field: 'date' },
@@ -68,7 +69,26 @@ const spec = {
             ]
         },
         {
+            spacing: 0,
             tracks: [
+                {
+                    // the title and legend of the rows below, which leave no room for a header of their own
+                    title: 'One row per engine, sorted by remaining useful life',
+                    data: ENGINES,
+                    dataTransform: [{ type: 'filter', field: 'unit', oneOf: [] }],
+                    alignment: 'overlay',
+                    x: { ...X, field: 'start_date', axis: 'none' },
+                    tracks: [
+                        {
+                            mark: 'rect',
+                            color: { value: '#4e79a7' },
+                            style: { legendTitle: 'Cycles', legendLabel: 'Observed' }
+                        },
+                        { mark: 'rect', color: { value: '#f9be86' }, style: { legendLabel: 'Remaining useful life' } }
+                    ],
+                    width: 800,
+                    height: 20
+                },
                 {
                     data: ENGINES,
                     alignment: 'overlay',
