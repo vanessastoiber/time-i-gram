@@ -816,6 +816,30 @@ describe('relative (time coordinate system)', () => {
         expect(timeAxis(hg).options.timeCoordinates.kind).toEqual('relative');
     });
 
+    it('maps the xe of an overlaid member that inherits the relative x', () => {
+        // e.g. lives from birth to death: x (with `relative`) on the track, xe on the member
+        const { hg } = compiled({
+            tracks: [
+                {
+                    ...relativeTrack({ anchor: { field: 'birth' }, unit: 'year' }),
+                    alignment: 'overlay',
+                    mark: undefined,
+                    y: undefined,
+                    data: { type: 'csv-time', url: '', interval: ['date', 'death'] },
+                    tracks: [{ mark: 'rect', xe: { field: 'death', type: 'temporal' } }]
+                }
+            ]
+        } as GoslingSpec);
+        const { data, options } = dataTrack(hg);
+        expect(data.timeCoordinates.fields).toEqual([
+            { source: 'date', coord: '__relative_date' },
+            { source: 'death', coord: '__relative_death' }
+        ]);
+        expect(data.timeCoordinates.interval).toEqual(['date', 'death']);
+        expect(data.xe).toEqual('__relative_death');
+        expect(options.spec.overlay[0].xe.field).toEqual('__relative_death');
+    });
+
     it('names the reference event in the axis with relative.label', () => {
         const spec = { tracks: [relativeTrack({ anchor: { argmax: 'v' }, unit: 'week', label: "the season's peak" })] };
         expect(validateGoslingSpec(spec).state).toEqual('success');

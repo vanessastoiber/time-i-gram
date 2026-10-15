@@ -459,9 +459,44 @@ function resolveTimeCoordinates(track: Track, warn: Warn) {
     let system: TimeCoordinateSystem | undefined;
     const config: TrackTimeCoordinates = { system: ABSOLUTE_TIME, fields: [], keyFields: [] };
 
+    /** Source field of the track's own temporal x, for members that inherit it */
+    let trackXSource: string | undefined;
+
+    /** Rewrite the temporal x channels of a member to their coordinate fields; returns their source fields. */
+    const rewriteChannels = (member: Partial<SingleTrack>, system: TimeCoordinateSystem) => {
+        const sourceOf: Partial<Record<(typeof X_CHANNELS)[number], string>> = {};
+        // span ends are computed per tile by the track, so the track maps them, not the fetcher
+        const spans = [...(member.dataTransform ?? (track as Partial<SingleTrack>).dataTransform ?? [])].filter(
+            (t): t is SpanTransform => t.type === 'span'
+        );
+        X_CHANNELS.forEach(key => {
+            const channel = member[key];
+            if (!IsChannelDeep(channel) || channel.type !== 'temporal' || !channel.field) return;
+            const coord = coordinateField(channel.field, system);
+            const span = spans.find(t => t.newField === channel.field);
+            if (span) {
+                config.derived = config.derived ?? [];
+                if (!config.derived.find(f => f.coord === coord))
+                    config.derived.push({ source: channel.field, coord, start: span.field });
+            } else {
+                sourceOf[key] = channel.field;
+                if (!config.fields.find(f => f.coord === coord)) config.fields.push({ source: channel.field, coord });
+            }
+            channel.field = coord;
+        });
+        return sourceOf;
+    };
+
     members.forEach(member => {
         const x = member.x;
-        if (!IsChannelDeep(x) || x.type !== 'temporal') return;
+        if (!IsChannelDeep(x) || x.type !== 'temporal') {
+            // a member that inherits the track's x: its own xe (x1, x1e) is in the track's coordinate system too
+            if (member !== track && member.x === undefined && system && system.kind !== 'absolute') {
+                const sourceOf = rewriteChannels(member, system);
+                if (trackXSource && sourceOf.xe && !config.interval) config.interval = [trackXSource, sourceOf.xe];
+            }
+            return;
+        }
         const memberSystem = resolveMemberSystem(member, warn);
         if (system && timeCoordinateSignature(system) !== timeCoordinateSignature(memberSystem)) {
             warn(
@@ -480,26 +515,8 @@ function resolveTimeCoordinates(track: Track, warn: Warn) {
         }
 
         // rewrite every temporal x channel of this member to its coordinate field
-        const sourceOf: Partial<Record<(typeof X_CHANNELS)[number], string>> = {};
-        // span ends are computed per tile by the track, so the track maps them, not the fetcher
-        const spans = [...(member.dataTransform ?? (track as Partial<SingleTrack>).dataTransform ?? [])].filter(
-            (t): t is SpanTransform => t.type === 'span'
-        );
-        X_CHANNELS.forEach(key => {
-            const channel = member[key];
-            if (!IsChannelDeep(channel) || channel.type !== 'temporal' || !channel.field) return;
-            const coord = coordinateField(channel.field, system!);
-            const span = spans.find(t => t.newField === channel.field);
-            if (span) {
-                config.derived = config.derived ?? [];
-                if (!config.derived.find(f => f.coord === coord))
-                    config.derived.push({ source: channel.field, coord, start: span.field });
-            } else {
-                sourceOf[key] = channel.field;
-                if (!config.fields.find(f => f.coord === coord)) config.fields.push({ source: channel.field, coord });
-            }
-            channel.field = coord;
-        });
+        const sourceOf = rewriteChannels(member, system!);
+        if (member === track) trackXSource = sourceOf.x;
         if (sourceOf.x && sourceOf.xe) config.interval = [sourceOf.x, sourceOf.xe];
 
         if (system.kind === 'relative' && !config.relative) {
