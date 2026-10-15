@@ -23,6 +23,8 @@ import { EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS } from './spec/temporal-data_cmapss-p
 import { EX_SPEC_TEMPORAL_CMAPSS_FAULT_MODES } from './spec/temporal-data_cmapss-fault-modes';
 import { EX_SPEC_TEMPORAL_CMAPSS_SENSORS } from './spec/temporal-data_cmapss-sensors';
 import { EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS } from './spec/temporal-data_cmapss-conditions';
+import { EX_SPEC_TEMPORAL_CHRO_RING } from './spec/temporal-data_chro-ring';
+import { EX_SPEC_TEMPORAL_BEIJING_AIR } from './spec/temporal-data_beijing-air';
 
 /** The JS code blocks of README.md that build a spec, evaluated to the spec object. */
 function readmeSpecs(): Record<string, GoslingSpec> {
@@ -55,6 +57,8 @@ const examples: Record<string, GoslingSpec> = {
     'relative: C-MAPSS fault modes': EX_SPEC_TEMPORAL_CMAPSS_FAULT_MODES,
     'granularity: C-MAPSS sensors': EX_SPEC_TEMPORAL_CMAPSS_SENSORS,
     'relative: C-MAPSS conditions': EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS,
+    'Chro-Ring': EX_SPEC_TEMPORAL_CHRO_RING,
+    'calendar: Beijing air': EX_SPEC_TEMPORAL_BEIJING_AIR,
     ...readmeSpecs()
 };
 

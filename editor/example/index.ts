@@ -73,6 +73,7 @@ import { EX_SPEC_TEMPORAL_CMAPSS_FAULT_MODES } from './spec/temporal-data_cmapss
 import { EX_SPEC_TEMPORAL_CMAPSS_SENSORS } from './spec/temporal-data_cmapss-sensors';
 import { EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS } from './spec/temporal-data_cmapss-conditions';
 import { EX_SPEC_TEMPORAL_CHRO_RING } from './spec/temporal-data_chro-ring';
+import { EX_SPEC_TEMPORAL_BEIJING_AIR } from './spec/temporal-data_beijing-air';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -664,6 +665,15 @@ const editorExampleObj: {
         spec: EX_SPEC_TEMPORAL_CHRO_RING,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_CHRO_RING
+    },
+    TEMPORAL_DATA_BEIJING_AIR: {
+        group: 'Temporal Data',
+        name: 'Calendar: Beijing Air Quality by Hour, Weekday and Winter',
+        description:
+            'Date components across columns; calendar grid (period week + row); period year with start (November); faceted + segmented rows; timeUnit rules; ISO-week and quarter domains; date tooltips; a link split across coordinate systems',
+        spec: EX_SPEC_TEMPORAL_BEIJING_AIR,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_BEIJING_AIR
     }
 };
 
