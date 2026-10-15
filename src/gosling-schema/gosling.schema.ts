@@ -944,6 +944,8 @@ export interface Row extends ChannelDeepCommon {
 
 export interface Color extends ChannelDeepCommon {
     type?: 'quantitative' | 'nominal';
+    /** Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined` */
+    aggregate?: Aggregate;
     domain?: ValueExtent;
     /** Determine the colors that should be bound to data value. Default properties are determined considering the field type. */
     range?: Range;
@@ -959,6 +961,8 @@ export interface Color extends ChannelDeepCommon {
 
 export interface Stroke extends ChannelDeepCommon {
     type?: 'quantitative' | 'nominal';
+    /** Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined` */
+    aggregate?: Aggregate;
     domain?: ValueExtent;
     range?: Range;
     /** Title of the legend. __Default__: `undefined` */
@@ -971,12 +975,16 @@ export interface Stroke extends ChannelDeepCommon {
 
 export interface StrokeWidth extends ChannelDeepCommon {
     type?: 'quantitative' | 'nominal';
+    /** Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined` */
+    aggregate?: Aggregate;
     domain?: ValueExtent;
     range?: ValueExtent;
 }
 
 export interface Size extends ChannelDeepCommon {
     type?: 'quantitative' | 'nominal';
+    /** Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined` */
+    aggregate?: Aggregate;
     domain?: ValueExtent;
     range?: ValueExtent;
     /** not supported: Whether to display legend. __Default__: `false` */
@@ -985,6 +993,8 @@ export interface Size extends ChannelDeepCommon {
 
 export interface Opacity extends ChannelDeepCommon {
     type?: 'quantitative' | 'nominal';
+    /** Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined` */
+    aggregate?: Aggregate;
     domain?: ValueExtent;
     range?: ValueExtent;
 }

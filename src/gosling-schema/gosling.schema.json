@@ -435,6 +435,10 @@
     "Color": {
       "additionalProperties": false,
       "properties": {
+        "aggregate": {
+          "$ref": "#/definitions/Aggregate",
+          "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+        },
         "domain": {
           "$ref": "#/definitions/ValueExtent",
           "description": "Values of the data"
@@ -4228,6 +4232,10 @@
     "Opacity": {
       "additionalProperties": false,
       "properties": {
+        "aggregate": {
+          "$ref": "#/definitions/Aggregate",
+          "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+        },
         "domain": {
           "$ref": "#/definitions/ValueExtent",
           "description": "Values of the data"
@@ -8810,6 +8818,10 @@
     "Size": {
       "additionalProperties": false,
       "properties": {
+        "aggregate": {
+          "$ref": "#/definitions/Aggregate",
+          "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+        },
         "domain": {
           "$ref": "#/definitions/ValueExtent",
           "description": "Values of the data"
@@ -8994,6 +9006,10 @@
     "Stroke": {
       "additionalProperties": false,
       "properties": {
+        "aggregate": {
+          "$ref": "#/definitions/Aggregate",
+          "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+        },
         "domain": {
           "$ref": "#/definitions/ValueExtent",
           "description": "Values of the data"
@@ -9037,6 +9053,10 @@
     "StrokeWidth": {
       "additionalProperties": false,
       "properties": {
+        "aggregate": {
+          "$ref": "#/definitions/Aggregate",
+          "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+        },
         "domain": {
           "$ref": "#/definitions/ValueExtent",
           "description": "Values of the data"

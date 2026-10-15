@@ -272,6 +272,10 @@
         {
           "additionalProperties": false,
           "properties": {
+            "aggregate": {
+              "$ref": "#/definitions/Aggregate",
+              "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+            },
             "base": {
               "type": "string"
             },
@@ -325,6 +329,10 @@
         {
           "additionalProperties": false,
           "properties": {
+            "aggregate": {
+              "$ref": "#/definitions/Aggregate",
+              "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+            },
             "base": {
               "type": "string"
             },
@@ -358,6 +366,10 @@
         {
           "additionalProperties": false,
           "properties": {
+            "aggregate": {
+              "$ref": "#/definitions/Aggregate",
+              "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+            },
             "base": {
               "type": "string"
             },
@@ -404,6 +416,10 @@
         {
           "additionalProperties": false,
           "properties": {
+            "aggregate": {
+              "$ref": "#/definitions/Aggregate",
+              "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+            },
             "base": {
               "type": "string"
             },
@@ -433,6 +449,10 @@
         {
           "additionalProperties": false,
           "properties": {
+            "aggregate": {
+              "$ref": "#/definitions/Aggregate",
+              "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+            },
             "base": {
               "type": "string"
             },
