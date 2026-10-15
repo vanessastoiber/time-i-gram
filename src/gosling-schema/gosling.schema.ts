@@ -1195,7 +1195,7 @@ export interface CSVTimeData {
     sampleLength?: number;
     /** Fields with dates, converted to Unix seconds and stored in the first field:
      * - one field: a date or date-time string (e.g., `2012-01-31`, `01/31/2012`, `31.01.2012`, `2012-01-31 16:40:21`);
-     * - two fields: a date and a time of day (`HH:MM:SS`), or a year and a calendar week (with `includesCalendarWeek`);
+     * - two fields: a date and a time of day (`16:40:21`, `0:05`, `7:21 PM`), or a year and a calendar week (with `includesCalendarWeek`);
      * - three or more fields: date components named `year`, `month`, `day`, `hour`, `minute`, `second`.
      *
      * Date-times without a time zone are read as UTC. Unparseable dates are not drawn and log a warning. */

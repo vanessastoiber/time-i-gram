@@ -301,7 +301,7 @@
       "description": "Temporal data in a CSV (or other delimiter-separated) file. Time fields are converted to Unix epoch seconds, the coordinates of a temporal axis.",
       "properties": {
         "dateFields": {
-          "description": "Fields with dates, converted to Unix seconds and stored in the first field:\n- one field: a date or date-time string (e.g., `2012-01-31`, `01/31/2012`, `31.01.2012`, `2012-01-31 16:40:21`);\n- two fields: a date and a time of day (`HH:MM:SS`), or a year and a calendar week (with `includesCalendarWeek`);\n- three or more fields: date components named `year`, `month`, `day`, `hour`, `minute`, `second`.\n\nDate-times without a time zone are read as UTC. Unparseable dates are not drawn and log a warning.",
+          "description": "Fields with dates, converted to Unix seconds and stored in the first field:\n- one field: a date or date-time string (e.g., `2012-01-31`, `01/31/2012`, `31.01.2012`, `2012-01-31 16:40:21`);\n- two fields: a date and a time of day (`16:40:21`, `0:05`, `7:21 PM`), or a year and a calendar week (with `includesCalendarWeek`);\n- three or more fields: date components named `year`, `month`, `day`, `hour`, `minute`, `second`.\n\nDate-times without a time zone are read as UTC. Unparseable dates are not drawn and log a warning.",
           "items": {
             "type": "string"
           },

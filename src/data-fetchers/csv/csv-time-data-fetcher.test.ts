@@ -81,6 +81,20 @@ describe('csv-time data fetcher: date parsing', () => {
             expect(rows[0].d).toEqual(utc(2016, 2, 29, 16, 40, 21));
         });
 
+        it('date and time-of-day columns: H:MM times, date-times in the date column, AM/PM, before 1970', async () => {
+            // e.g. NYC Open Data: crash_date "2024-06-01T00:00:00.000", crash_time "0:05" or "13:40"
+            const { rows } = await loadCsv(
+                'd,t\n2024-06-01T00:00:00.000,0:05\n2024-06-01T00:00:00.000,13:40\n6/1/2024,7:21 PM\n1969-07-20,20:17:40',
+                { dateFields: ['d', 't'] }
+            );
+            expect(rows.map(r => r.d)).toEqual([
+                utc(2024, 6, 1, 0, 5),
+                utc(2024, 6, 1, 13, 40),
+                utc(2024, 6, 1, 19, 21),
+                utc(1969, 7, 20, 20, 17, 40)
+            ]);
+        });
+
         it('year/month/day/hour component columns', async () => {
             const { rows } = await loadCsv('year,month,day,hour\n2016,2,29,16', {
                 dateFields: ['year', 'month', 'day', 'hour']
