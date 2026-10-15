@@ -11,6 +11,7 @@ export { RECT } from './rect';
 export { SEMANTIC_ZOOM_SEQUENCE, SEMANTIC_ZOOM_CYTO } from './semantic-zoom';
 export { TEXT } from './text';
 export { TRIANGLE } from './triangle';
+export { TIME_INPUT_DATE_AND_TIME, TIME_INPUT_UNIX_TIMESTAMPS } from './time-input';
 // File examples
 export { VCF_INDELS } from './vcf-indels';
 export { VCF_POINT_MUTATIONS } from './vcf-point-mutations';

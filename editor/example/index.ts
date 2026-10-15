@@ -156,6 +156,20 @@ export interface Example {
 const docExampleObj: {
     readonly [id: string]: Example;
 } = {
+    doc_time_date_and_time: {
+        group: 'Doc',
+        name: 'Time Input: Date and Time Columns',
+        description: 'csv-time with dateFields [date, time of day]; timeUnit rules (hour, day) with count; date tooltips',
+        spec: docExamples.TIME_INPUT_DATE_AND_TIME,
+        hidden: true
+    },
+    doc_time_unix_timestamps: {
+        group: 'Doc',
+        name: 'Time Input: Unix Timestamps',
+        description: 'json-time with inline values; timestampField in seconds and in milliseconds (timestampUnit); dates before 1970',
+        spec: docExamples.TIME_INPUT_UNIX_TIMESTAMPS,
+        hidden: true
+    },
     doc_area: {
         group: 'Doc',
         name: 'Area Mark',
