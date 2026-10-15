@@ -31,7 +31,7 @@ import { TIME_INPUT_DATE_AND_TIME, TIME_INPUT_UNIX_TIMESTAMPS } from './doc-exam
 /** The JS code blocks of README.md that build a spec, evaluated to the spec object. */
 function readmeSpecs(): Record<string, GoslingSpec> {
     const md = fs.readFileSync(path.resolve(__dirname, '../../README.md'), 'utf8');
-    const running = md.slice(md.indexOf('const CSV_URL'), md.indexOf('embed(document.getElementById("container"), spec);'));
+    const running = md.slice(md.indexOf('const DATA_URL'), md.indexOf('embed(document.getElementById("container"), spec);'));
     const quickStart = md.slice(md.indexOf("const spec = {\n  title: 'Seattle Weather'"), md.indexOf('function App()'));
     return {
         'README running example': new Function(`${running}; return spec;`)(),

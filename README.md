@@ -221,77 +221,58 @@ embed = {
 
 ### U.S. Unemployment Across Industries — Circular Overview + Linked Detail
 
-A multi-view dashboard combining a **circular overview** (left) with **linked detail panels** (right) for exploring U.S. unemployment across five industry sectors (2000–2010). Brushing on the circular view or the timeline bar filters all detail panels via coordinated linking.
+A multi-view dashboard combining a **circular overview** (left) with **linked detail panels** (right) for exploring U.S. unemployment across five industry sectors (2000–2010). Brushing on the circular view or the timeline bar zooms all detail panels via coordinated linking. This is the editor example *Supp. S3: U.S. Unemployment Across Industries*.
 
 
 ```js
 import { embed } from '@vanessa_stoiber1999/time-i-gram';
 
-const CSV_URL =
-  "https://raw.githubusercontent.com/denisseram/time-i-gram/14a22f2e66006df8a8498e2c0d6f992c5b49a810/unemployment-across-industries.csv";
+// Monthly unemployment by industry, 2000 to 2010 (U.S. Bureau of Labor Statistics), as published in vega-datasets
+const DATA_URL = "https://raw.githubusercontent.com/vega/vega/main/docs/data/unemployment-across-industries.json";
 
-const baseData = {
-  type: "csv-time",
-  url: CSV_URL,
-  separator: ",",
-  dateFields: ["date"],
-  sampleLength: 2000
-};
+const baseData = { type: "json-time", url: DATA_URL, dateFields: ["date"], sampleLength: 2000 };
 
-const timeDomain = { interval: [946713600, 1293782400] };
+// January 2000 to February 2010, the extent of the data
+const timeDomain = { interval: ["2000-01", "2010-02"] };
 const industries = ["Government", "Manufacturing", "Construction", "Information", "Finance"];
+const yTitle = "Unemployed (thousands)";
 
-// Helper: create an area + line overlay for one industry
-function industryTracks(series, width, height) {
+// One industry as an area with a line on top; `legend` only on the last line of a panel
+function industryTracks(series, legend) {
+  const base = {
+    data: { ...baseData },
+    dataTransform: [{ type: "filter", field: "series", oneOf: [series] }],
+    x: { field: "date", type: "temporal", axis: "bottom", domain: timeDomain, linkingId: "detail-link" },
+    color: { field: "series", type: "nominal", domain: industries, legend, title: "Industry" },
+    style: { outline: "none" }
+  };
   return [
-    {
-      data: { ...baseData },
-      dataTransform: [{ type: "filter", field: "series", oneOf: [series] }],
-      x: { field: "date", type: "temporal", axis: "bottom", domain: timeDomain, linkingId: "detail-link" },
-      y: { field: "count", type: "quantitative", axis: "left" },
-      color: { field: "series", type: "nominal", domain: industries },
-      mark: "area",
-      opacity: { value: 0.3 },
-      width,
-      height,
-      style: { outline: "none" }
-    },
-    {
-      data: { ...baseData },
-      dataTransform: [{ type: "filter", field: "series", oneOf: [series] }],
-      x: { field: "date", type: "temporal", axis: "bottom", domain: timeDomain, linkingId: "detail-link" },
-      y: { field: "count", type: "quantitative", axis: "left" },
-      color: { field: "series", type: "nominal", domain: industries },
-      mark: "line",
-      size: { value: 1.5 },
-      width,
-      height,
-      style: { outline: "none" }
-    }
+    { ...base, mark: "area", opacity: { value: 0.3 }, y: { field: "count", type: "quantitative", axis: "left" } },
+    { ...base, mark: "line", size: { value: 1.5 }, y: { field: "count", type: "quantitative", axis: "left", title: yTitle } }
   ];
 }
 
 const spec = {
-  title: "U.S. Unemployment Across Industries (2000–2010)",
-  subtitle: "Monthly number of unemployed persons by industry sector — Source: U.S. Bureau of Labor Statistics (BLS)",
+  title: "Which industries were hit hardest by the 2008 recession?",
+  subtitle: "Unemployed persons (thousands) by industry and month, 2000 to 2010. Source: U.S. Bureau of Labor Statistics",
   arrangement: "horizontal",
   views: [
-    // ── LEFT: Circular overview with brush ──
+    // ── LEFT: circular overview with a brush ──
     {
       layout: "circular",
-      title: "Cyclical Unemployment Patterns",
-      subtitle: "Each ring shows the monthly unemployment count for one industry — drag the brush to zoom into a period",
-      centerRadius: 0.35,
+      title: "All industries (drag the brush)",
+      centerRadius: 0.5, // room for the axis title and the legend in the center
       alignment: "overlay",
       width: 450,
       height: 450,
       tracks: [
-        ...industries.map((s) => ({
+        ...industries.map((series, i) => ({
           data: { ...baseData },
-          dataTransform: [{ type: "filter", field: "series", oneOf: [s] }],
+          dataTransform: [{ type: "filter", field: "series", oneOf: [series] }],
           x: { field: "date", type: "temporal", axis: "top", domain: timeDomain },
-          y: { field: "count", type: "quantitative", axis: "right" },
-          color: { field: "series", type: "nominal", domain: industries, legend: true },
+          // the radial axis and the legend are shared: one title and one legend, in the center
+          y: { field: "count", type: "quantitative", axis: "right", ...(i === 0 ? { title: yTitle } : {}) },
+          color: { field: "series", type: "nominal", domain: industries, legend: i === 0, title: "Industry" },
           mark: "line",
           width: 450,
           height: 450,
@@ -300,29 +281,26 @@ const spec = {
         { mark: "brush", x: { linkingId: "detail-link" }, color: { value: "steelBlue" } }
       ]
     },
-    // ── RIGHT: Detail panels stacked vertically ──
+    // ── RIGHT: detail panels stacked vertically, and a timeline with a brush ──
     {
       arrangement: "vertical",
       views: [
         {
-          title: "Public & Industrial Sectors",
-          subtitle: "Monthly unemployed persons (thousands) in Government, Manufacturing, and Construction",
+          title: "Public and industrial sectors",
           alignment: "overlay",
           width: 500,
-          height: 130,
-          tracks: ["Government", "Manufacturing", "Construction"].flatMap((s) => industryTracks(s, 500, 130))
+          height: 170,
+          tracks: ["Government", "Manufacturing", "Construction"].flatMap((s, i, all) => industryTracks(s, i === all.length - 1))
         },
         {
-          title: "Service & Knowledge Sectors",
-          subtitle: "Monthly unemployed persons (thousands) in Information and Finance",
+          title: "Service and knowledge sectors",
           alignment: "overlay",
           width: 500,
-          height: 130,
-          tracks: ["Information", "Finance"].flatMap((s) => industryTracks(s, 500, 130))
+          height: 170,
+          tracks: ["Information", "Finance"].flatMap((s, i, all) => industryTracks(s, i === all.length - 1))
         },
         {
-          title: "Timeline Overview",
-          subtitle: "Aggregate unemployment count — drag to select a time window",
+          title: "All industries (drag to select a period)",
           alignment: "overlay",
           width: 500,
           height: 60,
