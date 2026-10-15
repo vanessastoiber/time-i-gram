@@ -153,7 +153,7 @@ export function binByTimeUnit(binning: TimeUnitBinning, data: Datum[], cs: TimeC
         if (group) group.push(d);
         else groups.set(key, [d]);
     });
-    return Array.from(groups.values()).map(rows => {
+    const binned = Array.from(groups.values()).map(rows => {
         const first = rows[0];
         const row: Datum = {
             [source]: cs.kind === 'relative' ? first[field] : floorTime(+first[source], unit),
@@ -167,6 +167,10 @@ export function binByTimeUnit(binning: TimeUnitBinning, data: Datum[], cs: TimeC
         });
         return row;
     });
+    // a unit with no valid value (e.g. only `NA`) has no mean: drop it rather than draw it at 0
+    const measured = aggregates.filter(a => a.op !== 'count');
+    if (measured.length === 0) return binned;
+    return binned.filter(row => measured.some(({ field: f }) => isFinite(+row[f])));
 }
 
 /**

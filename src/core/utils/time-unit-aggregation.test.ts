@@ -72,6 +72,21 @@ describe('binByTimeUnit', () => {
         expect(out.map(r => r.v)).toEqual(expected);
     });
 
+    it('skips missing values, and drops units that have none (e.g. only NA)', () => {
+        const withNA = [
+            { date: utc(2010, 1, 5), series: 'A', v: 'NA' },
+            { date: utc(2010, 1, 6), series: 'A', v: 4 },
+            { date: utc(2010, 2, 5), series: 'A', v: 'NA' }
+        ];
+        const mean = binByTimeUnit({ ...MONTHLY, aggregates: [{ field: 'v', op: 'mean' }] }, withNA, ABSOLUTE_TIME);
+        expect(mean.map(r => [iso(+r.__month_date), r.v])).toEqual([['2010-01-01', 4]]);
+        const count = binByTimeUnit({ ...MONTHLY, aggregates: [{ field: 'v', op: 'count' }] }, withNA, ABSOLUTE_TIME);
+        expect(count.map(r => [iso(+r.__month_date), r.v])).toEqual([
+            ['2010-01-01', 2],
+            ['2010-02-01', 1]
+        ]);
+    });
+
     it('only places rows when nothing is aggregated', () => {
         const out = binByTimeUnit({ ...MONTHLY, aggregates: [] }, rows, ABSOLUTE_TIME);
         expect(out).toHaveLength(4);
