@@ -74,6 +74,7 @@ import { EX_SPEC_TEMPORAL_CMAPSS_SENSORS } from './spec/temporal-data_cmapss-sen
 import { EX_SPEC_TEMPORAL_CMAPSS_CONDITIONS } from './spec/temporal-data_cmapss-conditions';
 import { EX_SPEC_TEMPORAL_CHRO_RING } from './spec/temporal-data_chro-ring';
 import { EX_SPEC_TEMPORAL_BEIJING_AIR } from './spec/temporal-data_beijing-air';
+import { EX_SPEC_TEMPORAL_NOVELISTS } from './spec/temporal-data_novelists';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -674,6 +675,15 @@ const editorExampleObj: {
         spec: EX_SPEC_TEMPORAL_BEIJING_AIR,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_BEIJING_AIR
+    },
+    TEMPORAL_DATA_NOVELISTS: {
+        group: 'Temporal Data',
+        name: 'Relative: Novelists and Their Masterpieces by Age',
+        description:
+            'Pre-1900 dates; intervals (x + xe) from interval columns; row facets; relative anchor per row (birth) on a linear and a circular layout; a brush on the ring driving the relative linear view; date tooltips',
+        spec: EX_SPEC_TEMPORAL_NOVELISTS,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_NOVELISTS
     }
 };
 
