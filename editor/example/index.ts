@@ -685,9 +685,9 @@ const editorExampleObj: {
     },
     TEMPORAL_DATA_CHRO_RING: {
         group: 'Temporal Data',
-        name: 'Chro-Ring: the Life of Su Shi (simulated)',
+        name: 'Chro-Ring: the Life of Su Shi (CBDB)',
         description:
-            'Chro-Ring with simulated data: intervals (x + xe) on concentric rings; dates before 1970; inline JSON values; span transform; timeUnit year',
+            'Chro-Ring with CBDB data: intervals (x + xe) from interval columns on a linear and a circular layout; dates before 1970; row facets on a ring; timeUnit year with count on size; date tooltips',
         spec: EX_SPEC_TEMPORAL_CHRO_RING,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_CHRO_RING
