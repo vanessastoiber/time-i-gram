@@ -72,6 +72,7 @@ import { EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS } from './spec/temporal-data_cmapss-p
 import { EX_SPEC_TEMPORAL_CHRO_RING } from './spec/temporal-data_chro-ring';
 import { EX_SPEC_TEMPORAL_BEIJING_AIR } from './spec/temporal-data_beijing-air';
 import { EX_SPEC_TEMPORAL_NOVELISTS } from './spec/temporal-data_novelists';
+import { EX_SPEC_TEMPORAL_KEELING_CO2 } from './spec/temporal-data_keeling-co2';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -708,6 +709,15 @@ const editorExampleObj: {
         spec: EX_SPEC_TEMPORAL_NOVELISTS,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_NOVELISTS
+    },
+    TEMPORAL_DATA_KEELING_CO2: {
+        group: 'Temporal Data',
+        name: 'Period: the Keeling Curve, Decade by Decade',
+        description:
+            'period decade with one ring per decade (a filter on the period field); timeUnit transform with labelField; granularity rules up to decades; date tooltips; data from 1958',
+        spec: EX_SPEC_TEMPORAL_KEELING_CO2,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_KEELING_CO2
     }
 };
 

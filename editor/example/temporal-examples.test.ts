@@ -23,6 +23,7 @@ import { EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS } from './spec/temporal-data_cmapss-p
 import { EX_SPEC_TEMPORAL_CHRO_RING } from './spec/temporal-data_chro-ring';
 import { EX_SPEC_TEMPORAL_BEIJING_AIR } from './spec/temporal-data_beijing-air';
 import { EX_SPEC_TEMPORAL_NOVELISTS } from './spec/temporal-data_novelists';
+import { EX_SPEC_TEMPORAL_KEELING_CO2 } from './spec/temporal-data_keeling-co2';
 import { TIME_INPUT_DATE_AND_TIME, TIME_INPUT_UNIX_TIMESTAMPS } from './doc-examples/time-input';
 
 /** The JS code blocks of README.md that build a spec, evaluated to the spec object. */
@@ -56,6 +57,7 @@ const examples: Record<string, GoslingSpec> = {
     'Chro-Ring': EX_SPEC_TEMPORAL_CHRO_RING,
     'calendar: Beijing air': EX_SPEC_TEMPORAL_BEIJING_AIR,
     'relative: novelists': EX_SPEC_TEMPORAL_NOVELISTS,
+    'period: Keeling CO2': EX_SPEC_TEMPORAL_KEELING_CO2,
     'doc: date and time columns': TIME_INPUT_DATE_AND_TIME,
     'doc: Unix timestamps': TIME_INPUT_UNIX_TIMESTAMPS,
     ...readmeSpecs()
