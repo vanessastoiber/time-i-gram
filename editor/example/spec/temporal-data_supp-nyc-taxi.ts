@@ -10,7 +10,7 @@ import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 
 const spec = {
     title: 'How long are New York taxi trips, and when do they start?',
-    subtitle: 'Trips of one vendor on 3 February 2016, 12:35 to 13:35. Zoom out for other hours and days.',
+    subtitle: 'Trips of one vendor, 3 Feb 2016, 12:35 to 13:35 (zoom out for more). Source: NYC TLC, via Kaggle',
     xDomain: { interval: ['2016-02-03T12:35:00Z', '2016-02-03T13:35:00Z'] },
 
     views: [

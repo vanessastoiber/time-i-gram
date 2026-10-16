@@ -41,6 +41,21 @@ describe('timeUnit transform', () => {
         ]);
         expect(weeks[0].date).toEqual(utc(2010, 8, 18, 13));
     });
+
+    it('names each unit in labelField', () => {
+        const rows = [{ date: utc(1963, 8, 18, 13) }];
+        const label = (unit: 'decade' | 'year' | 'quarter' | 'month' | 'week' | 'day' | 'hour') =>
+            truncateTime({ type: 'timeUnit', field: 'date', unit, newField: 'u', labelField: 'name' }, rows)[0].name;
+        expect(['decade', 'year', 'quarter', 'month', 'week', 'day', 'hour'].map(u => label(u as 'year'))).toEqual([
+            '1960s',
+            '1963',
+            '1963-Q3',
+            '1963-08',
+            '1963-W33',
+            '1963-08-18',
+            '1963-08-18 13:00'
+        ]);
+    });
 });
 
 describe('binByTimeUnit', () => {
@@ -70,6 +85,21 @@ describe('binByTimeUnit', () => {
     ] as const)('computes %s', (op, expected) => {
         const out = binByTimeUnit({ ...MONTHLY, aggregates: [{ field: 'v', op }] }, rows, ABSOLUTE_TIME);
         expect(out.map(r => r.v)).toEqual(expected);
+    });
+
+    it('skips missing values, and drops units that have none (e.g. only NA)', () => {
+        const withNA = [
+            { date: utc(2010, 1, 5), series: 'A', v: 'NA' },
+            { date: utc(2010, 1, 6), series: 'A', v: 4 },
+            { date: utc(2010, 2, 5), series: 'A', v: 'NA' }
+        ];
+        const mean = binByTimeUnit({ ...MONTHLY, aggregates: [{ field: 'v', op: 'mean' }] }, withNA, ABSOLUTE_TIME);
+        expect(mean.map(r => [iso(+r.__month_date), r.v])).toEqual([['2010-01-01', 4]]);
+        const count = binByTimeUnit({ ...MONTHLY, aggregates: [{ field: 'v', op: 'count' }] }, withNA, ABSOLUTE_TIME);
+        expect(count.map(r => [iso(+r.__month_date), r.v])).toEqual([
+            ['2010-01-01', 2],
+            ['2010-02-01', 1]
+        ]);
     });
 
     it('only places rows when nothing is aggregated', () => {

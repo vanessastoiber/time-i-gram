@@ -80,9 +80,11 @@
 }
 
 .example-card {
-    height: 180px;
+    min-height: 180px;
     width: 250px;
     cursor: pointer;
+    vertical-align: top;
+    text-align: left;
 }
 
 .example-card-bg {
@@ -123,6 +125,19 @@
     white-space: nowrap;
     overflow: hidden;
     display: block;
+}
+
+.example-card-description {
+    /* the grammar features an example uses: at most four lines, the rest on hover (title) */
+    font-size: 12px;
+    line-height: 16px;
+    color: #6b6b6b;
+    width: 250px;
+    max-height: 64px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
 }
 
 .example-card-bg:hover {

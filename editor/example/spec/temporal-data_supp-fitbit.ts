@@ -31,7 +31,7 @@ const HEART_RATE_Y = {
 
 const fitbitSpec = {
     title: 'How do activity and heart rate change from day to day?',
-    subtitle: 'One FitBit user, 12 April to 12 May 2016. Zoom or pan any view.',
+    subtitle: 'One FitBit user, 12 April to 12 May 2016. Source: Furberg et al. 2016 (Zenodo, CC0)',
     arrangement: 'horizontal',
     xDomain: { interval: ['2016-04-12', '2016-05-12'] },
     views: [
@@ -125,7 +125,8 @@ const fitbitSpec = {
                                 timeUnit: MINUTE_THEN_HOUR,
                                 linkingId: 'linking-with-brush'
                             },
-                            y: HEART_RATE_Y,
+                            // no room for ticks on the thin ring (they overlapped at its gap): the linear view has the scale
+                            y: { ...HEART_RATE_Y, axis: 'none' },
                             width: 300,
                             height: 40
                         }

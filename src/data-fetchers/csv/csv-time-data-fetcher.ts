@@ -2,7 +2,7 @@ import { sampleSize } from 'lodash-es';
 import { dsvFormat as d3dsvFormat, type DSVRowString } from 'd3-dsv';
 import type { CSVTimeData } from '@gosling-lang/gosling-schema';
 import type { CommonDataConfig } from '../utils';
-import { formatIsoDate, parseDateTime, timestampToSeconds, utcSeconds, TIME_MAX_POS, TIME_MIN_POS, rowsOfTile, type TimeDataConfig } from '../time-utils';
+import { formatIsoDate, parseDateTime, parseTimeOfDay, timestampToSeconds, utcSeconds, TIME_MAX_POS, TIME_MIN_POS, rowsOfTile, type TimeDataConfig } from '../time-utils';
 import { isoWeekStart } from '../../core/utils/time-units';
 import { applyTimeCoordinates } from '../../core/utils/time-coordinate-system';
 
@@ -94,11 +94,6 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
             return !isNaN(date.getTime());
         }
 
-        isValidTimeFormat(timeString: string) {
-        const timeRegex = /^\d{2}:\d{2}:\d{2}$/;
-        return timeRegex.test(timeString);
-        }
-
         /** Warn (once per data source) about a date that cannot be parsed; such rows are not drawn. */
         warnUnparseable(value: unknown) {
             if (this.hasWarnedUnparseable) return;
@@ -127,9 +122,12 @@ function CSVTimeDataFetcher(HGC: any, ...args: any): any {
                             row[convertToDate[0]] = this.parseAndConvertToSeconds(row[convertToDate[0]]);
                             break;
                         case 2:
-                            if (this.isValidTimeFormat(row[convertToDate[1]])) {
-                                const fullDate = `${row[convertToDate[0]]} ${row[convertToDate[1]]}`;
-                                row[convertToDate[0]] = this.parseAndConvertToSeconds(fullDate);
+                            if (isFinite(parseTimeOfDay(String(row[convertToDate[1]] ?? '')))) {
+                                // a date (or a date-time, whose time is ignored) and a time of day: `16:40:21`,
+                                // `0:05`, `7:21 PM`
+                                const date = this.parseAndConvertToSeconds(row[convertToDate[0]]);
+                                row[convertToDate[0]] =
+                                    Math.floor(date / 86400) * 86400 + parseTimeOfDay(row[convertToDate[1]]);
                             // Check if we're dealing with a calendar week format in the second convertToDate field
                             } else if (this.dataConfig.includesCalendarWeek && this.containsCalendarWeek(row[convertToDate[1]])) {
                                 const calendarWeekMonday = this.weekToDate(row[convertToDate[0]], row[convertToDate[1]]);

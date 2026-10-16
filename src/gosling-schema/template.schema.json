@@ -115,7 +115,7 @@
                   "$ref": "#/definitions/Period"
                 }
               ],
-              "description": "Wrap a temporal axis by a calendar period, which sets the axis' time coordinate system to `period`: each time is placed at its position within its period (its month, day and time for a year; its weekday and time for a week; its time of day for a day), so all periods share one axis, or one revolution in a circular layout. The axis labels positions within the period (Jan...Dec, W1...W53, Mon...Sun, 00:00...23:00). Each row also gets the period it belongs to as a field (`newField`, e.g. `\"2010\"`), to be encoded with `color` (overlaid periods) or `row` (one ring per period).\n\nOnly for `type: \"temporal\"` on `x`. The domain is always the whole period: a `domain` is ignored."
+              "description": "Wrap a temporal axis by a calendar period, which sets the axis' time coordinate system to `period`: each time is placed at its position within its period (its year of the decade, month and day for a decade; its month, day and time for a year; its weekday and time for a week; its time of day for a day), so all periods share one axis, or one revolution in a circular layout. The axis labels positions within the period (’0...’9, Jan...Dec, W1...W53, Mon...Sun, 00:00...23:00). Each row also gets the period it belongs to as a field (`newField`, e.g. `\"2010\"`), to be encoded with `color` (overlaid periods) or `row` (one ring per period).\n\nOnly for `type: \"temporal\"` on `x`. The domain is always the whole period: a `domain` is ignored."
             },
             "range": {
               "$ref": "#/definitions/ValueExtent",
@@ -272,6 +272,10 @@
         {
           "additionalProperties": false,
           "properties": {
+            "aggregate": {
+              "$ref": "#/definitions/Aggregate",
+              "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+            },
             "base": {
               "type": "string"
             },
@@ -325,6 +329,10 @@
         {
           "additionalProperties": false,
           "properties": {
+            "aggregate": {
+              "$ref": "#/definitions/Aggregate",
+              "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+            },
             "base": {
               "type": "string"
             },
@@ -358,6 +366,10 @@
         {
           "additionalProperties": false,
           "properties": {
+            "aggregate": {
+              "$ref": "#/definitions/Aggregate",
+              "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+            },
             "base": {
               "type": "string"
             },
@@ -404,6 +416,10 @@
         {
           "additionalProperties": false,
           "properties": {
+            "aggregate": {
+              "$ref": "#/definitions/Aggregate",
+              "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+            },
             "base": {
               "type": "string"
             },
@@ -433,6 +449,10 @@
         {
           "additionalProperties": false,
           "properties": {
+            "aggregate": {
+              "$ref": "#/definitions/Aggregate",
+              "description": "Reduce the rows of each time unit of `x.timeUnit` (a quantitative field): `count`, `sum`, `mean`, `median`, `min` or `max`. __Default__: `undefined`"
+            },
             "base": {
               "type": "string"
             },
@@ -711,6 +731,10 @@
         },
         "include": {
           "description": "Check whether the value includes a substring.",
+          "type": "string"
+        },
+        "labelField": {
+          "description": "If specified, a field that receives a readable name of the unit, e.g. for `color`, `row` or `text`: `\"1960s\"` (decade), `\"1960\"` (year), `\"1960-Q1\"` (quarter), `\"1960-03\"` (month), `\"1960-W09\"` (ISO week), `\"1960-03-01\"` (day), `\"1960-03-01 14:00\"` (hour, minute), `\"1960-03-01 14:00:05\"` (second, millisecond).",
           "type": "string"
         },
         "maxRows": {
@@ -1025,11 +1049,11 @@
       "additionalProperties": false,
       "properties": {
         "newField": {
-          "description": "Field that receives each row's period, as a string that sorts chronologically: `\"2010\"` (year), `\"2010/11\"` (year with `start`), `\"2010-03\"` (month), `\"2010-W05\"` (week), `\"2010-03-01\"` (day).\n\n__Default:__ `\"<field>_<unit>\"`, e.g. `\"date_year\"`",
+          "description": "Field that receives each row's period, as a string that sorts chronologically: `\"1960s\"` (decade), `\"1961–1970\"` (decade with `start`), `\"2010\"` (year), `\"2010/11\"` (year with `start`), `\"2010-03\"` (month), `\"2010-W05\"` (week), `\"2010-03-01\"` (day).\n\n__Default:__ `\"<field>_<unit>\"`, e.g. `\"date_year\"`",
           "type": "string"
         },
         "start": {
-          "description": "Where each period begins: a month (1-12) for calendar years (e.g. `8` for August-July seasons), an ISO week (1-52) for week-based years (e.g. `40` for flu seasons), a weekday (1 = Monday ... 7 = Sunday) for weeks, an hour (0-23) for days. Not supported for months.\n\n__Default:__ the first month, week, weekday (Monday) or hour (0)",
+          "description": "Where each period begins: the last digit of the first year (0-9) for decades (e.g. `1` for 1961-1970), a month (1-12) for calendar years (e.g. `8` for August-July seasons), an ISO week (1-52) for week-based years (e.g. `40` for flu seasons), a weekday (1 = Monday ... 7 = Sunday) for weeks, an hour (0-23) for days. Not supported for months.\n\n__Default:__ a year ending in 0, the first month, week, weekday (Monday) or hour (0)",
           "type": "number"
         },
         "unit": {
@@ -1049,6 +1073,7 @@
     "PeriodUnit": {
       "description": "Calendar periods by which a temporal axis can be wrapped.",
       "enum": [
+        "decade",
         "year",
         "month",
         "week",
@@ -1176,6 +1201,30 @@
         "unit": {
           "$ref": "#/definitions/TimeUnit",
           "description": "Unit of the axis labels (\"+3 wk\") and of `timeUnit` bins, which count whole units from the anchor. Units from `month` up are labeled with nominal lengths (a month is 30.44 days). __Default:__ chosen from the visible span"
+        },
+        "unitName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "plural": {
+                  "type": "string"
+                },
+                "short": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "short",
+                "plural"
+              ],
+              "type": "object"
+            }
+          ],
+          "description": "Names of `unit` on the axis, for offsets that count something else with the length of a time unit (e.g. operating cycles stored one per day): `\"cycle\"` labels ticks `\"+50 cycles\"` and the axis \"cycles from ...\". `{ \"short\": \"cyc\", \"plural\": \"cycles\" }` gives `\"+50 cyc\"` and \"cycles from ...\". Requires `unit`."
         }
       },
       "required": [
@@ -1748,7 +1797,7 @@
           "type": "string"
         },
         "format": {
-          "description": "format of the data value.",
+          "description": "Format of the data value: a d3-format specifier for `quantitative` fields, and a d3-time-format specifier (in UTC) for `temporal` fields, whose values are shown as dates. __Default__ for `temporal`: the date, and the time of day when it is not midnight (e.g. `2015-12-08 14:00`).",
           "type": "string"
         },
         "type": {

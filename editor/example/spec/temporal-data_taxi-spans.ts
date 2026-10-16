@@ -34,7 +34,7 @@ const VENDOR_COLOR = {
 
 const spec = {
     title: 'When do New York taxi trips happen, and how long do they take?',
-    subtitle: 'Top: one hour of trips on 3 February 2016. Bottom: all trips of January to June 2016 by hour of the day.',
+    subtitle: 'Top: one hour, 3 Feb 2016; bottom: January to June 2016 by hour. Source: NYC TLC, via Kaggle',
     arrangement: 'vertical',
     views: [
         {

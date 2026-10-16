@@ -1,13 +1,14 @@
 import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 
 // Supplementary material, Fig. S4 (Seattle Weather).
-// Copied from the supplementary PDF (a fragment starting at `views: [...]`, wrapped in a root object).
+// Copied from the supplementary PDF (a fragment starting at `views: [...]`, wrapped in a root object). It reads the
+// data from vega-datasets, its original host (the PDF read a copy in thesis-datasets).
 // Since fixed: the domain is the data's (2012 to 2015), thresholds are durations, and every view has
 // titles, axis titles and legends.
 
 const spec = {
     title: 'Is it always raining in Seattle?',
-    subtitle: 'Daily precipitation, temperature and weather in Seattle, 2012 to 2015',
+    subtitle: 'Daily weather in Seattle, 2012 to 2015. Source: NOAA, via vega-datasets',
     views: [
         {
             // --- Precipitation over time ---
@@ -15,7 +16,7 @@ const spec = {
             xDomain: { interval: ['2012', '2015'] },
 
             data: {
-                url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/1_seattle-weather/seattle-weather.csv',
+                url: 'https://raw.githubusercontent.com/vega/vega/main/docs/data/seattle-weather.csv',
                 type: 'csv-time',
                 dateFields: ['date'],
                 yearFirstDate: true
@@ -54,7 +55,7 @@ const spec = {
             xDomain: { interval: ['2012', '2015'] },
 
             data: {
-                url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/1_seattle-weather/seattle-weather.csv',
+                url: 'https://raw.githubusercontent.com/vega/vega/main/docs/data/seattle-weather.csv',
                 type: 'csv-time',
                 dateFields: ['date'],
                 yearFirstDate: true
@@ -103,7 +104,7 @@ const spec = {
             xDomain: { interval: ['2012', '2015'] },
 
             data: {
-                url: 'https://raw.githubusercontent.com/vanessastoiber/thesis-datasets/main/1_seattle-weather/seattle-weather.csv',
+                url: 'https://raw.githubusercontent.com/vega/vega/main/docs/data/seattle-weather.csv',
                 type: 'csv-time',
                 dateFields: ['date'],
                 yearFirstDate: true

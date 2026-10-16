@@ -35,7 +35,7 @@ const CASES = { field: 'INF_A', type: 'quantitative', domain: [0, 14000], title:
 
 const spec = {
     title: 'When in the year does influenza A peak?',
-    subtitle: 'Weekly influenza A cases in the USA, 2010 to 2014. Brush the ring to compare weeks across years.',
+    subtitle: 'Weekly influenza A cases, USA, 2010 to 2014; brush the ring to compare weeks. Source: WHO FluNet',
     arrangement: 'vertical',
     views: [
         {
