@@ -19,6 +19,11 @@ describe('json-time data fetcher: date parsing', () => {
         expect(rows.map(r => r.date)).toEqual([utc(2000, 3, 1, 8), utc(2012, 1, 31), utc(2012, 1, 1)]);
     });
 
+    it('reads ISO week strings as their Monday', async () => {
+        const { rows } = await loadValues([{ week: '2012-W40' }, { week: '2020-W01' }], { dateFields: ['week'] });
+        expect(rows.map(r => r.week)).toEqual([utc(2012, 10, 1), utc(2019, 12, 30)]);
+    });
+
     it('reads Unix timestamps from timestampField and keeps rows loaded from a url', async () => {
         const originalFetch = globalThis.fetch;
         globalThis.fetch = (async () => ({ ok: true, json: async () => [{ t: '1327968000' }, { t: 1328054400 }] })) as any;

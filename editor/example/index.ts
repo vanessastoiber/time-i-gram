@@ -67,6 +67,12 @@ import { EX_SPEC_TEMPORAL_FITBIT_CYCLES } from './spec/temporal-data_fitbit-cycl
 import { EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY } from './spec/temporal-data_unemployment-granularity';
 import { EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT } from './spec/temporal-data_relative-alignment';
 import { EX_SPEC_TEMPORAL_TAXI_SPANS } from './spec/temporal-data_taxi-spans';
+import { EX_SPEC_TEMPORAL_CMAPSS_ALIGNMENT } from './spec/temporal-data_cmapss-alignment';
+import { EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS } from './spec/temporal-data_cmapss-prognosis';
+import { EX_SPEC_TEMPORAL_CHRO_RING } from './spec/temporal-data_chro-ring';
+import { EX_SPEC_TEMPORAL_BEIJING_AIR } from './spec/temporal-data_beijing-air';
+import { EX_SPEC_TEMPORAL_NOVELISTS } from './spec/temporal-data_novelists';
+import { EX_SPEC_TEMPORAL_KEELING_CO2 } from './spec/temporal-data_keeling-co2';
 
 export type ExampleGroup =
     | 'Visual Encoding'
@@ -148,6 +154,20 @@ export interface Example {
 const docExampleObj: {
     readonly [id: string]: Example;
 } = {
+    doc_time_date_and_time: {
+        group: 'Doc',
+        name: 'Time Input: Date and Time Columns',
+        description: 'csv-time with dateFields [date, time of day]; timeUnit rules (hour, day) with count; date tooltips',
+        spec: docExamples.TIME_INPUT_DATE_AND_TIME,
+        hidden: true
+    },
+    doc_time_unix_timestamps: {
+        group: 'Doc',
+        name: 'Time Input: Unix Timestamps',
+        description: 'json-time with inline values; timestampField in seconds and in milliseconds (timestampUnit); dates before 1970',
+        spec: docExamples.TIME_INPUT_UNIX_TIMESTAMPS,
+        hidden: true
+    },
     doc_area: {
         group: 'Doc',
         name: 'Area Mark',
@@ -522,6 +542,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_OVERVIEW_DETAIL: {
         group: 'Temporal Data',
         name: 'Unemployment - Overview + Detail',
+        description:
+            'json-time from a URL; overview + detail with a brush (linkingId); one track per industry (faceted)',
         spec: EX_SPEC_TEMPORAL_OVERVIEW_DETAIL,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_OVERVIEW_DETAIL
@@ -529,6 +551,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_SEATTLE_WEATHER: {
         group: 'Temporal Data',
         name: 'Seattle Weather',
+        description:
+            'csv-time; three views linked by linkingId; semantic zoom (visibility with a duration threshold: color bands or text labels)',
         spec: EX_SPEC_TEMPORAL_SEATTLE_WEATHER,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_SEATTLE_WEATHER
@@ -536,6 +560,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_UNEMPLOYMENT_CIRCULAR_LINEAR: {
         group: 'Temporal Data',
         name: 'Unemployment: Circular Overview + Linear Detail',
+        description:
+            'json-time; a circular overview whose brush drives a linear detail (absolute time); overlaid series with a titled legend',
         spec: EX_SPEC_TEMPORAL_UNEMPLOYMENT_CIRCULAR_LINEAR,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_UNEMPLOYMENT_CIRCULAR_LINEAR
@@ -543,6 +569,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_SUPP_UNEMPLOYMENT: {
         group: 'Temporal Data',
         name: 'Supp. S3: U.S. Unemployment Across Industries',
+        description:
+            'Supplementary Fig. S3: circular overview, linear detail panels and a timeline brush (linkingId); overlaid areas and lines',
         spec: EX_SPEC_TEMPORAL_SUPP_UNEMPLOYMENT,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_SUPP_UNEMPLOYMENT
@@ -550,6 +578,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_SUPP_SEATTLE_WEATHER: {
         group: 'Temporal Data',
         name: 'Supp. S4: Seattle Weather',
+        description:
+            'Supplementary Fig. S4: date-string domains; three linked views; semantic zoom with a duration threshold; yearFirstDate',
         spec: EX_SPEC_TEMPORAL_SUPP_SEATTLE_WEATHER,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_SUPP_SEATTLE_WEATHER
@@ -557,6 +587,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_SUPP_SOLAR_WEATHER: {
         group: 'Temporal Data',
         name: 'Supp. S5: Solar Power and Local Weather',
+        description:
+            'Supplementary Fig. S5: an overview brush over five linked views; day-first dates (dayFirstDate); tooltips. Data source to be confirmed',
         spec: EX_SPEC_TEMPORAL_SUPP_SOLAR_WEATHER,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_SUPP_SOLAR_WEATHER
@@ -564,13 +596,17 @@ const editorExampleObj: {
     TEMPORAL_DATA_SUPP_NYC_TAXI: {
         group: 'Temporal Data',
         name: 'Supp. S6: NYC Taxi Trip Duration',
+        description:
+            'Supplementary Fig. S6: arcs (withinLink) from pickup to drop-off interval columns; semantic zoom (arcs below 2 hours); linked views',
         spec: EX_SPEC_TEMPORAL_SUPP_NYC_TAXI,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_SUPP_NYC_TAXI
     },
     TEMPORAL_DATA_SUPP_WHO_FLU: {
         group: 'Temporal Data',
-        name: 'Supp. S7: WHO Flu Data',
+        name: 'Supp. S7 (original, hand-preprocessed): WHO Flu Data',
+        description:
+            'Supplementary Fig. S7 as published: every year moved into 2010 by hand before plotting. The same chart without that step: "Period: WHO Flu by Week of the Year"',
         spec: EX_SPEC_TEMPORAL_SUPP_WHO_FLU,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_SUPP_WHO_FLU
@@ -578,6 +614,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_SUPP_FITBIT: {
         group: 'Temporal Data',
         name: 'Supp. S8: FitBit Activity and Heart Rate',
+        description:
+            'Supplementary Fig. S8: granularity rules (mean by minute, by hour above 2 days); linked linear and circular views; two y axes',
         spec: EX_SPEC_TEMPORAL_SUPP_FITBIT,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_SUPP_FITBIT
@@ -585,6 +623,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_WHO_FLU_PERIOD: {
         group: 'Temporal Data',
         name: 'Period: WHO Flu by Week of the Year',
+        description:
+            'period year with ISO weeks (weekBased) on a ring and a linear view; color on the period field; a brush in the period system; ISO year + week columns',
         spec: EX_SPEC_TEMPORAL_WHO_FLU_PERIOD,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_WHO_FLU_PERIOD
@@ -592,6 +632,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_FITBIT_CYCLES: {
         group: 'Temporal Data',
         name: 'Period: FitBit Weekly and Daily Cycles',
+        description:
+            'period week with one ring per week (row on the period field); period day; timeUnit hour with mean',
         spec: EX_SPEC_TEMPORAL_FITBIT_CYCLES,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_FITBIT_CYCLES
@@ -599,6 +641,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_UNEMPLOYMENT_GRANULARITY: {
         group: 'Temporal Data',
         name: 'Granularity: Unemployment by Month or Year (zoom)',
+        description:
+            'granularity transition rules (month, year above 4 years) with mean; date-string domains; zoomLimits as durations; brush',
         spec: EX_SPEC_TEMPORAL_UNEMPLOYMENT_GRANULARITY,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_UNEMPLOYMENT_GRANULARITY
@@ -606,6 +650,8 @@ const editorExampleObj: {
     TEMPORAL_DATA_RELATIVE_ALIGNMENT: {
         group: 'Temporal Data',
         name: 'Relative: Flu Seasons and Unemployment Aligned to Events',
+        description:
+            'relative: an argmax anchor per season (groupby period, seasons from ISO week 40) and a fixed-date anchor; relative.label',
         spec: EX_SPEC_TEMPORAL_RELATIVE_ALIGNMENT,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_RELATIVE_ALIGNMENT
@@ -613,9 +659,65 @@ const editorExampleObj: {
     TEMPORAL_DATA_TAXI_SPANS: {
         group: 'Temporal Data',
         name: 'Spans: NYC Taxi Trips and the Daily Cycle',
+        description:
+            'span transform (pickup + trip duration) drawn as arcs; period day with timeUnit hour and count; one row per vendor',
         spec: EX_SPEC_TEMPORAL_TAXI_SPANS,
         underDevelopment: true,
         image: THUMBNAILS.TEMPORAL_DATA_TAXI_SPANS
+    },
+    TEMPORAL_DATA_CMAPSS_ALIGNMENT: {
+        group: 'Temporal Data',
+        name: 'Relative: Jet Engines Aligned to Entry into Service or to Failure',
+        description:
+            'relative: anchors first and last per engine (groupby); timeUnit week with mean on offsets; relative.unitName (cycles)',
+        spec: EX_SPEC_TEMPORAL_CMAPSS_ALIGNMENT,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_ALIGNMENT
+    },
+    TEMPORAL_DATA_CMAPSS_PROGNOSIS: {
+        group: 'Temporal Data',
+        name: 'Relative: Jet Engine Prognosis, Aligned to an Unobserved Failure',
+        description:
+            'relative: an anchor per row (field); two linked relative views; intervals (x + xe) and a span transform; one row per engine; relative.unitName (cycles)',
+        spec: EX_SPEC_TEMPORAL_CMAPSS_PROGNOSIS,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_CMAPSS_PROGNOSIS
+    },
+    TEMPORAL_DATA_CHRO_RING: {
+        group: 'Temporal Data',
+        name: 'Chro-Ring: the Life of Su Shi (CBDB)',
+        description:
+            'Chro-Ring with CBDB data: intervals (x + xe) from interval columns on a linear and a circular layout; dates before 1970; row facets on a ring; timeUnit year with count on size; date tooltips',
+        spec: EX_SPEC_TEMPORAL_CHRO_RING,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_CHRO_RING
+    },
+    TEMPORAL_DATA_BEIJING_AIR: {
+        group: 'Temporal Data',
+        name: 'Calendar: Beijing Air Quality by Hour, Weekday and Winter',
+        description:
+            'Date components across columns; calendar grid (period week + row); period year with start (November); faceted + segmented rows; timeUnit rules; ISO-week and quarter domains; date tooltips; a link split across coordinate systems',
+        spec: EX_SPEC_TEMPORAL_BEIJING_AIR,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_BEIJING_AIR
+    },
+    TEMPORAL_DATA_NOVELISTS: {
+        group: 'Temporal Data',
+        name: 'Relative: Novelists and Their Masterpieces by Age',
+        description:
+            'Pre-1900 dates; intervals (x + xe) from interval columns; row facets; relative anchor per row (birth) on a linear and a circular layout; a brush on the ring driving the relative linear view; date tooltips',
+        spec: EX_SPEC_TEMPORAL_NOVELISTS,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_NOVELISTS
+    },
+    TEMPORAL_DATA_KEELING_CO2: {
+        group: 'Temporal Data',
+        name: 'Period: the Keeling Curve, Decade by Decade',
+        description:
+            'period decade with one ring per decade (a filter on the period field); timeUnit transform with labelField; granularity rules up to decades; date tooltips; data from 1958',
+        spec: EX_SPEC_TEMPORAL_KEELING_CO2,
+        underDevelopment: true,
+        image: THUMBNAILS.TEMPORAL_DATA_KEELING_CO2
     }
 };
 

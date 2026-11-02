@@ -5,6 +5,7 @@ import {
     UNIT_SECONDS,
     ceilUnitEnd,
     floorTime,
+    formatTimeValue,
     isoWeekDate,
     isoWeekStart,
     isoWeeksInYear,
@@ -139,6 +140,23 @@ describe('parseTimeValue', () => {
         for (const bad of ['', 'Jan 2010', '2010-13', '2010-02-30', '2010-W54', '10-01-2010', '2010-01-01T25:00']) {
             expect(parseTimeValue(bad)).toBeNaN();
         }
+    });
+});
+
+describe('formatTimeValue', () => {
+    it('shows the date, and the time of day when it is not midnight', () => {
+        expect(formatTimeValue(s('2015-12-08'))).toEqual('2015-12-08');
+        expect(formatTimeValue(s('2015-12-08T14:00:00Z'))).toEqual('2015-12-08 14:00');
+        expect(formatTimeValue(s('2015-12-08T14:00:30Z'))).toEqual('2015-12-08 14:00:30');
+        expect(formatTimeValue(String(s('2015-12-08T14:00:00Z')))).toEqual('2015-12-08 14:00');
+    });
+    it('supports a d3-time-format specifier, before 1970 too', () => {
+        expect(formatTimeValue(s('2015-12-08T14:00:00Z'), '%b %-d, %H:%M')).toEqual('Dec 8, 14:00');
+        expect(formatTimeValue(s('1817-07-18'), '%Y')).toEqual('1817');
+    });
+    it('returns values that are not times as they are', () => {
+        expect(formatTimeValue('NA')).toEqual('NA');
+        expect(formatTimeValue(undefined)).toEqual('undefined');
     });
 });
 

@@ -62,6 +62,7 @@ import {
 } from '../../core/mark/temporal-header';
 import { drawHeaderLegend } from '../../core/mark/legend';
 import { getRelativeGenomicPosition } from '../../core/utils/assembly';
+import { formatTimeValue } from '../../core/utils/time-units';
 import { getTextStyle } from '../../core/utils/text-style';
 import {
     Is2DTrack,
@@ -1493,6 +1494,9 @@ const factory: PluginTrackFactory<Tile, GoslingTrackOptions> = (HGC, context, op
                             let value = rawValue;
                             if (d.type === 'quantitative' && d.format) {
                                 value = HGC.libraries.d3Format.format(d.format)(+rawValue);
+                            } else if (d.type === 'temporal') {
+                                // Unix seconds, shown as a UTC date
+                                value = formatTimeValue(rawValue, d.format);
                             } else if (d.type === 'genomic') {
                                 // e.g., chr1:204,133
                                 const { chromosome, position } = getRelativeGenomicPosition(+rawValue, this.#assembly);

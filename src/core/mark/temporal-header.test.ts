@@ -48,6 +48,16 @@ describe('header strip of temporal linear tracks (G1, G6)', () => {
         ]);
     });
 
+    it('lists a labeled track once when several visible tiles hold a copy of it', () => {
+        const observed = { mark: 'rect', color: { value: 'blue' }, style: { legendLabel: 'Observed' } };
+        const remaining = { mark: 'rect', color: { value: 'orange' }, style: { legendLabel: 'Remaining' } };
+        const legend = headerLegend(
+            [track(observed), track(remaining), track(observed), track(remaining)],
+            spec => colorCategories(spec, [])
+        );
+        expect(legend.entries.map(e => e.label)).toEqual(['Observed', 'Remaining']);
+    });
+
     it('reads categories from the data, in the order of the domain', () => {
         const spec = track({ color: { field: 's', type: 'nominal' } });
         expect(colorCategories(spec, [{ s: 'x' }, { s: 'y' }, { s: 'x' }])).toEqual(['x', 'y']);

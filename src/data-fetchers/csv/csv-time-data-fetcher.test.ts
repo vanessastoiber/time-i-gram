@@ -81,6 +81,20 @@ describe('csv-time data fetcher: date parsing', () => {
             expect(rows[0].d).toEqual(utc(2016, 2, 29, 16, 40, 21));
         });
 
+        it('date and time-of-day columns: H:MM times, date-times in the date column, AM/PM, before 1970', async () => {
+            // e.g. NYC Open Data: crash_date "2024-06-01T00:00:00.000", crash_time "0:05" or "13:40"
+            const { rows } = await loadCsv(
+                'd,t\n2024-06-01T00:00:00.000,0:05\n2024-06-01T00:00:00.000,13:40\n6/1/2024,7:21 PM\n1969-07-20,20:17:40',
+                { dateFields: ['d', 't'] }
+            );
+            expect(rows.map(r => r.d)).toEqual([
+                utc(2024, 6, 1, 0, 5),
+                utc(2024, 6, 1, 13, 40),
+                utc(2024, 6, 1, 19, 21),
+                utc(1969, 7, 20, 20, 17, 40)
+            ]);
+        });
+
         it('year/month/day/hour component columns', async () => {
             const { rows } = await loadCsv('year,month,day,hour\n2016,2,29,16', {
                 dateFields: ['year', 'month', 'day', 'hour']
@@ -134,6 +148,33 @@ describe('csv-time data fetcher: ISO calendar weeks', () => {
         expect(rows.slice(0, 3).map(r => r.year)).toEqual([utc(2015, 12, 28), utc(2013, 12, 30), utc(2010, 1, 4)]);
         expect(rows[3].year).toBeNaN(); // 2010 has no week 53
     });
+
+    it('reads ISO week strings in one field as their Monday, including week 53 and week 1 starting in December', async () => {
+        const { rows } = await loadCsv('week\n2012-W40\n2015-W53\n2020-W01', { dateFields: ['week'] });
+        expect(rows.map(r => r.week)).toEqual([utc(2012, 10, 1), utc(2015, 12, 28), utc(2019, 12, 30)]);
+    });
+
+    it('reads basic-format ISO weeks and week dates with a weekday', async () => {
+        const { rows } = await loadCsv('week\n2012W40\n2012-W40-3\n2012W407\n2020-W01-1', { dateFields: ['week'] });
+        expect(rows.map(r => r.week)).toEqual([utc(2012, 10, 1), utc(2012, 10, 3), utc(2012, 10, 7), utc(2019, 12, 30)]);
+    });
+
+    it('gives NaN for ISO weeks that do not exist and warns once', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const { rows } = await loadCsv('week\n2010-W53\n2012-W00\n2012-W54', { dateFields: ['week'] });
+        expect(rows.map(r => r.week)).toEqual([NaN, NaN, NaN]);
+        expect(warn).toHaveBeenCalledTimes(1);
+        warn.mockRestore();
+    });
+
+    it('reads ISO weeks from a tab-separated file', async () => {
+        const { rows } = await loadCsv('Kalenderwoche\tBundesland\n2012-W40\tBundesweit', {
+            separator: '\t',
+            dateFields: ['Kalenderwoche']
+        });
+        expect(rows[0].Kalenderwoche).toEqual(utc(2012, 10, 1));
+        expect(rows[0].Bundesland).toEqual('Bundesweit');
+    });
 });
 
 describe('csv-time data fetcher: time coordinate systems', () => {
@@ -156,5 +197,17 @@ describe('csv-time data fetcher: time coordinate systems', () => {
         expect(rows.map(r => (r.__period_year - refStart) / (7 * 86400))).toEqual([51, 0, 1]);
         const tile = await new Promise<any>(resolve => fetcher.fetchTilesDebounced(resolve, ['0.0']));
         expect(tile['0.0'].tabularData.map((r: any) => r.v)).toEqual(['a', 'b', 'c']);
+    });
+
+    it('puts ISO week strings into their week-based year', async () => {
+        const { rows } = await loadCsv('week\n2022-W50\n2023-W01', {
+            dateFields: ['week'],
+            x: '__period_year',
+            timeCoordinates: { ...PERIOD_YEAR, fields: [{ source: 'week', coord: '__period_year' }] }
+        });
+        // 2023-W01 starts on 2023-01-02, 2022-W50 on 2022-12-12
+        expect(rows.map(r => r.season)).toEqual(['2022', '2023']);
+        const refStart = utc(2001, 1, 1);
+        expect(rows.map(r => (r.__period_year - refStart) / (7 * 86400))).toEqual([49, 0]);
     });
 });

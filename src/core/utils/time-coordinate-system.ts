@@ -39,7 +39,8 @@ export interface PeriodTime {
     kind: 'period';
     unit: PeriodUnit;
     weekBased: boolean;
-    /** Month (1-12), ISO week (1-52), weekday (1-7) or hour (0-23) at which each period begins. */
+    /** Last digit of the first year (0-9), month (1-12), ISO week (1-52), weekday (1-7) or hour (0-23) at which each
+     * period begins. */
     start: number;
 }
 
@@ -49,6 +50,8 @@ export interface RelativeTime {
     unit?: TimeUnit;
     /** Description of the reference event, for the axis (e.g. "the peak of INF_A"). */
     anchorLabel?: string;
+    /** Names of `unit` on the axis, if they replace the unit's own (e.g. cycles counted as days). */
+    unitName?: { short: string; plural: string };
 }
 
 export const ABSOLUTE_TIME: AbsoluteTime = { kind: 'absolute' };
@@ -88,15 +91,17 @@ const REF_MONDAY = Date.UTC(2001, 0, 1) / 1000;
 /** The reference week-based year always has room for 53 weeks (the time axis labels the same slots). */
 export const WEEKS_IN_REF_YEAR = 53;
 
-export const PERIOD_UNITS: readonly PeriodUnit[] = ['year', 'month', 'week', 'day'];
+export const PERIOD_UNITS: readonly PeriodUnit[] = ['decade', 'year', 'month', 'week', 'day'];
 
 function defaultPeriodStart(unit: PeriodUnit): number {
-    return unit === 'day' ? 0 : 1;
+    return unit === 'day' || unit === 'decade' ? 0 : 1;
 }
 
 /** Valid range of `period.start`, or `undefined` if the unit has no start. */
 export function periodStartRange(unit: PeriodUnit, weekBased: boolean): [number, number] | undefined {
     switch (unit) {
+        case 'decade':
+            return [0, 9];
         case 'year':
             return weekBased ? [1, 52] : [1, 12];
         case 'week':
@@ -126,10 +131,13 @@ export function periodKeyField(field: string, period: PeriodUnit | Period): stri
 /**
  * The reference period, `[start, end)` in Unix seconds: the coordinates of every period lie in it.
  * A year is a leap year (so 29 February has a place and dates align across years), a month has 31 days,
- * a week-based year has 53 weeks.
+ * a week-based year has 53 weeks. A decade is the ten years from 2000 (+ `start`): its leap years are its 1st, 5th
+ * and 9th, so 29 February of a decade's other years is placed on 1 March.
  */
 export function periodReference(cs: PeriodTime): [number, number] {
     switch (cs.unit) {
+        case 'decade':
+            return [utc(2000 + cs.start, 1), utc(2010 + cs.start, 1)];
         case 'year': {
             if (cs.weekBased) return [REF_MONDAY, REF_MONDAY + WEEKS_IN_REF_YEAR * WEEK];
             // the reference year contains February 2000
@@ -157,6 +165,10 @@ function daysIntoWeek(t: number, start: number) {
 /** The start (Unix seconds) of the period that contains `t`. */
 export function periodStartOf(t: number, cs: PeriodTime): number {
     switch (cs.unit) {
+        case 'decade': {
+            const { year } = utcParts(t);
+            return utc(year - (((year - cs.start) % 10) + 10) % 10, 1);
+        }
         case 'year': {
             if (cs.weekBased) {
                 const { year, week } = isoWeekDate(t);
@@ -180,6 +192,8 @@ export function periodStartOf(t: number, cs: PeriodTime): number {
 export function periodEndOf(t: number, cs: PeriodTime): number {
     const start = periodStartOf(t, cs);
     switch (cs.unit) {
+        case 'decade':
+            return offsetTime(start, 'year', 10);
         case 'year':
             if (cs.weekBased) return isoWeekStart(isoWeekDate(start).year + 1, cs.start);
             return offsetTime(start, 'year', 1);
@@ -198,6 +212,13 @@ export function toPeriodCoordinate(t: number, cs: PeriodTime): number {
     const secondsOfDay = t - floorTime(t, 'day');
     const [refStart] = periodReference(cs);
     switch (cs.unit) {
+        case 'decade': {
+            // the same year of the decade, month and day in the reference decade (Date.UTC turns 29 February of a
+            // year that is not a leap year there into 1 March)
+            const { year, month, day } = utcParts(t);
+            const yearOfDecade = year - utcParts(periodStartOf(t, cs)).year;
+            return utc(utcParts(refStart).year + yearOfDecade, month, day) + secondsOfDay;
+        }
         case 'year': {
             if (cs.weekBased) {
                 // weeks since the start of the season: week 1 follows the last week of the previous year, so a
@@ -226,6 +247,10 @@ export function periodKey(t: number, cs: PeriodTime): string {
     if (!isFinite(t)) return '';
     const start = periodStartOf(t, cs);
     switch (cs.unit) {
+        case 'decade': {
+            const { year } = utcParts(start);
+            return cs.start === 0 ? `${pad(year, 4)}s` : `${pad(year, 4)}–${pad(year + 9, 4)}`;
+        }
         case 'year': {
             const year = cs.weekBased ? isoWeekDate(start + 3 * DAY).year : utcParts(start).year;
             const shifted = cs.start !== 1;
@@ -509,6 +534,8 @@ export function setTrackTimeUnitTiling(track: object, tiling: TimeUnitTiling | u
 export function unitsWithinPeriod(cs: PeriodTime): TimeUnit[] {
     const subDay: TimeUnit[] = ['millisecond', 'second', 'minute', 'hour'];
     switch (cs.unit) {
+        case 'decade':
+            return [...subDay, 'day', 'month', 'quarter', 'year'];
         case 'year': {
             if (cs.weekBased) return [...subDay, 'day', 'week'];
             const quarters: TimeUnit[] = (cs.start - 1) % 3 === 0 ? ['quarter'] : [];
