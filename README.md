@@ -37,6 +37,7 @@ Two new data source types for loading time-based datasets:
 | `json-time` | Load temporal data from inline JSON values or remote JSON URLs |
 
 Both support `dateFields` (for human-readable dates), `timestampField` (for Unix timestamps), and `interval` (for time ranges).
+A date field may also hold ISO 8601 weeks such as `2012-W40` (read as the Monday of the week); for tab-separated files, set `"separator": "\t"`.
 
 ```jsonc
 {

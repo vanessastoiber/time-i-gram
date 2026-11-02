@@ -187,11 +187,25 @@ function parsePartialDate(s: string): { start: number; unit: TimeUnit } | undefi
     if ((m = s.match(new RegExp(`^${YEAR}-Q([1-4])$`)))) {
         return { start: utc(+m[1], (+m[2] - 1) * 3 + 1), unit: 'quarter' };
     }
-    if ((m = s.match(new RegExp(`^${YEAR}-W(\\d{2})$`)))) {
-        const start = isoWeekStart(+m[1], +m[2]);
+    if (new RegExp(`^${YEAR}-W\\d{2}$`).test(s)) {
+        const start = parseIsoWeekDate(s);
         return isNaN(start) ? undefined : { start, unit: 'week' };
     }
     return undefined;
+}
+
+/** An ISO 8601 week date, extended (`2012-W40`, `2012-W40-3`) or basic (`2012W40`, `2012W403`). */
+export const ISO_WEEK_DATE = new RegExp(`^${YEAR}(-?)W(\\d{2})(?:\\2([1-7]))?$`);
+
+/**
+ * UTC midnight of an ISO 8601 week date: the Monday of `YYYY-Www` / `YYYYWww`, or the given weekday
+ * (1 = Monday ... 7 = Sunday) of `YYYY-Www-D` / `YYYYWwwD`. `NaN` if the string is not an ISO week date
+ * or the week does not exist in that year (e.g. `2010-W53`, `2012-W00`).
+ */
+export function parseIsoWeekDate(s: string): number {
+    const m = s.match(ISO_WEEK_DATE);
+    if (!m) return NaN;
+    return isoWeekStart(+m[1], +m[3]) + (+(m[4] ?? 1) - 1) * DAY;
 }
 
 /**
