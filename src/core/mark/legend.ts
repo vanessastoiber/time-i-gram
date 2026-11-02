@@ -527,19 +527,30 @@ export function drawRowLegend(
         fontFamily: theme.legend.labelFontFamily
     });
 
+    // Tracks with a header strip (linear, temporal x) put the first row's label below the header that covers the
+    // top of that row, and, with a y axis on the left, every label on the right, away from the axis.
+    const header = (spec as { _headerHeight?: number })._headerHeight ?? 0;
+    const firstRowPosition = Math.min(...rowCategories.map(category => +tm.encodedValue('row', category)));
+    const leftYAxis = IsChannelDeep(spec.y) && spec.y.axis !== 'none' && spec.y.axis !== 'right';
+    const alignRight = header > 0 && leftYAxis;
+
     rowCategories.forEach(category => {
+        if (header > 0 && category === '') return; // an empty row (under the header) has no label
         const rowPosition = tm.encodedValue('row', category);
+
+        const textStyleObj = new HGC.libraries.PIXI.TextStyle(labelTextStyle);
+        const textMetrics = HGC.libraries.PIXI.TextMetrics.measureText(category, textStyleObj);
+        const boxWidth = textMetrics.width + paddingX * 2;
+        const boxX = alignRight ? trackInfo.position[0] + trackInfo.dimensions[0] - 1 - boxWidth : trackInfo.position[0] + 1;
+        const boxY = trackInfo.position[1] + rowPosition + (header > 0 && rowPosition === firstRowPosition ? header : 0) + 1;
 
         const textGraphic = new HGC.libraries.PIXI.Text(category, labelTextStyle);
         textGraphic.anchor.x = 0;
         textGraphic.anchor.y = 0;
-        textGraphic.position.x = trackInfo.position[0] + paddingX;
-        textGraphic.position.y = trackInfo.position[1] + rowPosition + paddingY;
+        textGraphic.position.x = boxX - 1 + paddingX;
+        textGraphic.position.y = boxY - 1 + paddingY;
 
         graphics.addChild(textGraphic);
-
-        const textStyleObj = new HGC.libraries.PIXI.TextStyle(labelTextStyle);
-        const textMetrics = HGC.libraries.PIXI.TextMetrics.measureText(category, textStyleObj);
 
         graphics.beginFill(colorToHex(theme.legend.background), theme.legend.backgroundOpacity);
         graphics.lineStyle(
@@ -548,12 +559,7 @@ export function drawRowLegend(
             0, // alpha
             0 // alignment of the line to draw, (0 = inner, 0.5 = middle, 1 = outter)
         );
-        graphics.drawRect(
-            trackInfo.position[0] + 1,
-            trackInfo.position[1] + rowPosition + 1,
-            textMetrics.width + paddingX * 2,
-            textMetrics.height + paddingY * 2
-        );
+        graphics.drawRect(boxX, boxY, boxWidth, textMetrics.height + paddingY * 2);
     });
 }
 

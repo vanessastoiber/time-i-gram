@@ -10,6 +10,7 @@ import {
     type TimeCoordinatesConfig,
     type TimeUnitTiling
 } from '../core/utils/time-coordinate-system';
+import { ISO_WEEK_DATE, parseIsoWeekDate } from '../core/utils/time-units';
 
 /** What the compiler adds to the data config of a time fetcher (see `goslingToHiGlass`). */
 export interface TimeDataConfig {
@@ -118,7 +119,7 @@ export function parseTimeOfDay(value: string): number {
 }
 
 /**
- * Parse a date with an optional time of day into Unix seconds.
+ * Parse a date with an optional time of day, or an ISO week date (`2012-W40`, see `parseIsoWeekDate`), into Unix seconds.
  * A string with an explicit zone (`2022-01-01T00:00Z`, `...+01:00`) keeps that zone; every other
  * string is read as UTC so that it lines up with the UTC time axis regardless of the browser's
  * time zone. Formats this parser does not know are handed to `Date.parse`, and the local date and
@@ -126,6 +127,7 @@ export function parseTimeOfDay(value: string): number {
  */
 export function parseDateTime(value: string, options: DateOrderOptions = {}): number {
     const s = value.trim();
+    if (ISO_WEEK_DATE.test(s)) return parseIsoWeekDate(s);
     if (/\d[T ]\d/.test(s) && /(Z|[+-]\d{2}:?\d{2})$/.test(s)) {
         return Date.parse(s) / 1000;
     }

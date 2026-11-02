@@ -157,11 +157,11 @@ function relativeTicks(domain: [number, number], cs: RelativeTime, count: number
         .domain([domain[0] / length, domain[1] / length])
         .ticks(count);
     const label = (k: number) =>
-        k === 0 ? '0' : `${k > 0 ? '+' : '\u2212'}${formatOffset(Math.abs(k))} ${SHORT_UNIT_NAMES[unit]}`;
+        k === 0 ? '0' : `${k > 0 ? '+' : '\u2212'}${formatOffset(Math.abs(k))} ${cs.unitName?.short ?? SHORT_UNIT_NAMES[unit]}`;
     return {
         ticks: steps.map(k => k * length),
         labels: steps.map(label),
-        context: cs.anchorLabel ? `${PLURAL_UNIT_NAMES[unit]} from ${cs.anchorLabel}` : ''
+        context: cs.anchorLabel ? `${cs.unitName?.plural ?? PLURAL_UNIT_NAMES[unit]} from ${cs.anchorLabel}` : ''
     };
 }
 
@@ -212,6 +212,13 @@ const isMonthStart = (d: Date) => isDayStart(d) && d.getUTCDate() === 1;
 /** Label of a position within a period: never a year, since every period shares the axis. */
 function periodLabel(d: Date, cs: PeriodTime): string {
     switch (cs.unit) {
+        case 'decade':
+            // the year of the decade by its last digit ('0 ... '9: the same in every decade), months within years
+            return isMonthStart(d) && d.getUTCMonth() === 0
+                ? `’${d.getUTCFullYear() % 10}`
+                : isMonthStart(d)
+                ? formatMonth(d)
+                : formatMonthDay(d);
         case 'year':
             return isMonthStart(d) ? formatMonth(d) : isDayStart(d) ? formatMonthDay(d) : formatMonthDayTime(d);
         case 'month':

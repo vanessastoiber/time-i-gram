@@ -17,8 +17,7 @@ const ONE_PARTICIPANT = [{ type: 'filter', field: 'Id', oneOf: ['2022484408'] }]
 
 const spec = {
     title: 'FitBit heart rate: is it higher at weekends, and at what time of day?',
-    subtitle:
-        'Hourly means, one participant, April to May 2016. Left: a ring per week (Monday at the top). Right: all days.',
+    subtitle: 'Hourly means of one participant, April to May 2016; left: a ring per week, right: all days. Source: Furberg et al. 2016',
     arrangement: 'horizontal',
     // room for the ring's labels on its right
     spacing: 40,

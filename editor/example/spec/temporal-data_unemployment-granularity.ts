@@ -9,8 +9,8 @@ import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 // (2 years visible) is monthly. Zooming either view switches its granularity.
 
 const UNEMPLOYMENT = {
-    type: 'csv-time',
-    url: 'https://raw.githubusercontent.com/denisseram/time-i-gram/14a22f2e66006df8a8498e2c0d6f992c5b49a810/unemployment-across-industries.csv',
+    type: 'json-time',
+    url: 'https://raw.githubusercontent.com/vega/vega/main/docs/data/unemployment-across-industries.json',
     dateFields: ['date']
 } as const;
 
@@ -31,7 +31,7 @@ const BY_MONTH_THEN_YEAR = [{ unit: 'month', maxSpan: '4 years' }, { unit: 'year
 
 const spec = {
     title: 'How did unemployment change by industry from 2000 to 2009?',
-    subtitle: 'Monthly means while less than 4 years are visible, yearly means above: zoom either view to switch',
+    subtitle: 'Monthly means; yearly when more than 4 years are visible. Source: U.S. Bureau of Labor Statistics',
     zoomLimits: ['6 months', '20 years'],
     arrangement: 'vertical',
     views: [

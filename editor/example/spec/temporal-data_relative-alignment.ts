@@ -19,8 +19,8 @@ const FLU = {
 } as const;
 
 const UNEMPLOYMENT = {
-    type: 'csv-time',
-    url: 'https://raw.githubusercontent.com/denisseram/time-i-gram/14a22f2e66006df8a8498e2c0d6f992c5b49a810/unemployment-across-industries.csv',
+    type: 'json-time',
+    url: 'https://raw.githubusercontent.com/vega/vega/main/docs/data/unemployment-across-industries.json',
     dateFields: ['date']
 } as const;
 
@@ -28,7 +28,7 @@ const SERIES = ['Construction', 'Manufacturing', 'Finance', 'Information', 'Educ
 
 const spec = {
     title: 'Do flu seasons, and industries after the 2008 crash, follow the same course?',
-    subtitle: 'Top: each flu season aligned to its peak week. Bottom: unemployment aligned to 15 September 2008.',
+    subtitle: 'Flu seasons aligned to their peak week; unemployment to 15 Sep 2008. Sources: WHO FluNet; U.S. BLS',
     arrangement: 'vertical',
     views: [
         {

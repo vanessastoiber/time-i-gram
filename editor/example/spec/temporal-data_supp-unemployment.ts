@@ -4,18 +4,18 @@ import type { GoslingSpec } from '@gosling-lang/gosling-schema';
 // Copied from the supplementary PDF and wrapped in a TS export. Fixed since: removed `genomicFields`,
 // which is not a csv-time property and made the spec schema-invalid (docs/grammar-audit.md §7).
 
-const CSV_URL =
-    'https://raw.githubusercontent.com/denisseram/time-i-gram/14a22f2e66006df8a8498e2c0d6f992c5b49a810/unemployment-across-industries.csv';
+// the BLS series as published in vega-datasets (the supplementary material read a CSV copy of it)
+const JSON_URL = 'https://raw.githubusercontent.com/vega/vega/main/docs/data/unemployment-across-industries.json';
 
 const baseData = {
-    type: 'csv-time',
-    url: CSV_URL,
-    separator: ',',
+    type: 'json-time',
+    url: JSON_URL,
     dateFields: ['date'],
     sampleLength: 2000
 };
 
-const timeDomain = { interval: [946713600, 1293782400] };
+// January 2000 to February 2010, the extent of the data
+const timeDomain = { interval: ['2000-01', '2010-02'] };
 const industries = ['Government', 'Manufacturing', 'Construction', 'Information', 'Finance'];
 
 const spec = {
@@ -102,7 +102,8 @@ const spec = {
                                 domain: industries
                             },
                             mark: 'area',
-                            opacity: { value: 0.3 },
+                            // faint: overlaid areas mix their colors, which then differ from the legend
+                            opacity: { value: 0.12 },
                             width: 500,
                             height: 170,
                             style: { outline: 'none' }
@@ -166,7 +167,8 @@ const spec = {
                                 domain: industries
                             },
                             mark: 'area',
-                            opacity: { value: 0.3 },
+                            // faint: overlaid areas mix their colors, which then differ from the legend
+                            opacity: { value: 0.12 },
                             width: 500,
                             height: 170,
                             style: { outline: 'none' }
