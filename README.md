@@ -1,6 +1,6 @@
 # time-i-gram
 
-[![npm](https://img.shields.io/npm/v/@vanessa_stoiber1999/time-i-gram?label=npm%20(embed))](https://www.npmjs.com/package/@vanessa_stoiber1999/time-i-gram)
+[![npm](https://img.shields.io/npm/v/time-i-gram?label=npm%20(embed))](https://www.npmjs.com/package/time-i-gram)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 
 **time-i-gram: A Grammar for Interactive Visualization of Time-based Data**
@@ -155,15 +155,14 @@ time-i-gram inherits the full power of Gosling.js, including:
 
 ```bash
 # Install the embed package
-npm install @vanessa_stoiber1999/time-i-gram
+npm install time-i-gram@0.1.0
 ```
 
-### Peer Dependencies
+The package is one self-contained ES module (React, PixiJS and HiGlass are bundled), so nothing else needs to be installed.
+Without installing, import it from a CDN:
 
-time-i-gram requires the following peer dependencies:
-
-```bash
-npm install pixi.js@^6.3.0 react@^18.0.0 react-dom@^18.0.0
+```js
+import { embed } from 'https://cdn.jsdelivr.net/npm/time-i-gram@0.1.0/dist/index.js';
 ```
 
 ---
@@ -199,7 +198,7 @@ function App() {
 ### Using the Embed API
 
 ```js
-import { embed } from '@vanessa_stoiber1999/time-i-gram';
+import { embed } from 'time-i-gram';
 
 const spec = { /* your time-i-gram spec */ };
 
@@ -211,7 +210,7 @@ embed(document.getElementById('container'), spec);
 
 ```js
 embed = {
-  const mod = await import('https://cdn.jsdelivr.net/npm/@vanessa_stoiber1999/time-i-gram');
+  const mod = await import('https://cdn.jsdelivr.net/npm/time-i-gram@0.1.0/dist/index.js');
   return mod.embed;
 }
 ```
@@ -226,7 +225,7 @@ A multi-view dashboard combining a **circular overview** (left) with **linked de
 
 
 ```js
-import { embed } from '@vanessa_stoiber1999/time-i-gram';
+import { embed } from 'time-i-gram';
 
 // Monthly unemployment by industry, 2000 to 2010 (U.S. Bureau of Labor Statistics), as published in vega-datasets
 const DATA_URL = "https://raw.githubusercontent.com/vega/vega/main/docs/data/unemployment-across-industries.json";
@@ -356,6 +355,16 @@ yarn start
 ```
 
 Then open [http://localhost:3000/](http://localhost:3000/) in your browser to explore the interactive editor with built-in examples.
+
+### Building the npm Package
+
+```bash
+yarn build-package   # writes the package to package-dist/ (name and version are set in npm-package/package.json)
+yarn test-package    # embeds three specs with the built package in headless Chromium
+                     # (once before: npx playwright install chromium)
+```
+
+Publish with `npm publish` inside `package-dist/`. A new version also needs the version in the CDN URLs of this README and of `editor/html-template.ts`.
 
 ## API
 
