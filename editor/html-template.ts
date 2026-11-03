@@ -3,7 +3,7 @@
  * HiGlass, PIXI and their CSS, so an exported page needs nothing else.
  * Bump the version after publishing a release that contains the changes you want exported pages to use.
  */
-export const TIME_I_GRAM_EMBED_URL = 'https://cdn.jsdelivr.net/npm/@vanessa_stoiber1999/time-i-gram@0.0.1/dist/index.js';
+export const TIME_I_GRAM_EMBED_URL = 'https://cdn.jsdelivr.net/npm/time-i-gram@0.1.0/dist/index.js';
 
 export const getHtmlTemplate = (spec: string, embedUrl = TIME_I_GRAM_EMBED_URL) => `
 <!DOCTYPE html>

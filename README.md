@@ -1,6 +1,6 @@
 # time-i-gram
 
-[![npm](https://img.shields.io/npm/v/@vanessa_stoiber1999/time-i-gram?label=npm%20(embed))](https://www.npmjs.com/package/@vanessa_stoiber1999/time-i-gram)
+[![npm](https://img.shields.io/npm/v/time-i-gram?label=npm%20(embed))](https://www.npmjs.com/package/time-i-gram)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 
 **time-i-gram: A Grammar for Interactive Visualization of Time-based Data**
@@ -155,65 +155,104 @@ time-i-gram inherits the full power of Gosling.js, including:
 
 ```bash
 # Install the embed package
-npm install @vanessa_stoiber1999/time-i-gram
+npm install time-i-gram@0.1.0
 ```
 
-### Peer Dependencies
+The package is one self-contained ES module (React, PixiJS and HiGlass are bundled), so nothing else needs to be installed.
+Without installing, import it from a CDN:
 
-time-i-gram requires the following peer dependencies:
-
-```bash
-npm install pixi.js@^6.3.0 react@^18.0.0 react-dom@^18.0.0
+```js
+import { embed } from 'https://cdn.jsdelivr.net/npm/time-i-gram@0.1.0/dist/index.js';
 ```
 
 ---
 
 ## Quick Start
 
-### Using the React Component
+### In a Plain HTML Page
 
-```tsx
-import { GoslingComponent } from 'gosling.js';
+Save this as an `.html` file and open it through a local web server (e.g. `python3 -m http.server`, then http://localhost:8000/):
 
-const spec = {
-  title: 'Seattle Weather',
-  tracks: [{
-    data: {
-      url: 'https://raw.githubusercontent.com/vega/vega/main/docs/data/seattle-weather.csv',
-      type: 'csv-time',
-      dateFields: ['date']
-    },
-    mark: 'bar',
-    x: { field: 'date', type: 'temporal', axis: 'bottom', domain: { interval: [1325376000, 1451606400] } }, // 2012-2015 in Unix seconds
-    y: { field: 'precipitation', type: 'quantitative' },
-    width: 800,
-    height: 200
-  }]
-};
+```html
+<!DOCTYPE html>
+<html>
+<body>
+  <div id="container"></div>
+  <script type="module">
+    import { embed } from 'https://cdn.jsdelivr.net/npm/time-i-gram@0.1.0/dist/index.js';
 
-function App() {
-  return <GoslingComponent spec={spec} />;
-}
+    const spec = {
+      title: 'Seattle Weather',
+      tracks: [{
+        data: {
+          url: 'https://raw.githubusercontent.com/vega/vega/main/docs/data/seattle-weather.csv',
+          type: 'csv-time',
+          dateFields: ['date']
+        },
+        mark: 'bar',
+        x: { field: 'date', type: 'temporal', axis: 'bottom', domain: { interval: [1325376000, 1451606400] } }, // 2012-2015 in Unix seconds
+        y: { field: 'precipitation', type: 'quantitative' },
+        width: 800,
+        height: 200
+      }]
+    };
+
+    embed(document.getElementById('container'), spec);
+  </script>
+</body>
+</html>
 ```
 
-### Using the Embed API
+### Using the Embed API with a Bundler (Vite, esbuild, webpack)
+
+After `npm install time-i-gram@0.1.0`:
 
 ```js
-import { embed } from '@vanessa_stoiber1999/time-i-gram';
+import { embed } from 'time-i-gram';
 
 const spec = { /* your time-i-gram spec */ };
 
-// Embed in a DOM element
+// Embed in a DOM element; resolves to the API of the visualization
 embed(document.getElementById('container'), spec);
+```
+
+TypeScript types are included: `import { embed, type GoslingSpec } from 'time-i-gram'`.
+
+### Using in React
+
+The package has no React component; call `embed` on an element:
+
+```jsx
+import { useEffect, useRef } from 'react';
+import { embed } from 'time-i-gram';
+
+function Chart({ spec }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    embed(ref.current, spec);
+  }, [spec]);
+  return <div ref={ref} />;
+}
 ```
 
 ### Using in Observable Notebooks
 
+`embed(spec)` returns an element that the cell displays:
+
 ```js
-embed = {
-  const mod = await import('https://cdn.jsdelivr.net/npm/@vanessa_stoiber1999/time-i-gram');
-  return mod.embed;
-}
+embed = (await import('https://cdn.jsdelivr.net/npm/time-i-gram@0.1.0/dist/index.js')).embed
+```
+
+```js
+embed({ /* your time-i-gram spec */ })
+```
+
+In [Observable Framework](https://observablehq.com/framework/):
+
+```js
+import { embed } from 'npm:time-i-gram@0.1.0';
+
+display(await embed({ /* your time-i-gram spec */ }));
 ```
 
 ---
@@ -224,9 +263,11 @@ embed = {
 
 A multi-view dashboard combining a **circular overview** (left) with **linked detail panels** (right) for exploring U.S. unemployment across five industry sectors (2000–2010). Brushing on the circular view or the timeline bar zooms all detail panels via coordinated linking. This is the editor example *Supp. S3: U.S. Unemployment Across Industries*.
 
+The code below is for a bundler. To run it in a plain HTML page, put it in a `<script type="module">` next to a `<div id="container"></div>` and import from `https://cdn.jsdelivr.net/npm/time-i-gram@0.1.0/dist/index.js` instead of `time-i-gram` (see [In a Plain HTML Page](#in-a-plain-html-page)).
+
 
 ```js
-import { embed } from '@vanessa_stoiber1999/time-i-gram';
+import { embed } from 'time-i-gram';
 
 // Monthly unemployment by industry, 2000 to 2010 (U.S. Bureau of Labor Statistics), as published in vega-datasets
 const DATA_URL = "https://raw.githubusercontent.com/vega/vega/main/docs/data/unemployment-across-industries.json";
@@ -357,22 +398,34 @@ yarn start
 
 Then open [http://localhost:3000/](http://localhost:3000/) in your browser to explore the interactive editor with built-in examples.
 
-## API
+### Building the npm Package
 
-time-i-gram exposes the same API as Gosling.js:
-
-```ts
-import { GoslingComponent, compile, validateGoslingSpec, embed, init } from 'gosling.js';
+```bash
+yarn build-package   # writes the package to package-dist/ (name and version are set in npm-package/package.json)
+yarn test-package    # embeds three specs with the built package in headless Chromium
+                     # (once before: npx playwright install chromium)
 ```
 
-| Export | Description |
+Publish with `npm publish` inside `package-dist/`. A new version also needs the version in the CDN URLs of this README and of `editor/html-template.ts`.
+
+## API
+
+The npm package `time-i-gram` exports one function, `embed` (and the spec type `GoslingSpec`):
+
+```ts
+import { embed } from 'time-i-gram';
+
+const api = await embed(element, spec, { theme: 'light' }); // options: id, className, theme
+```
+
+| Call | Result |
 |---|---|
-| `GoslingComponent` | React component for rendering visualizations |
-| `embed` | Embed a visualization into a DOM element |
-| `compile` | Compile a Gosling spec into a HiGlass spec |
-| `validateGoslingSpec` | Validate a specification against the schema |
-| `init` | Register all track plugins and data fetchers (called automatically) |
-| `GoslingSchema` | The JSON schema for validation |
+| `embed(element, spec, options?)` | Renders into the DOM element `element` and resolves to the API of the visualization |
+| `embed(spec, options?)` | Resolves to a new `<div>` with the visualization (for Observable); the API is its `value` |
+
+The API is the one of Gosling.js: `subscribe` / `unsubscribe` (events such as `click`, `mouseOver`, `rangeSelect`), `zoomTo`, `zoomToExtent`, `getTracks`, `getTrack`, `getCanvas`, `exportPng` and `exportPdf`.
+
+The other exports of Gosling.js (`GoslingComponent`, `compile`, `validateGoslingSpec`, `init`, `GoslingSchema`) are in the source (`src/index.ts`), not in the npm package.
 
 ---
 

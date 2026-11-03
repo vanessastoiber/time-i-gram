@@ -1,0 +1,44 @@
+{
+    "name": "time-i-gram",
+    "version": "0.1.0",
+    "description": "A grammar for interactive visualization of time-based data, extending Gosling.js. One self-contained ES module with an embed function.",
+    "type": "module",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        },
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "dist"
+    ],
+    "sideEffects": true,
+    "keywords": [
+        "visualization",
+        "grammar",
+        "time",
+        "temporal",
+        "gosling"
+    ],
+    "author": "Denisse Chacón Ramírez",
+    "contributors": [
+        "Vanessa Stoiber",
+        "Denisse Chacón Ramírez",
+        "Nils Gehlenborg",
+        "Wolfgang Aigner",
+        "Marc Streit"
+    ],
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/vanessastoiber/time-i-gram.git"
+    },
+    "homepage": "https://github.com/vanessastoiber/time-i-gram#readme",
+    "bugs": {
+        "url": "https://github.com/vanessastoiber/time-i-gram/issues"
+    }
+}

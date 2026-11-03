@@ -2510,11 +2510,6 @@ d3-array@2, d3-array@^2.3.0, d3-array@^2.5.0, d3-array@^2.5.1, d3-array@^2.7.1:
   dependencies:
     internmap "1 - 2"
 
-d3-array@^1.2.0:
-  version "1.2.4"
-  resolved "https://registry.yarnpkg.com/d3-array/-/d3-array-1.2.4.tgz#635ce4d5eea759f6f605863dbcfc30edc737f71f"
-  integrity sha512-KHW6M86R+FUPYGb3R5XiYjXPq7VzwxZ22buHhAEVG5ztoEcZZMLov530mmccaqA1GghZArjQV46fuc8kUqhhHw==
-
 d3-axis@^2.0.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/d3-axis/-/d3-axis-2.1.0.tgz#978db534092711117d032fad5d733d206307f6a0"
@@ -2535,11 +2530,6 @@ d3-collection@1:
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/d3-collection/-/d3-collection-1.0.7.tgz#349bd2aa9977db071091c13144d5e4f16b5b310e"
   integrity sha512-ii0/r5f4sjKNTfh84Di+DpztYwqKhEyUlKoPrzUFfeSkWxjW49xU2QzO9qrPrNkpdI0XJkfzvmTu8V2Zylln6A==
-
-d3-color@1:
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/d3-color/-/d3-color-1.4.1.tgz#c52002bf8846ada4424d55d97982fef26eb3bc8a"
-  integrity sha512-p2sTHSLCJI2QKunbGb7ocOh7DgTAn8IrLx21QRc/BSnodXM4sv6aLQlnfpvehFMLZEfBc6g9pH9SWQccFYfJ9Q==
 
 "d3-color@1 - 2", d3-color@^2.0.0:
   version "2.0.0"
@@ -2610,11 +2600,6 @@ d3-dsv@^2.0.0:
   resolved "https://registry.yarnpkg.com/d3-ease/-/d3-ease-3.0.1.tgz#9658ac38a2140d59d346160f1f6c30fda0bd12f4"
   integrity sha512-wR/XK3D3XcLIZwpbvQwQ5fK+8Ykds1ip7A2Txe0yxncXSdq1L9skcG7blcedkOX+ZcgxGAmLX1FrRGbADwzi0w==
 
-d3-format@1:
-  version "1.4.5"
-  resolved "https://registry.yarnpkg.com/d3-format/-/d3-format-1.4.5.tgz#374f2ba1320e3717eb74a9356c67daee17a7edb4"
-  integrity sha512-J0piedu6Z8iB6TbIGfZgDzfXxUFN3qQRMofy2oPdXzQibYGqPB/9iMcxr/TGalU+2RsyDO+U4f33id8tbnSRMQ==
-
 "d3-format@1 - 2", d3-format@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/d3-format/-/d3-format-2.0.0.tgz#a10bcc0f986c372b729ba447382413aabf5b0767"
@@ -2631,13 +2616,6 @@ d3-geo@^2.0.1:
   integrity sha512-8pM1WGMLGFuhq9S+FpPURxic+gKzjluCD/CHTuUF3mXMeiCo0i6R0tO1s4+GArRFde96SLcW/kOFRjoAosPsFA==
   dependencies:
     d3-array "^2.5.0"
-
-d3-interpolate@1:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/d3-interpolate/-/d3-interpolate-1.4.0.tgz#526e79e2d80daa383f9e0c1c1c7dcc0f0583e987"
-  integrity sha512-V9znK0zc3jOPV4VD2zZn0sDhZU3WAE2bmlxdIwwQPPzPjvyLkd8B3JUVdS1IDUFDkWZ72c9qnv1GK2ZagTZ8EA==
-  dependencies:
-    d3-color "1"
 
 "d3-interpolate@1 - 2", "d3-interpolate@1.2.0 - 2":
   version "2.0.1"
@@ -2681,18 +2659,6 @@ d3-scale-chromatic@^2.0.0:
     d3-color "1 - 2"
     d3-interpolate "1 - 2"
 
-d3-scale@^2.1.0:
-  version "2.2.2"
-  resolved "https://registry.yarnpkg.com/d3-scale/-/d3-scale-2.2.2.tgz#4e880e0b2745acaaddd3ede26a9e908a9e17b81f"
-  integrity sha512-LbeEvGgIb8UMcAa0EATLNX0lelKWGYDQiPdHj+gLblGVhGLyNbaCn3EvrJf0A3Y/uOOU5aD6MTh5ZFCdEwGiCw==
-  dependencies:
-    d3-array "^1.2.0"
-    d3-collection "1"
-    d3-format "1"
-    d3-interpolate "1"
-    d3-time "1"
-    d3-time-format "2"
-
 d3-scale@^3.2.1:
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/d3-scale/-/d3-scale-3.3.0.tgz#28c600b29f47e5b9cd2df9749c206727966203f3"
@@ -2732,13 +2698,6 @@ d3-shape@^2.0.0:
   dependencies:
     d3-path "1 - 2"
 
-d3-time-format@2, d3-time-format@^2.1.1:
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/d3-time-format/-/d3-time-format-2.3.0.tgz#107bdc028667788a8924ba040faf1fbccd5a7850"
-  integrity sha512-guv6b2H37s2Uq/GefleCDtbe0XZAuy7Wa49VGkPVPMfLL9qObgBST3lEHJBMUp8S7NdLQAGIvr2KXk8Hc98iKQ==
-  dependencies:
-    d3-time "1"
-
 "d3-time-format@2 - 3":
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/d3-time-format/-/d3-time-format-3.0.0.tgz#df8056c83659e01f20ac5da5fdeae7c08d5f1bb6"
@@ -2752,11 +2711,6 @@ d3-time-format@2, d3-time-format@^2.1.1:
   integrity sha512-dJxPBlzC7NugB2PDLwo9Q8JiTR3M3e4/XANkreKSUxF8vvXKqm1Yfq4Q5dl8budlunRVlUUaDUgFt7eA8D6NLg==
   dependencies:
     d3-time "1 - 3"
-
-d3-time@1:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/d3-time/-/d3-time-1.1.0.tgz#b1e19d307dae9c900b7e5b25ffc5dcc249a8a0f1"
-  integrity sha512-Xh0isrZ5rPYYdqhAVk8VLnMEidhz5aP7htAADH6MfzgmmicPkTo8LhkLxci61/lCB7n7UmE3bN0leRt+qvkLxA==
 
 "d3-time@1 - 2", d3-time@^2.1.1:
   version "2.1.1"
@@ -4459,11 +4413,6 @@ highlight.js@^10.7.2:
   resolved "https://registry.yarnpkg.com/highlight.js/-/highlight.js-10.7.3.tgz#697272e3991356e40c3cac566a74eef681756531"
   integrity sha512-tzcUFauisWKNHaRkN4Wjl/ZA07gENAjFl3J/c480dprkGTg5EQstgaNFqBfUqCq54kZRIEcreTsAgF/m2quD7A==
 
-higlass-register@^0.1.0:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/higlass-register/-/higlass-register-0.1.1.tgz#638ff3e30dd5785971dfca6a07ce01daba38860f"
-  integrity sha512-0oBDGEnUn18uF4SHD21oRp0/CD0tnhEwDPG5H5s8IgG44kasAUXs6TqnATmLplHVkPl+x34jA0TnfXWpvo+fwQ==
-
 higlass-register@^0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/higlass-register/-/higlass-register-0.3.0.tgz#6c728ad911359bd7e88749aceaffd8812415c52a"
@@ -4478,58 +4427,6 @@ higlass-text@^0.1.1:
     d3-scale "^4.0.2"
     higlass-register "^0.3.0"
     slugid "^2.0.0"
-
-higlass-unix-time-track@^0.1.6:
-  version "0.1.6"
-  resolved "https://registry.yarnpkg.com/higlass-unix-time-track/-/higlass-unix-time-track-0.1.6.tgz#a20e87f50ab981e3fd9522e0bb92eee2bca0188a"
-  integrity sha512-Usp6pmSCxQ0qQRf2tr/cBqWWypYx+c25MDbFtsnDc8MUqZ3/mbQB08dI9opLq7p41amsdp5xAQw+uRahkf7TDQ==
-  dependencies:
-    d3-scale "^2.1.0"
-    d3-time-format "^2.1.1"
-    higlass "^1.0.4"
-    higlass-register "^0.1.0"
-
-higlass@^1.0.4:
-  version "1.13.6"
-  resolved "https://registry.yarnpkg.com/higlass/-/higlass-1.13.6.tgz#4f94afc8211542ad20c995506d0b52bec9a8e622"
-  integrity sha512-sXGtysmyAzZkT8OHOb4sZMU8Rv6OPucwlfya/4b4P7tI4Sk8HlFLC9teYnfhyHhSL3HU9hy+fBmCjonz5QwmjA==
-  dependencies:
-    ajv "^6.10.0"
-    box-intersect "^1.0.1"
-    buffer "^6.0.3"
-    clsx "^1.2.1"
-    css-element-queries "^1.2.3"
-    d3-array "^2.7.1"
-    d3-axis "^2.0.0"
-    d3-brush "^2.1.0"
-    d3-color "^2.0.0"
-    d3-drag "^2.0.0"
-    d3-dsv "^2.0.0"
-    d3-format "^2.0.0"
-    d3-geo "^2.0.1"
-    d3-queue "^3.0.7"
-    d3-request "^1.0.6"
-    d3-scale "^4.0.2"
-    d3-selection "^2.0.0"
-    d3-transition "^3.0.1"
-    d3-zoom "^3.0.0"
-    dom-scroll-into-view "^1.2.1"
-    genbank-parser "^1.0.0"
-    ndarray "^1.0.18"
-    pako "^1.0.10"
-    prismjs "^1.16.0"
-    prop-types "^15.6.0"
-    pub-sub-es "^2.0.1"
-    react-checkbox-tree "^1.7.3"
-    react-color "^2.13.8"
-    react-grid-layout "^0.16.6"
-    react-simple-code-editor "^0.9.10"
-    react-sortable-hoc "^1.10.1"
-    reactcss "^1.2.3"
-    robust-point-in-polygon "^1.0.3"
-    slugid "^3.2.0"
-    url-parse "^1.4.3"
-    vkbeautify "^0.99.3"
 
 higlass@^1.12.4:
   version "1.12.4"
@@ -6609,6 +6506,18 @@ pkg-dir@^4.1.0:
   dependencies:
     find-up "^4.0.0"
 
+playwright-core@1.64.1:
+  version "1.64.1"
+  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.64.1.tgz#ca9ec82d7da6ced1b2326ec59ef097aaa9a29f94"
+  integrity sha512-BC4s8y6SEVA6Q1rSxZTto8hI1KUI3xXlHGZgvGqP4IqPdI/a6FX9H29IDNz7vKo9l21b6LfYosScPL6M3xxyDQ==
+
+playwright@^1.64.1:
+  version "1.64.1"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.64.1.tgz#c174f48e17f5f3fba71726a9bcdeb8534d5c665d"
+  integrity sha512-HCrVhHr5QQuwYoswEUGTb7gGp522yflbv/ST8nF4sFWGuLjQCt17Q/EubpGGSNKYn1tsTCPZxqHhHCfVURu7UA==
+  dependencies:
+    playwright-core "1.64.1"
+
 posix-character-classes@^0.1.0:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/posix-character-classes/-/posix-character-classes-0.1.1.tgz#01eac0fe3b5af71a2a6c02feabb8c1fef7e00eab"
@@ -7591,7 +7500,7 @@ slash@^3.0.0:
   resolved "https://registry.yarnpkg.com/slash/-/slash-3.0.0.tgz#6539be870c165adbd5240220dbe361f1bc4d4634"
   integrity sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==
 
-slugid@^2.0.0, slugid@^3.0.0, slugid@^3.1.0, slugid@^3.2.0:
+slugid@^2.0.0, slugid@^3.0.0, slugid@^3.1.0:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/slugid/-/slugid-3.2.0.tgz#3731f4debe46b319f6fbbefda58de30316af957d"
   integrity sha512-f0vZb6VyjUdZG5kaxd9CNpfhy+eUUTC8RnbDolC3ZLjYa7n5AdPkQnqnIjmoZYoPS9dWMOXQdoBREAGQqdZb9A==
